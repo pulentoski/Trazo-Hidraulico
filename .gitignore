@@ -9,3 +9,7 @@ __pycache__/
 *.out
 !docs/validation/*.md
 .DS_Store
+
+# Claves privadas y certificados: nunca al repositorio
+*.pem
+*.key
