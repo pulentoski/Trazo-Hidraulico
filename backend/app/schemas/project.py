@@ -13,7 +13,7 @@ class ProjectCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     description: str = ""
-    length_srid: int = Field(32719, description="SRID métrico para calcular largos (p. ej. 32719 = UTM 19S)")
+    length_srid: int | None = Field(None, description="SRID métrico para largos (por defecto LENGTH_SRID, p. ej. 32719)")
     design_profile_id: int | None = None
     options: HydraulicOptions | None = None
 

@@ -35,13 +35,14 @@ def _check_srid(srid: int) -> None:
 
 
 def create_project(session: Session, body: ProjectCreate) -> Project:
-    _check_srid(body.length_srid)
+    srid = body.length_srid or get_settings().length_srid
+    _check_srid(srid)
     profile_id = body.design_profile_id
     if profile_id is None:
         default = catalog_repo.default_profile(session)
         profile_id = default.id if default else None
     project = Project(id=uuid.uuid4(), name=body.name, description=body.description,
-                      length_srid=body.length_srid, design_profile_id=profile_id)
+                      length_srid=srid, design_profile_id=profile_id)
     session.add(project)
     session.flush()
     model = NetworkModel(options=body.options or HydraulicOptions())

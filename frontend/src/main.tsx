@@ -1,9 +1,11 @@
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-mono/400.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-
-function App() {
-  return <main style={{ fontFamily: "sans-serif", padding: 24 }}>Trazo Hidráulico — infraestructura en marcha.</main>;
-}
+import App from "./App";
+import "./styles/app.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

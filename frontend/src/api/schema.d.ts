@@ -883,10 +883,9 @@ export interface components {
             design_profile_id?: number | null;
             /**
              * Length Srid
-             * @description SRID métrico para calcular largos (p. ej. 32719 = UTM 19S)
-             * @default 32719
+             * @description SRID métrico para largos (por defecto LENGTH_SRID, p. ej. 32719)
              */
-            length_srid: number;
+            length_srid?: number | null;
             /** Name */
             name: string;
             options?: components["schemas"]["HydraulicOptions"] | null;

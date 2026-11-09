@@ -1,0 +1,23 @@
+// Íconos de línea (24×24) para la interfaz.
+const P = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+
+export const Icon = {
+  select: () => <svg viewBox="0 0 24 24" {...P}><path d="M5 3l14 8-6 1.5L9.5 19z" /></svg>,
+  multi: () => <svg viewBox="0 0 24 24" {...P}><rect x="3.5" y="3.5" width="17" height="17" strokeDasharray="3 2.5" /><path d="M9 9l8 4.5-3.4.8-1.9 3.5z" /></svg>,
+  junction: () => <svg viewBox="0 0 24 24" {...P}><circle cx="12" cy="12" r="4.5" /><path d="M3 12h3.5M17.5 12H21" /></svg>,
+  pipe: () => <svg viewBox="0 0 24 24" {...P}><circle cx="4.5" cy="18" r="2" /><circle cx="19.5" cy="6" r="2" /><path d="M6.3 17l5-6 3 1.5 3.6-5" /></svg>,
+  tank: () => <svg viewBox="0 0 24 24" {...P}><rect x="6" y="4" width="12" height="16" rx="1.5" /><path d="M6 12h12" /></svg>,
+  reservoir: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 8h18l-3 11H6z" /><path d="M6 12c2-1.4 4 1.4 6 0s4 1.4 6 0" /></svg>,
+  move: () => <svg viewBox="0 0 24 24" {...P}><path d="M12 3v18M3 12h18M12 3l-2.5 2.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5" /></svg>,
+  trash: () => <svg viewBox="0 0 24 24" {...P}><path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v6M14 11v6" /></svg>,
+  measure: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 16.5L16.5 3 21 7.5 7.5 21z" /><path d="M7 13l2 2M10 10l2 2M13 7l2 2" /></svg>,
+  undo: () => <svg viewBox="0 0 24 24" {...P}><path d="M9 7H4V2" /><path d="M4 7a8.5 8.5 0 1 1 1.9 9.4" /></svg>,
+  redo: () => <svg viewBox="0 0 24 24" {...P}><path d="M15 7h5V2" /><path d="M20 7a8.5 8.5 0 1 0-1.9 9.4" /></svg>,
+  save: () => <svg viewBox="0 0 24 24" {...P}><path d="M5 3h11l3 3v15H5z" /><path d="M8 3v5h7V3M8 21v-7h8v7" /></svg>,
+  play: () => <svg viewBox="0 0 24 24" {...P}><path d="M7 4.5v15l12-7.5z" /></svg>,
+  download: () => <svg viewBox="0 0 24 24" {...P}><path d="M12 3v12M7 10l5 5 5-5M4 20h16" /></svg>,
+  folder: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 6.5h6l2 2h10V19H3z" /></svg>,
+  history: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3.5 2" /></svg>,
+  sun: () => <svg viewBox="0 0 24 24" {...P}><circle cx="12" cy="12" r="4" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" /></svg>,
+  moon: () => <svg viewBox="0 0 24 24" {...P}><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></svg>,
+};

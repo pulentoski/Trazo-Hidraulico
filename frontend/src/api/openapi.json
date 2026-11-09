@@ -1530,10 +1530,16 @@
             "title": "Design Profile Id"
           },
           "length_srid": {
-            "default": 32719,
-            "description": "SRID métrico para calcular largos (p. ej. 32719 = UTM 19S)",
-            "title": "Length Srid",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SRID métrico para largos (por defecto LENGTH_SRID, p. ej. 32719)",
+            "title": "Length Srid"
           },
           "name": {
             "maxLength": 200,
