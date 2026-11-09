@@ -10,7 +10,7 @@ HOST_GID ?= $(shell stat -c %g .)
 export HOST_UID HOST_GID
 
 .PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend test-e2e reset-db gen-types backup \
-        create-admin demo restore-test backup-now
+        create-admin unlock-user reset-password demo restore-test backup-now
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -41,7 +41,10 @@ up: check-auth ## Construye y levanta la pila; espera a que todo esté healthy
 
 up-public: check-auth ## Publica en SITE_ADDRESS (HTTPS) con límites, logs rotados y respaldo diario (docs/despliegue.md)
 	@set -a; . ./.env; set +a; [ -n "$${SITE_ADDRESS:-}" ] || { echo "ERROR: defina SITE_ADDRESS en .env (dominio, https://IP o http://IP)." >&2; exit 1; }; \
-	case "$$SITE_ADDRESS" in http://*) echo "ADVERTENCIA: modo HTTP sin cifrado (solo pruebas): contraseñas y sesiones viajan en texto plano." >&2 ;; esac
+	case "$$SITE_ADDRESS" in http://*) \
+	  echo "ADVERTENCIA: modo HTTP sin cifrado (solo pruebas): contraseñas y sesiones viajan en texto plano." >&2; \
+	  [ "$${COOKIE_SECURE:-true}" = false ] || { echo "ERROR: con SITE_ADDRESS=http://... defina COOKIE_SECURE=false en .env: el navegador descarta una cookie Secure recibida por HTTP y el ingreso no avanza." >&2; exit 1; } ;; \
+	esac
 	@set -a; . ./.env; set +a; mkdir -p "$${BACKUP_DIR:-/var/backups/trazo-hidraulico}" 2>/dev/null || true
 	$(PUBLIC) up -d --build --wait --wait-timeout 300
 	@$(PUBLIC) ps --format 'table {{.Service}}\t{{.Status}}'
@@ -72,16 +75,29 @@ test-frontend: env
 
 E2E_EMAIL ?= e2e@trazo.local
 E2E_PASSWORD ?= Recorrido-e2e-2026
-test-e2e: ## Recorrido visual con Playwright contra la pila levantada (make up)
+# BASE_URL: dirección a recorrer (en una instancia publicada, p. ej. https://IP; acepta el certificado interno).
+# E2E_SHOTS: carpeta de capturas (por defecto docs/capturas).
+BASE_URL ?= http://localhost:8080
+E2E_SHOTS ?= docs/capturas
+test-e2e: ## Recorrido visual con Playwright contra la pila levantada (make up; o BASE_URL=https://IP en una instancia)
 	$(COMPOSE) exec -T api python -m app.cli ensure-user --email $(E2E_EMAIL) --password $(E2E_PASSWORD) --org "Recorrido e2e" --role admin
 	docker build -q -t trazo-hidraulico/e2e:local e2e >/dev/null
 	docker run --rm --network host --ipc=host -u $(HOST_UID):$(HOST_GID) -e HOME=/tmp -v $(CURDIR):/repo -w /repo \
-	  -e E2E_EMAIL=$(E2E_EMAIL) -e E2E_PASSWORD=$(E2E_PASSWORD) \
+	  -e E2E_EMAIL=$(E2E_EMAIL) -e E2E_PASSWORD=$(E2E_PASSWORD) -e BASE_URL=$(BASE_URL) -e E2E_SHOTS=$(E2E_SHOTS) \
 	  trazo-hidraulico/e2e:local python3 e2e/recorrido.py
 
-create-admin: ## Crea o actualiza el superadministrador (pide correo y contraseña; o EMAIL= PASSWORD=)
-	$(COMPOSE) exec $(if $(PASSWORD),-T,) $(if $(EMAIL),-e TRAZO_ADMIN_EMAIL=$(EMAIL),) $(if $(PASSWORD),-e TRAZO_ADMIN_PASSWORD=$(PASSWORD),) \
-	  api python -m app.cli create-admin
+create-admin: ## Crea o actualiza el superadministrador (pide correo y contraseña; o EMAIL=, y TRAZO_ADMIN_PASSWORD en el entorno)
+	@t=; [ -t 0 ] || t=-T; \
+	TRAZO_ADMIN_EMAIL="$${TRAZO_ADMIN_EMAIL:-$(EMAIL)}" TRAZO_ADMIN_PASSWORD="$${TRAZO_ADMIN_PASSWORD:-$(PASSWORD)}" \
+	  $(COMPOSE) exec $$t -e TRAZO_ADMIN_EMAIL -e TRAZO_ADMIN_PASSWORD api python -m app.cli create-admin
+
+unlock-user: ## Quita el bloqueo por intentos fallidos (423) de una cuenta: make unlock-user EMAIL=...
+	@[ -n "$(EMAIL)" ] || { echo "Uso: make unlock-user EMAIL=correo@dominio" >&2; exit 2; }
+	$(COMPOSE) exec -T api python -m app.cli unlock-user --email "$(EMAIL)"
+
+reset-password: ## Contraseña nueva para una cuenta (pedida por consola, sin eco): make reset-password EMAIL=...
+	@[ -n "$(EMAIL)" ] || { echo "Uso: make reset-password EMAIL=correo@dominio" >&2; exit 2; }
+	@t=; [ -t 0 ] || t=-T; $(COMPOSE) exec $$t -e TRAZO_NEW_PASSWORD api python -m app.cli reset-password --email "$(EMAIL)"
 
 demo: ## Organización «Demo APR» con un usuario por rol y el proyecto APR Demo (solo entorno local; docs/demo.md)
 	$(COMPOSE) exec -T api python -m app.cli seed-demo

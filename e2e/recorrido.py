@@ -25,7 +25,8 @@ BASE = os.environ.get("BASE_URL", "http://localhost:8080")
 EMAIL = os.environ.get("E2E_EMAIL", "e2e@trazo.local")
 PASSWORD = os.environ.get("E2E_PASSWORD", "Recorrido-e2e-2026")
 ROOT = Path(__file__).resolve().parent.parent
-SHOTS = ROOT / "docs" / "capturas"
+SHOTS = ROOT / os.environ.get("E2E_SHOTS", "docs/capturas")
+INSECURE = BASE.startswith("https://")  # instancia con certificado interno de Caddy
 DEMO = ROOT / "examples" / "apr-demo.xlsx"
 ORTHO = ROOT / "e2e" / "fixtures" / "ortofoto.tif"
 TOOLS = ["V", "B", "N", "T", "E", "R", "M", "X", "D", "C", "L", "G", "W", "F"]
@@ -237,7 +238,7 @@ def totp(secret: str) -> str:
 
 def login(browser) -> dict:
     """Ingreso por la pantalla /login (con TOTP si el rol lo exige); devuelve el estado de sesión."""
-    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="es-CL")
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="es-CL", ignore_https_errors=INSECURE)
     page = ctx.new_page()
     watch(page)
     page.goto(f"{BASE}/acerca-de")
@@ -264,7 +265,7 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch()
         state = login(browser)
-        api = p.request.new_context(base_url=BASE, storage_state=state)
+        api = p.request.new_context(base_url=BASE, storage_state=state, ignore_https_errors=INSECURE)
         r = api.post("/api/projects/import-excel", multipart={
             "file": {"name": "apr-demo.xlsx", "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                      "buffer": DEMO.read_bytes()}, "name": "APR Demo (e2e)"})
@@ -274,7 +275,7 @@ def main() -> int:
             for i, (theme, width) in enumerate((("claro", 1440), ("oscuro", 1440), ("claro", 1024), ("oscuro", 1024))):
                 log(f"== tema {theme}, {width} px ==")
                 ctx = browser.new_context(viewport={"width": width, "height": 900}, accept_downloads=True, locale="es-CL",
-                                          storage_state=state)
+                                          storage_state=state, ignore_https_errors=INSECURE)
                 page = ctx.new_page()
                 watch(page)
                 try:
@@ -292,7 +293,7 @@ def main() -> int:
         for x in dict.fromkeys(problems):
             print("  -", x)
         return 1
-    print(f"\n✔ Recorrido e2e sin errores. Capturas en {SHOTS.relative_to(ROOT)}/")
+    print(f"\n✔ Recorrido e2e sin errores. Capturas en {SHOTS}/")
     return 0
 
 

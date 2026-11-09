@@ -38,9 +38,28 @@ claves aleatorias y le pregunta:
 4. Servidor SMTP (opcional): sin correo saliente, los administradores generan enlaces de un solo uso para
    invitar y recuperar contraseñas.
 
-Luego ejecuta `make up-public` (compose base + `compose.public.yml` + `compose.prod.yml`) y
-`make create-admin`. Para instalar sin preguntas defina `TRAZO_MODE`, `TRAZO_DOMAIN`, `TRAZO_ADMIN_EMAIL`,
-`TRAZO_ADMIN_PASSWORD`, etc. (ver el encabezado del script).
+Luego ejecuta `make up-public` (compose base + `compose.public.yml` + `compose.prod.yml`),
+`make create-admin` y comprueba `/healthz`.
+
+### Instalación sin preguntas (por ssh, sin terminal)
+
+```bash
+git clone https://github.com/pulentoski/Trazo-Hidraulico.git /tmp/trazo && cd /tmp/trazo
+sudo TRAZO_MODE=2 TRAZO_MFA_ADMINS=false TRAZO_GOOGLE_KEY= TRAZO_SMTP_HOST= \
+     TRAZO_ADMIN_EMAIL=admin@ejemplo.cl bash deploy/instalar.sh --no-interactivo
+```
+
+Con `--no-interactivo` (o `TRAZO_NONINTERACTIVE=1`, o si no hay terminal) el script no pregunta: las variables
+`TRAZO_*` no definidas toman su valor por defecto y una variable definida vacía cuenta como respondida. Sin
+`TRAZO_ADMIN_PASSWORD` genera una contraseña aleatoria fuerte y la muestra **una sola vez** al final. Lista
+completa de variables en el encabezado de `deploy/instalar.sh`.
+
+### Acceso por IP sin dominio (`TRAZO_MODE=2`)
+
+Caddy emite un certificado propio para la IP (`TLS_MODE=internal`) y redirige el puerto 80 al 443. El navegador
+muestra «La conexión no es privada»: en Chrome/Edge, **Configuración avanzada → Continuar a IP (no seguro)**; en
+Firefox, **Avanzado… → Aceptar el riesgo y continuar**. Con curl: `curl -k https://IP/healthz`. La cookie de
+sesión sigue siendo `Secure` (la conexión es HTTPS).
 
 Al primer ingreso, el superadministrador debe configurar el segundo factor (TOTP) en **/perfil** si
 `MFA_REQUIRED_FOR_ADMINS=true` (por defecto). Después crea las organizaciones en **/plataforma** e invita a
@@ -81,6 +100,46 @@ sus administradores.
   ingresos fallidos y bloqueos, cambios de red, importaciones, exportaciones y cambios de permisos.
 - **Uso**: el superadministrador ve en **/plataforma** simulaciones, cargas de mapa y ortofotos por
   organización, con los límites del plan.
+
+## Cuentas desde la consola del servidor
+
+```bash
+cd /opt/trazo-hidraulico
+make create-admin                         # crea o actualiza el superadministrador (pide correo y contraseña)
+make unlock-user EMAIL=correo@dominio     # quita el bloqueo por intentos fallidos (423)
+make reset-password EMAIL=correo@dominio  # contraseña nueva pedida sin eco; desbloquea y cierra sus sesiones
+```
+
+## Problemas de ingreso
+
+| Síntoma | Causa | Solución |
+|---|---|---|
+| «Cuenta bloqueada temporalmente…» (HTTP 423) | 5 intentos fallidos (`LOGIN_MAX_ATTEMPTS`) bloquean la cuenta `LOGIN_LOCKOUT_MINUTES` (15) min. El bloqueo se guarda en la base (`app_user.locked_until`), por eso **reiniciar la API no lo quita**. | Esperar, o `make unlock-user EMAIL=…` |
+| Contraseña olvidada sin correo saliente | Sin SMTP no llega el enlace de recuperación | Otro administrador genera un enlace, o `make reset-password EMAIL=…` |
+| El ingreso «se queda pegado» o vuelve al formulario | Sitio abierto por `http://` con `COOKIE_SECURE=true`: el navegador descarta la cookie `Secure` y cada consulta posterior responde 401. | Entrar por `https://`. Para modo HTTP de pruebas, `COOKIE_SECURE=false` (el instalador lo pone en el modo 3; `make up-public` ahora se niega a arrancar con `http://` y cookie `Secure`, y la API deja una advertencia en su log cuando la cookie no es `Secure`). La pantalla de ingreso ahora lo explica en vez de quedarse esperando. |
+| «Demasiados intentos de ingreso desde esta dirección» (429) | Más de `LOGIN_RATE_PER_MINUTE` (10) ingresos por minuto desde la misma IP | Esperar un minuto |
+| Consultas SQL directas fallan con «relation "users" does not exist» | La tabla de usuarios se llama **`app_user`** (sesiones: `user_session`, membresías: `membership`) | Use los comandos `make` de arriba en lugar de SQL a mano |
+
+La pantalla de ingreso muestra un mensaje específico para 401 (credenciales o sesión perdida), 423 (bloqueo),
+código TOTP incorrecto, servidor inaccesible y cookie de sesión no guardada.
+
+## Correcciones de la primera instalación real (noviembre 2026)
+
+Primera prueba de `deploy/instalar.sh` en una instancia AWS limpia (Ubuntu, acceso por IP con certificado interno):
+
+- **Modo no interactivo**: el script preguntaba por `/dev/tty` incluso cuando la variable estaba definida vacía
+  (key de Google, SMTP), y fallaba sin terminal. Ahora acepta `--no-interactivo`, detecta la falta de terminal,
+  respeta variables vacías y genera la contraseña del superadministrador si no se entrega.
+- **Contraseña del superadministrador**: se pasaba como argumento de `make` (se rompía con `$`, comillas o
+  espacios y quedaba visible en la lista de procesos). Ahora va por variable de entorno y `make create-admin`
+  usa `exec -T` cuando no hay terminal.
+- **Bloqueo y contraseña**: nuevos `make unlock-user` y `make reset-password` (antes había que editar la tabla a
+  mano, y la tabla no se llama `users` sino `app_user`).
+- **Cookie en HTTP**: verificación en `make up-public`, advertencia en el log de la API y mensaje claro en la
+  pantalla de ingreso.
+- **Verificación**: el instalador comprueba `/healthz` al terminar e indica los comandos de cuentas.
+- **e2e contra una instancia**: `make test-e2e BASE_URL=https://IP E2E_SHOTS=/tmp/capturas` acepta el
+  certificado interno y no ensucia `docs/capturas` del servidor.
 
 ## Actualización
 

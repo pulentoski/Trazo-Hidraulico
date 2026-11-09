@@ -4,6 +4,8 @@
     python -m app.cli seed-demo                                             organización «Demo APR» y sus usuarios
     python -m app.cli ensure-user --email X --password Y --org NOMBRE --role ROL
     python -m app.cli purge                                                 sesiones y enlaces vencidos
+    python -m app.cli unlock-user --email X                                 quita el bloqueo por intentos fallidos
+    python -m app.cli reset-password --email X                              contraseña nueva (pedida sin eco)
 
 Sin --email o --password los pide por consola (la contraseña sin eco). También lee TRAZO_ADMIN_EMAIL y
 TRAZO_ADMIN_PASSWORD (para instalaciones automatizadas).
@@ -17,10 +19,10 @@ import sys
 import uuid
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.core.db import get_sessionmaker
-from app.models import Membership, Organization, Project, User
+from app.models import Membership, Organization, Project, User, UserSession
 from app.services import auth
 
 DEMO_ORG = "Demo APR"
@@ -143,6 +145,47 @@ def purge(_args) -> None:
     print("Sesiones y enlaces vencidos eliminados.")
 
 
+def _existing(session, email: str) -> User:
+    user = auth.user_by_email(session, email)
+    if user is None:
+        sys.exit(f"Error: no existe un usuario con el correo {email} (tabla app_user).")
+    return user
+
+
+def unlock_user(args) -> None:
+    with get_sessionmaker()() as session:
+        token = auth.current.set(auth.SYSTEM)
+        try:
+            user = _existing(session, args.email)
+            was = bool(user.locked_until and user.locked_until > auth.now())
+            user.failed_logins, user.locked_until = 0, None
+            auth.audit(session, "cuenta.desbloqueo", user=user)
+            session.commit()
+        finally:
+            auth.current.reset(token)
+    print(f"{args.email}: {'desbloqueada' if was else 'no estaba bloqueada'}; contador de intentos fallidos en 0."
+          + ("" if user.active else " Atención: la cuenta está desactivada."))
+
+
+def reset_password(args) -> None:
+    pw = os.environ.get("TRAZO_NEW_PASSWORD")
+    if not pw:
+        pw = getpass.getpass("Contraseña nueva (mín. 10, letras y números): ")
+        if getpass.getpass("Repita la contraseña: ") != pw:
+            sys.exit("Las contraseñas no coinciden.")
+    with get_sessionmaker()() as session:
+        token = auth.current.set(auth.SYSTEM)
+        try:
+            user = _existing(session, args.email)
+            auth.set_password(session, user, pw)  # también quita el bloqueo y el contador de intentos
+            session.execute(delete(UserSession).where(UserSession.user_id == user.id))
+            auth.audit(session, "password.reinicio_consola", user=user)
+            session.commit()
+        finally:
+            auth.current.reset(token)
+    print(f"Contraseña de {args.email} actualizada; cuenta desbloqueada y sesiones abiertas cerradas.")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(prog="python -m app.cli")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -159,6 +202,12 @@ def main() -> None:
     e.add_argument("--role", choices=auth.ROLES, required=True)
     e.set_defaults(func=ensure_user)
     sub.add_parser("purge").set_defaults(func=purge)
+    u = sub.add_parser("unlock-user")
+    u.add_argument("--email", required=True)
+    u.set_defaults(func=unlock_user)
+    r = sub.add_parser("reset-password")
+    r.add_argument("--email", required=True)
+    r.set_defaults(func=reset_password)
     args = ap.parse_args()
     try:
         args.func(args)

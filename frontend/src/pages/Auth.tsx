@@ -1,7 +1,7 @@
 // Pantallas públicas: ingreso (con segundo factor), recuperación de contraseña e invitación.
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { api } from "../api/client";
+import { api, ApiError } from "../api/client";
 import type { InvitationInfo } from "../api/types";
 import { Brand } from "../components/PageHeader";
 import { PATHS } from "../paths";
@@ -24,6 +24,22 @@ function safeNext(v: string | null): string {
   return v && v.startsWith("/") && !v.startsWith("//") ? v : PATHS.home;
 }
 
+/** Mensajes claros para cada respuesta del ingreso (nunca dejar el formulario «pegado»). */
+export function loginErrorText(err: unknown): string {
+  if (err instanceof TypeError) return "No se pudo contactar al servidor. Revise su conexión y que la dirección sea la correcta.";
+  const status = err instanceof ApiError ? err.status : 0;
+  const code = err instanceof ApiError && err.body && typeof err.body === "object" && "code" in err.body
+    ? (err.body as { code: unknown }).code : null;
+  const msg = errorText(err);
+  if (status === 423) return `${msg} Para desbloquearla antes, quien administra el servidor puede ejecutar make unlock-user.`;
+  if (status === 401 && code === "bad_credentials") return msg;
+  if (status === 401 && (code === "login_required" || code === "mfa_pending")) return "La sesión no se mantuvo: vuelva a ingresar con su correo y contraseña.";
+  if (status === 401 && code === "bad_code") return "Código incorrecto. Use el código actual de su aplicación de autenticación (cambia cada 30 s).";
+  if (status === 429) return msg || "Demasiados intentos: espere un minuto.";
+  if (status >= 500) return "El servidor no respondió correctamente. Intente en unos minutos.";
+  return msg;
+}
+
 export function Login() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -38,9 +54,20 @@ export function Login() {
     api.me().then((me) => { if (me.mfa_pending) setStep("mfa"); else navigate(safeNext(params.get("volver")), { replace: true }); })
       .catch(() => undefined);
   }, [navigate, params]);
-  const done = async () => {
+  const done = async (): Promise<boolean> => {
     const me = await refresh();
-    navigate(me?.mfa_setup_required ? `${PATHS.profile}?mfa=1` : safeNext(params.get("volver")), { replace: true });
+    if (!me || me.mfa_pending) {
+      // El servidor aceptó el ingreso, pero el navegador no devolvió la cookie de sesión.
+      setStep("password");
+      setError(window.location.protocol === "http:"
+        ? "El ingreso fue aceptado, pero el navegador no guardó la sesión: este sitio se abrió por http:// y la "
+          + "cookie de sesión exige HTTPS. Entre por https:// o, solo para pruebas, configure COOKIE_SECURE=false en el servidor."
+        : "El ingreso fue aceptado, pero el navegador no guardó la cookie de sesión. Permita las cookies de este sitio "
+          + "(no use bloqueo de cookies propias) y vuelva a intentarlo.");
+      return false;
+    }
+    navigate(me.mfa_setup_required ? `${PATHS.profile}?mfa=1` : safeNext(params.get("volver")), { replace: true });
+    return true;
   };
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +82,7 @@ export function Login() {
         await api.mfa(code);
         await done();
       }
-    } catch (err) { setError(errorText(err)); } finally { setBusy(false); }
+    } catch (err) { setError(loginErrorText(err)); } finally { setBusy(false); }
   };
   return (
     <Card title={step === "password" ? "Ingresar" : "Segundo factor"}>

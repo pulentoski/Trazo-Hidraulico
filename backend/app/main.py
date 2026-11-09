@@ -1,10 +1,12 @@
 """Punto de entrada FastAPI de Trazo Hidráulico."""
+import logging
 import re
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.config import get_settings
 from app.core.ratelimit import RateLimitMiddleware
 from app.routers import (analysis, auth as auth_router, catalog, demand, diagnosis, health, measurements, network,
                          orgs, orthophotos, projects, sig, trazo, wells)
@@ -21,6 +23,11 @@ app = FastAPI(
     redoc_url=None,
     dependencies=[Depends(auth.authenticate)],
 )
+
+if not get_settings().cookie_secure:
+    logging.getLogger("uvicorn.error").warning(
+        "ADVERTENCIA: COOKIE_SECURE=false — la cookie de sesión viaja sin cifrar (modo HTTP por IP, solo pruebas). "
+        "Publique con HTTPS y COOKIE_SECURE=true antes de usar datos reales.")
 
 # Auditoría de importaciones y exportaciones (rutas con éxito): quién, qué y cuándo.
 AUDIT_PATHS = [
