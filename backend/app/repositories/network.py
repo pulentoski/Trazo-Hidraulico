@@ -6,10 +6,12 @@ from geoalchemy2.shape import to_shape
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import NetworkClient, NetworkLink, NetworkNode, NetworkShutoff, ProjectVersion
-from app.schemas.network import (ClientFeature, ClientProperties, DemandCategory, LineStringGeometry, LinkFeature,
-                                 LinkProperties, NetworkFeatureCollection, NodeFeature, NodeProperties, PointGeometry,
-                                 ShutoffFeature, ShutoffProperties, to_lps)
+from app.models import (NetworkClient, NetworkHydrant, NetworkLink, NetworkNode, NetworkShutoff, NetworkWell,
+                        ProjectVersion)
+from app.schemas.network import (ClientFeature, ClientProperties, DemandCategory, HydrantFeature, HydrantProperties,
+                                 LineStringGeometry, LinkFeature, LinkProperties, NetworkFeatureCollection, NodeFeature,
+                                 NodeProperties, PointGeometry, ShutoffFeature, ShutoffProperties, WellFeature,
+                                 WellProperties, to_lps)
 
 NODE_FIELDS = ("description", "elevation", "elevation_source", "elevation_method", "base_demand", "demand_pattern",
                "emitter_coeff", "initial_quality", "head", "head_pattern", "init_level", "min_level", "max_level",
@@ -17,10 +19,15 @@ NODE_FIELDS = ("description", "elevation", "elevation_source", "elevation_method
 LINK_FIELDS = ("description", "dn", "inner_diameter_mm", "material", "pipe_class", "catalog_pipe_id", "roughness",
                "minor_loss", "initial_status", "inner_diameter_source", "length_plan_m", "length_slope_m", "length_hydraulic_m",
                "length_choice", "pump_curve", "pump_power", "pump_speed", "pump_pattern", "valve_type",
-               "valve_setting", "valve_curve")
+               "valve_setting", "valve_curve", "condition", "install_year", "network_type")
 
 
-CLIENT_FIELDS = ("name", "client_type", "status", "consumption_value", "consumption_unit", "connection_mode", "elevation")
+CLIENT_FIELDS = ("name", "client_type", "status", "consumption_value", "consumption_unit", "connection_mode", "elevation",
+                 "client_number", "address", "route", "meter_number")
+SHUTOFF_FIELDS = ("name", "position", "state", "valve_type", "condition", "diameter_mm", "depth_m")
+HYDRANT_FIELDS = ("description", "condition", "hydrant_type", "diameter_mm", "fire_flow_lps", "min_pressure_m")
+WELL_FIELDS = ("description", "condition", "ground_elevation", "depth_m", "static_level_m", "dynamic_level_m",
+               "authorized_flow_lps")
 
 
 def _pt(lon: float, lat: float) -> WKTElement:
@@ -43,7 +50,7 @@ def insert_network(session: Session, version: ProjectVersion, fc: NetworkFeature
         row = NetworkNode(
             version_id=version.id, uid=_uid(p.uid), label=n.id, kind=p.kind,
             geom=WKTElement(f"POINT({lon!r} {lat!r})", srid=4326),
-            demands=[d.model_dump() for d in p.demands], extra={},
+            demands=[d.model_dump() for d in p.demands], extra=dict(p.attributes),
             **{f: getattr(p, f) for f in NODE_FIELDS},
         )
         node_rows.append(row)
@@ -59,7 +66,7 @@ def insert_network(session: Session, version: ProjectVersion, fc: NetworkFeature
         link_rows.append(NetworkLink(
             version_id=version.id, uid=_uid(p.uid), label=lk.id, kind=p.kind,
             from_node_id=ids[p.from_node], to_node_id=ids[p.to_node],
-            geom=WKTElement(wkt, srid=4326), extra={},
+            geom=WKTElement(wkt, srid=4326), extra=dict(p.attributes),
             **{f: getattr(p, f) for f in LINK_FIELDS},
         ))
     session.add_all(link_rows)
@@ -72,15 +79,26 @@ def insert_network(session: Session, version: ProjectVersion, fc: NetworkFeature
         client_rows.append(NetworkClient(
             version_id=version.id, uid=_uid(p.uid), label=c.id, node_id=ids[p.node], link_label=p.link,
             consumption_lps=to_lps(p.consumption_value, p.consumption_unit), geom=_pt(*c.geometry.coordinates),
-            connection_geom=_pt(*p.connection) if p.connection else None,
+            connection_geom=_pt(*p.connection) if p.connection else None, extra=dict(p.attributes),
             **{f: getattr(p, f) for f in CLIENT_FIELDS},
         ))
     shutoff_rows = [NetworkShutoff(
-        version_id=version.id, uid=_uid(sh.properties.uid), label=sh.id, name=sh.properties.name,
-        link_id=link_ids[sh.properties.link], position=sh.properties.position, state=sh.properties.state,
-        geom=_pt(*sh.geometry.coordinates),
+        version_id=version.id, uid=_uid(sh.properties.uid), label=sh.id, link_id=link_ids[sh.properties.link],
+        geom=_pt(*sh.geometry.coordinates), extra=dict(sh.properties.attributes),
+        **{f: getattr(sh.properties, f) for f in SHUTOFF_FIELDS},
     ) for sh in fc.shutoffs()]
-    session.add_all(client_rows + shutoff_rows)
+    hydrant_rows = [NetworkHydrant(
+        version_id=version.id, uid=_uid(h.properties.uid), label=h.id, node_id=ids[h.properties.node],
+        geom=_pt(*h.geometry.coordinates), extra=dict(h.properties.attributes),
+        **{f: getattr(h.properties, f) for f in HYDRANT_FIELDS},
+    ) for h in fc.hydrants()]
+    well_rows = [NetworkWell(
+        version_id=version.id, uid=_uid(w.properties.uid), label=w.id,
+        node_id=ids[w.properties.node] if w.properties.node else None,
+        geom=_pt(*w.geometry.coordinates), extra=dict(w.properties.attributes),
+        **{f: getattr(w.properties, f) for f in WELL_FIELDS},
+    ) for w in fc.wells()]
+    session.add_all(client_rows + shutoff_rows + hydrant_rows + well_rows)
     session.flush()
 
 
@@ -93,7 +111,7 @@ def load_network(session: Session, version_id: uuid.UUID) -> NetworkFeatureColle
         props = {f: getattr(n, f) for f in NODE_FIELDS}
         features.append(NodeFeature(
             id=n.label, geometry=PointGeometry(coordinates=(pt.x, pt.y)),
-            properties=NodeProperties(uid=str(n.uid), kind=n.kind,
+            properties=NodeProperties(uid=str(n.uid), kind=n.kind, attributes=n.extra or {},
                                       demands=[DemandCategory(**d) for d in (n.demands or [])], **props),
         ))
     links = select(NetworkLink).where(NetworkLink.version_id == version_id).order_by(NetworkLink.id)
@@ -105,7 +123,7 @@ def load_network(session: Session, version_id: uuid.UUID) -> NetworkFeatureColle
         features.append(LinkFeature(
             id=lk.label, geometry=LineStringGeometry(coordinates=[(x, y) for x, y in line.coords]),
             properties=LinkProperties(uid=str(lk.uid), kind=lk.kind, from_node=labels[lk.from_node_id],
-                                      to_node=labels[lk.to_node_id], **props),
+                                      to_node=labels[lk.to_node_id], attributes=lk.extra or {}, **props),
         ))
     clients = select(NetworkClient).where(NetworkClient.version_id == version_id).order_by(NetworkClient.id)
     for c in session.scalars(clients):
@@ -114,7 +132,7 @@ def load_network(session: Session, version_id: uuid.UUID) -> NetworkFeatureColle
         features.append(ClientFeature(
             id=c.label, geometry=PointGeometry(coordinates=(pt.x, pt.y)),
             properties=ClientProperties(uid=str(c.uid), node=labels[c.node_id], link=c.link_label,
-                                        connection=(conn.x, conn.y) if conn else None,
+                                        connection=(conn.x, conn.y) if conn else None, attributes=c.extra or {},
                                         **{f: getattr(c, f) for f in CLIENT_FIELDS}),
         ))
     shutoffs = select(NetworkShutoff).where(NetworkShutoff.version_id == version_id).order_by(NetworkShutoff.id)
@@ -122,8 +140,24 @@ def load_network(session: Session, version_id: uuid.UUID) -> NetworkFeatureColle
         pt = to_shape(sh.geom)
         features.append(ShutoffFeature(
             id=sh.label, geometry=PointGeometry(coordinates=(pt.x, pt.y)),
-            properties=ShutoffProperties(uid=str(sh.uid), name=sh.name, link=link_labels[sh.link_id],
-                                         position=sh.position, state=sh.state),
+            properties=ShutoffProperties(uid=str(sh.uid), link=link_labels[sh.link_id], attributes=sh.extra or {},
+                                         **{f: getattr(sh, f) for f in SHUTOFF_FIELDS}),
+        ))
+    hydrants = select(NetworkHydrant).where(NetworkHydrant.version_id == version_id).order_by(NetworkHydrant.id)
+    for h in session.scalars(hydrants):
+        pt = to_shape(h.geom)
+        features.append(HydrantFeature(
+            id=h.label, geometry=PointGeometry(coordinates=(pt.x, pt.y)),
+            properties=HydrantProperties(uid=str(h.uid), node=labels[h.node_id], attributes=h.extra or {},
+                                         **{f: getattr(h, f) for f in HYDRANT_FIELDS}),
+        ))
+    wells = select(NetworkWell).where(NetworkWell.version_id == version_id).order_by(NetworkWell.id)
+    for w in session.scalars(wells):
+        pt = to_shape(w.geom)
+        features.append(WellFeature(
+            id=w.label, geometry=PointGeometry(coordinates=(pt.x, pt.y)),
+            properties=WellProperties(uid=str(w.uid), node=labels[w.node_id] if w.node_id else None,
+                                      attributes=w.extra or {}, **{f: getattr(w, f) for f in WELL_FIELDS}),
         ))
     return NetworkFeatureCollection(features=features)
 

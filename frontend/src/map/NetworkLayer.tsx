@@ -5,9 +5,9 @@ import { classify, linkScale, linkValue as valueOf, pressureScale } from "../lib
 import { fmt, fmtLen } from "../lib/format";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { distToSegment, haversine, panBy, project, unproject, zoomAt } from "../lib/geo";
-import type { ELink, ENode, Network } from "../lib/network";
-import { defaultNodeProps, defaultPipeProps, estimatedLength, linkCoords, nearestPipe, nextId, pointAlong, roughnessFor,
-  uid } from "../lib/network";
+import type { EHydrant, ELink, ENode, EWell, Network } from "../lib/network";
+import { defaultNodeProps, defaultPipeProps, estimatedLength, linkCoords, nearestPipe, nextId, pointAlong, projectOnLink,
+  roughnessFor, uid } from "../lib/network";
 import { criteriaOf, useEditor } from "../state/store";
 
 type Pt = [number, number];
@@ -18,7 +18,10 @@ type Gesture =
   | { kind: "box"; start: Pt; now: Pt; additive: boolean }
   | { kind: "dragNode"; uid: string }
   | { kind: "dragVertex"; link: string; idx: number };
-type Target = { type: "node" | "link" | "client" | "shutoff"; uid: string } | { type: "vertex"; link: string; idx: number } | { type: "bg" };
+type ElType = "node" | "link" | "client" | "shutoff" | "hydrant" | "well";
+type Target = { type: ElType; uid: string } | { type: "vertex"; link: string; idx: number } | { type: "bg" };
+const EL_TYPES: string[] = ["node", "link", "client", "shutoff", "hydrant", "well"];
+const isEl = (t: Target): t is { type: ElType; uid: string } => EL_TYPES.includes(t.type);
 const PICK_PIPE_PX = 16;
 
 const CLICK_TOLERANCE = 4;
@@ -33,7 +36,7 @@ function readTarget(el: EventTarget | null): Target {
   if (!node) return { type: "bg" };
   const t = node.dataset.t;
   if (t === "vertex") return { type: "vertex", link: node.dataset.link!, idx: Number(node.dataset.idx) };
-  if (t === "node" || t === "link" || t === "client" || t === "shutoff") return { type: t, uid: node.dataset.uid! };
+  if (t && EL_TYPES.includes(t)) return { type: t as ElType, uid: node.dataset.uid! };
   return { type: "bg" };
 }
 
@@ -159,21 +162,64 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     st.select([link.uid]);
   };
 
+  const nearestOf = (pos: LngLat, kinds: ENode["kind"][], maxM = Infinity): ENode | null => {
+    let best: ENode | null = null;
+    let bd = maxM;
+    for (const n of Object.values(useEditor.getState().net.nodes)) {
+      if (!kinds.includes(n.kind)) continue;
+      const d = haversine(n.pos, pos);
+      if (d < bd) { bd = d; best = n; }
+    }
+    return best;
+  };
+
   const clickAction = (p: Pt, target: Target, shift: boolean, dbl = false) => {
     const st = useEditor.getState();
     const pos = unproject(p, camera, size);
+    if (st.mapPick) {
+      st.mapPick(pos);
+      st.set({ mapPick: null });
+      return;
+    }
     switch (tool) {
       case "select":
       case "move":
-        if (target.type === "node" || target.type === "link" || target.type === "client" || target.type === "shutoff") st.select([target.uid], shift);
-        else if (target.type === "bg" && !shift) st.select([]);
+        if (isEl(target)) {
+          st.select([target.uid], shift);
+          if (target.type === "link" && st.sectors) {
+            const l = st.net.links[target.uid];
+            const frac = l ? projectOnLink(st.net, l.uid, pos).fraction : 0;
+            const hit = st.sectors.sectors.find((sec) => sec.pieces.some((pc) => pc.link === l?.id && frac >= pc.start - 1e-9 && frac <= pc.end + 1e-9));
+            if (hit) st.set({ sectorFocus: hit.id, bottomTab: "sectors" });
+          }
+        } else if (target.type === "bg" && !shift) st.select([]);
         return;
       case "multiselect":
-        if (target.type === "node" || target.type === "link" || target.type === "client" || target.type === "shutoff") st.select([target.uid], true);
+        if (isEl(target)) st.select([target.uid], true);
         return;
       case "delete":
-        if (target.type === "node" || target.type === "link" || target.type === "client" || target.type === "shutoff") st.requestDelete([target.uid]);
+        if (isEl(target)) st.requestDelete([target.uid]);
         return;
+      case "hydrant": {
+        if (target.type === "hydrant") { st.select([target.uid]); return; }
+        const n = nearestOf(pos, ["junction"]);
+        if (!n) { st.toast("El grifo se conecta a un nudo de consumo: dibuje primero la red.", "error"); return; }
+        const h: EHydrant = { uid: uid(), id: nextId(Object.values(st.net.hydrants).map((x) => x.id), "hydrant"), pos, node: n.uid,
+          props: { description: null, hydrant_type: "columna", condition: null, diameter_mm: 100, fire_flow_lps: 16, min_pressure_m: 5, attributes: {} } };
+        st.commit((net) => ({ ...net, hydrants: { ...net.hydrants, [h.uid]: h } }));
+        st.select([h.uid]);
+        return;
+      }
+      case "well": {
+        if (target.type === "well") { st.select([target.uid]); return; }
+        const n = nearestOf(pos, ["reservoir"], 50);
+        const w: EWell = { uid: uid(), id: nextId(Object.values(st.net.wells).map((x) => x.id), "well"), pos, node: n?.uid ?? null,
+          props: { description: null, condition: null, ground_elevation: null, depth_m: null, static_level_m: null, dynamic_level_m: null,
+            authorized_flow_lps: null, attributes: {} } };
+        st.commit((net) => ({ ...net, wells: { ...net.wells, [w.uid]: w } }));
+        st.select([w.uid]);
+        return;
+      }
       case "client":
         if (target.type === "client") st.select([target.uid]);
         else if (!Object.values(st.net.links).some((l) => l.kind === "pipe")) st.toast("Dibuje primero una tubería para conectar clientes.", "error");
@@ -184,7 +230,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
         const pr = pipeAt(p);
         if (!pr) { st.toast("Haga clic sobre una tubería para ubicar la llave.", "error"); return; }
         const sh = { uid: uid(), id: nextId(Object.values(st.net.shutoffs).map((x) => x.id), "shutoff"), link: pr.link,
-          position: Math.round(pr.fraction * 1000) / 1000, props: { name: null, state: "open" as const } };
+          position: Math.round(pr.fraction * 1000) / 1000, props: { name: null, state: "open" as const, attributes: {} } };
         st.commit((n) => ({ ...n, shutoffs: { ...n.shutoffs, [sh.uid]: sh } }));
         st.select([sh.uid]);
         return;
@@ -477,6 +523,90 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     if (labels.nodeIds) labelEls.push(<text key={`${c.uid}-lbl`} x={x + 8} y={y + 4} className="lbl lbl-link">{c.id}</text>);
   }
 
+  // Grifos y pozos
+  const assetEls: React.ReactNode[] = [];
+  for (const h of Object.values(net.hydrants)) {
+    const [x, y] = proj(h.pos);
+    if (x < -50 || y < -50 || x > size.width + 50 || y > size.height + 50) continue;
+    const k = 6 * zoomScale;
+    const np = net.nodes[h.node] ? proj(net.nodes[h.node].pos) : null;
+    assetEls.push(
+      <g key={h.uid} className={`hydrant ${selected.has(h.uid) ? "sel" : ""}`}>
+        {np && <line className="service-assign" x1={x} y1={y} x2={np[0]} y2={np[1]} />}
+        <g transform={`translate(${x},${y})`} data-t="hydrant" data-uid={h.uid}>
+          <title>{`Grifo ${h.id} → ${net.nodes[h.node]?.id ?? "?"}`}</title>
+          {selected.has(h.uid) && <circle r={k + 6} className="node-sel" />}
+          <path d={`M ${-k * 0.6} ${k} L ${-k * 0.6} ${-k * 0.4} L 0 ${-k} L ${k * 0.6} ${-k * 0.4} L ${k * 0.6} ${k} Z M ${-k} 0 L ${k} 0`} />
+          <circle r={k + 4} className="hit-node" />
+        </g>
+      </g>,
+    );
+    if (labels.nodeIds) labelEls.push(<text key={`${h.uid}-lbl`} x={x + 9} y={y - 6} className="lbl">{h.id}</text>);
+  }
+  for (const w of Object.values(net.wells)) {
+    const [x, y] = proj(w.pos);
+    if (x < -50 || y < -50 || x > size.width + 50 || y > size.height + 50) continue;
+    const k = 7 * zoomScale;
+    assetEls.push(
+      <g key={w.uid} transform={`translate(${x},${y})`} className={`well ${selected.has(w.uid) ? "sel" : ""}`} data-t="well" data-uid={w.uid}>
+        <title>{`Pozo ${w.id}${w.node && net.nodes[w.node] ? ` → ${net.nodes[w.node].id}` : ""}`}</title>
+        {selected.has(w.uid) && <circle r={k + 6} className="node-sel" />}
+        <circle r={k} /><circle r={k * 0.4} className="well-core" />
+        <circle r={k + 4} className="hit-node" />
+      </g>,
+    );
+    if (labels.nodeIds) labelEls.push(<text key={`${w.uid}-lbl`} x={x + 10} y={y + 4} className="lbl">{w.id}</text>);
+  }
+
+  // Resultado de consulta destacado
+  const hl = new Set(s.highlight);
+  const hlEls: React.ReactNode[] = [];
+  if (hl.size) {
+    for (const l of Object.values(net.links)) {
+      if (!hl.has(l.uid)) continue;
+      hlEls.push(<polyline key={`hl-${l.uid}`} className="hl-link" points={linkCoords(net, l).map(proj).map((q) => q.join(",")).join(" ")} />);
+    }
+    for (const pool of [net.nodes, net.clients, net.hydrants, net.wells] as Record<string, { uid: string; pos: LngLat }>[]) {
+      for (const e of Object.values(pool)) {
+        if (!hl.has(e.uid)) continue;
+        const [x, y] = proj(e.pos);
+        hlEls.push(<circle key={`hl-${e.uid}`} className="hl-point" cx={x} cy={y} r={10 * zoomScale} />);
+      }
+    }
+    for (const sh of Object.values(net.shutoffs)) {
+      if (!hl.has(sh.uid) || !net.links[sh.link]) continue;
+      const [x, y] = proj(pointAlong(linkCoords(net, net.links[sh.link]), sh.position));
+      hlEls.push(<circle key={`hl-${sh.uid}`} className="hl-point" cx={x} cy={y} r={10 * zoomScale} />);
+    }
+  }
+
+  // Cuartel de corta destacado: tramos del cuartel y válvulas a cerrar
+  const sectorEls: React.ReactNode[] = [];
+  const focusSector = s.sectors?.sectors.find((x) => x.id === s.sectorFocus);
+  if (focusSector) {
+    const byLabel = new Map(Object.values(net.links).map((l) => [l.id, l]));
+    for (const pc of focusSector.pieces) {
+      const l = byLabel.get(pc.link);
+      if (!l) continue;
+      const coords = linkCoords(net, l);
+      const n = 12;
+      const pts = Array.from({ length: n + 1 }, (_, i) => proj(pointAlong(coords, pc.start + ((pc.end - pc.start) * i) / n)));
+      sectorEls.push(<polyline key={`sec-${pc.link}-${pc.start}`} className="sector-link" points={pts.map((q) => q.join(",")).join(" ")} />);
+    }
+    const downstream = new Set(focusSector.downstream_nodes);
+    for (const n of Object.values(net.nodes)) {
+      if (!downstream.has(n.id)) continue;
+      const [x, y] = proj(n.pos);
+      sectorEls.push(<circle key={`down-${n.uid}`} className="dry-node" cx={x} cy={y} r={9 * zoomScale} />);
+    }
+    const toClose = new Set(focusSector.valves);
+    for (const sh of Object.values(net.shutoffs)) {
+      if (!toClose.has(sh.id) || !net.links[sh.link]) continue;
+      const [x, y] = proj(pointAlong(linkCoords(net, net.links[sh.link]), sh.position));
+      sectorEls.push(<circle key={`close-${sh.uid}`} className="sector-valve" cx={x} cy={y} r={12 * zoomScale} />);
+    }
+  }
+
   // Punto de factibilidad pendiente
   const fd = s.feasibilityDraft;
   const feasEl = fd ? (() => { const [x, y] = proj(fd.pos); return <g className="feas-pt" transform={`translate(${x},${y})`}><circle r={9} /><circle r={3} /></g>; })() : null;
@@ -514,18 +644,21 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
   }
 
   const box = gesture.kind === "box" ? gesture : null;
-  const cursorClass = gesture.kind === "pan" ? "grabbing" : `tool-${tool}`;
+  const cursorClass = gesture.kind === "pan" ? "grabbing" : s.mapPick ? "tool-pick" : `tool-${tool}`;
 
   return (
     <svg ref={svgRef} className={`net-layer ${cursorClass}`} width={size.width} height={size.height}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
       onPointerLeave={() => setCursor(null)} onDoubleClick={onDoubleClick} onWheel={onWheel} onContextMenu={onContextMenu}>
       <g>{dryEls}</g>
+      <g>{sectorEls}</g>
+      <g>{hlEls}</g>
       <g>{linkEls}</g>
       <g>{arrowEls}</g>
       <g>{clientEls}</g>
       <g>{shutoffEls}</g>
       <g>{nodeEls}</g>
+      <g>{assetEls}</g>
       {feasEl}
       <g>{handleEls}</g>
       <g className="labels">{labelEls}</g>

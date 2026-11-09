@@ -15,6 +15,8 @@ export const TOOLS: { id: Tool; label: string; key: string; icon: () => ReactEle
   { id: "measure", label: "Medir", key: "D", icon: Icon.measure, hint: "Clics para medir distancias · doble clic o Esc reinicia" },
   { id: "client", label: "Cliente", key: "C", icon: Icon.client, hint: "Clic donde está el cliente: se conecta a la tubería más cercana (nudo cercano o nudo nuevo)" },
   { id: "shutoff", label: "Llave de corte", key: "L", icon: Icon.shutoff, hint: "Clic sobre una tubería para ubicar una llave · clic en una llave para seleccionarla" },
+  { id: "hydrant", label: "Grifo", key: "G", icon: Icon.hydrant, hint: "Clic donde está el grifo: se conecta al nudo de consumo más cercano" },
+  { id: "well", label: "Pozo", key: "W", icon: Icon.well, hint: "Clic donde está el pozo: se asocia al reservorio más cercano (si hay uno a menos de 50 m)" },
   { id: "feasibility", label: "Factibilidad", key: "F", icon: Icon.feasibility, hint: "Clic sobre una tubería: consumo y cota → simula la red con el cliente sin modificar el proyecto" },
 ];
 

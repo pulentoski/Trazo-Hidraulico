@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # Protección mínima para publicar (sin usuarios todavía)
     rate_limit_per_minute: int = 300  # solicitudes a /api por IP y minuto; 0 desactiva
     max_inp_mb: int = 20  # tamaño máximo del .inp importado (Caddy aplica el mismo límite)
+    max_xlsx_mb: int = 20  # tamaño máximo de planillas Excel/CSV importadas
+    max_ortho_mb: int = 500  # tamaño máximo de una ortofoto subida
+    ortho_dir: str = "/data/ortho"  # almacenamiento compartido de ortofotos (volumen)
 
     # Umbrales del validador (advertencias)
     short_pipe_m: float = 1.0

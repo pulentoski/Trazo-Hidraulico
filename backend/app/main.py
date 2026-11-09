@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.core.ratelimit import RateLimitMiddleware
-from app.routers import analysis, catalog, health, network, projects
+from app.routers import analysis, catalog, health, network, orthophotos, projects, sig
 from app.schemas.simulation import SimulationBlocked
 from app.services.errors import Conflict, InvalidNetwork, NotFound, SimulationBlockedError
 
@@ -18,7 +18,8 @@ app = FastAPI(
 
 app.add_middleware(RateLimitMiddleware)
 
-for r in (health.router, catalog.router, projects.router, network.router, analysis.router):
+for r in (health.router, catalog.router, sig.router, projects.router, network.router, analysis.router,
+          orthophotos.router):
     app.include_router(r, prefix="/api")
 
 

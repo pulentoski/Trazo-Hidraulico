@@ -12,7 +12,8 @@ STAMP="$(date +%Y-%m-%d_%H%M%S)"
 DEST="$BACKUP_ROOT/$STAMP"
 COMPOSE=(docker compose --env-file .env -f infra/compose.yml)
 # Imágenes necesarias para levantar la pila sin construir ni descargar (las de prueba se reconstruyen con make test).
-IMAGES=(trazo-hidraulico/api:local trazo-hidraulico/web:local caddy:2.11.9-alpine postgis/postgis:16-3.4 redis:7.4.12-alpine)
+IMAGES=(trazo-hidraulico/api:local trazo-hidraulico/web:local trazo-hidraulico/worker:local caddy:2.11.9-alpine
+        postgis/postgis:16-3.4 redis:7.4.12-alpine ghcr.io/developmentseed/titiler:2.3.0)
 
 step() { printf '\n› %s\n' "$*"; }
 fail() { echo "ERROR: $*" >&2; exit 1; }
@@ -29,10 +30,16 @@ step "Base de datos (pg_dump formato custom)"
 [ -s "$DEST/trazo.dump" ] || fail "el dump quedó vacío"
 # Verificación: el dump se puede leer (lista de contenido) y contiene las tablas principales.
 "${COMPOSE[@]}" exec -T db pg_restore --list < "$DEST/trazo.dump" > "$DEST/trazo.dump.list"
-for t in project project_version network_node network_link network_client catalog_pipe simulation_run; do
+for t in project project_version network_node network_link network_client network_hydrant network_well orthophoto \
+         saved_query catalog_pipe simulation_run; do
   grep -qE "TABLE DATA public $t " "$DEST/trazo.dump.list" || fail "el dump no contiene la tabla $t"
 done
 echo "  $(grep -c ';' "$DEST/trazo.dump.list") entradas en el índice; tablas principales presentes."
+
+step "Ortofotos (volumen de almacenamiento, tar.gz)"
+"${COMPOSE[@]}" run --rm --no-deps -T --entrypoint tar api -C /data/ortho -czf - . > "$DEST/ortofotos.tar.gz"
+gzip -t "$DEST/ortofotos.tar.gz" || fail "el archivo de ortofotos está dañado"
+echo "  $(tar -tzf "$DEST/ortofotos.tar.gz" | grep -c 'cog.tif$' || true) ortofotos procesadas; $(du -h "$DEST/ortofotos.tar.gz" | cut -f1)."
 
 step "Imágenes Docker (docker save | gzip)"
 for img in "${IMAGES[@]}"; do
@@ -65,7 +72,7 @@ EOF
 step "Instrucciones (RESTAURAR.md)"
 sed -e "s|@STAMP@|$STAMP|g" -e "s|@COMMIT@|$COMMIT|g" -e "s|@DEST@|$DEST|g" infra/RESTAURAR.template.md > "$DEST/RESTAURAR.md"
 
-(cd "$DEST" && sha256sum trazo.dump imagenes-docker.tar.gz trazo-hidraulico.bundle env compose.offline.yml > SHA256SUMS)
+(cd "$DEST" && sha256sum trazo.dump ortofotos.tar.gz imagenes-docker.tar.gz trazo-hidraulico.bundle env compose.offline.yml > SHA256SUMS)
 chmod 600 "$DEST"/*
 
 # Si se ejecuta como root (p. ej. con sudo), los archivos quedan del dueño del repositorio.

@@ -37,7 +37,17 @@ http://:8099 {
 	request_body @importar {
 		max_size {$MAX_INP_MB:20}MB
 	}
-	request_body /api/* {
+	# Ortofotos: límite propio (MAX_ORTHO_MB). Planillas y el resto de /api: 50 MB.
+	@ortofotos path_regexp ^/api/projects/[^/]+/orthophotos$
+	request_body @ortofotos {
+		max_size {$MAX_ORTHO_MB:500}MB
+	}
+	@api_general {
+		path /api/*
+		not path /api/projects/import
+		not path_regexp ^/api/projects/[^/]+/orthophotos$
+	}
+	request_body @api_general {
 		max_size 50MB
 	}
 
@@ -54,6 +64,23 @@ http://:8099 {
 
 	handle /healthz {
 		respond "ok" 200
+	}
+
+	# Teselas de ortofotos: el proxy fija el archivo (el cliente solo elige id y tesela).
+	@tiles path_regexp tile ^/tiles/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([0-9]{1,2})/([0-9]{1,8})/([0-9]{1,8})\.png$
+	handle @tiles {
+		rewrite * /cog/tiles/WebMercatorQuad/{re.tile.2}/{re.tile.3}/{re.tile.4}.png?url=/data/ortho/{re.tile.1}/cog.tif
+		reverse_proxy tiler:8000 {
+			# Ortofoto inexistente o tesela ilegible: 404 sin detalles internos.
+			@fallo status 5xx
+			handle_response @fallo {
+				respond 404
+			}
+		}
+		header Cache-Control "private, max-age=3600"
+	}
+	handle /tiles/* {
+		respond 404
 	}
 
 	handle /api/* {

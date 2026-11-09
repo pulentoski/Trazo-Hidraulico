@@ -1,6 +1,7 @@
 // Modelo de red del editor (identidad estable por uid) y conversión con el GeoJSON de la API.
-import type { ClientFeature, ClientProperties, HydraulicOptions, LinkFeature, LinkKind, LinkProperties, NetworkDocument,
-  NodeFeature, NodeKind, NodeProperties, ShutoffFeature, ShutoffProperties } from "../api/types";
+import type { ClientFeature, ClientProperties, HydrantFeature, HydrantProperties, HydraulicOptions, LinkFeature, LinkKind,
+  LinkProperties, NetworkDocument, NodeFeature, NodeKind, NodeProperties, ShutoffFeature, ShutoffProperties, WellFeature,
+  WellProperties } from "../api/types";
 import type { LngLat } from "./geo";
 import { polylineLength } from "./geo";
 
@@ -8,7 +9,9 @@ export type NodeProps = Omit<NodeProperties, "element" | "kind" | "uid">;
 export type LinkProps = Omit<LinkProperties, "element" | "kind" | "uid" | "from_node" | "to_node">;
 
 export type ClientProps = Omit<ClientProperties, "element" | "uid" | "node" | "link" | "connection">;
-export type ShutoffProps = Pick<ShutoffProperties, "name" | "state">;
+export type ShutoffProps = Omit<ShutoffProperties, "element" | "uid" | "link" | "position">;
+export type HydrantProps = Omit<HydrantProperties, "element" | "uid" | "node">;
+export type WellProps = Omit<WellProperties, "element" | "uid" | "node">;
 
 export interface ENode { uid: string; id: string; kind: NodeKind; pos: LngLat; props: NodeProps }
 export interface ELink { uid: string; id: string; kind: LinkKind; from: string; to: string; vertices: LngLat[]; props: LinkProps }
@@ -16,12 +19,17 @@ export interface ELink { uid: string; id: string; kind: LinkKind; from: string; 
 export interface EClient { uid: string; id: string; pos: LngLat; node: string; link: string | null; connection: LngLat | null; props: ClientProps }
 /** Llave de corte sobre una tubería (`link` = uid), en la fracción `position` de su largo. */
 export interface EShutoff { uid: string; id: string; link: string; position: number; props: ShutoffProps }
+/** Grifo conectado a un nudo de consumo (`node` = uid). */
+export interface EHydrant { uid: string; id: string; pos: LngLat; node: string; props: HydrantProps }
+/** Pozo, asociado opcionalmente al reservorio que lo representa (`node` = uid o null). */
+export interface EWell { uid: string; id: string; pos: LngLat; node: string | null; props: WellProps }
 export interface Network {
   nodes: Record<string, ENode>; links: Record<string, ELink>;
   clients: Record<string, EClient>; shutoffs: Record<string, EShutoff>;
+  hydrants: Record<string, EHydrant>; wells: Record<string, EWell>;
 }
 
-export const EMPTY: Network = { nodes: {}, links: {}, clients: {}, shutoffs: {} };
+export const EMPTY: Network = { nodes: {}, links: {}, clients: {}, shutoffs: {}, hydrants: {}, wells: {} };
 
 export function uid(): string {
   return crypto.randomUUID();
@@ -55,6 +63,8 @@ export function fromDocument(doc: NetworkDocument): Network {
   for (const l of Object.values(links)) linkByLabel[l.id] = l.uid;
   const clients: Record<string, EClient> = {};
   const shutoffs: Record<string, EShutoff> = {};
+  const hydrants: Record<string, EHydrant> = {};
+  const wells: Record<string, EWell> = {};
   for (const f of feats) {
     if (f.properties.element === "client") {
       const cf = f as ClientFeature;
@@ -66,12 +76,24 @@ export function fromDocument(doc: NetworkDocument): Network {
       };
     } else if (f.properties.element === "shutoff") {
       const sf = f as ShutoffFeature;
-      const id = sf.properties.uid ?? uid();
-      shutoffs[id] = { uid: id, id: sf.id, link: linkByLabel[sf.properties.link], position: sf.properties.position ?? 0.5,
-        props: { name: sf.properties.name ?? null, state: sf.properties.state ?? "open" } };
+      const { element: _e, uid: u, link, position, ...props } = sf.properties;
+      const id = u ?? uid();
+      shutoffs[id] = { uid: id, id: sf.id, link: linkByLabel[link], position: position ?? 0.5,
+        props: { ...props, name: props.name ?? null, state: props.state ?? "open" } };
+    } else if (f.properties.element === "hydrant") {
+      const hf = f as HydrantFeature;
+      const { element: _e, uid: u, node, ...props } = hf.properties;
+      const id = u ?? uid();
+      hydrants[id] = { uid: id, id: hf.id, pos: [hf.geometry.coordinates[0], hf.geometry.coordinates[1]], node: byLabel[node], props };
+    } else if (f.properties.element === "well") {
+      const wf = f as WellFeature;
+      const { element: _e, uid: u, node, ...props } = wf.properties;
+      const id = u ?? uid();
+      wells[id] = { uid: id, id: wf.id, pos: [wf.geometry.coordinates[0], wf.geometry.coordinates[1]],
+        node: node ? byLabel[node] ?? null : null, props };
     }
   }
-  return { nodes, links, clients, shutoffs };
+  return { nodes, links, clients, shutoffs, hydrants, wells };
 }
 
 export function linkCoords(net: Network, l: ELink): LngLat[] {
@@ -81,7 +103,7 @@ export function linkCoords(net: Network, l: ELink): LngLat[] {
 }
 
 export function toFeatureCollection(net: Network) {
-  const features: (NodeFeature | LinkFeature | ClientFeature | ShutoffFeature)[] = [];
+  const features: (NodeFeature | LinkFeature | ClientFeature | ShutoffFeature | HydrantFeature | WellFeature)[] = [];
   for (const n of Object.values(net.nodes)) {
     features.push({
       type: "Feature", id: n.id, geometry: { type: "Point", coordinates: [n.pos[0], n.pos[1]] },
@@ -116,14 +138,31 @@ export function toFeatureCollection(net: Network) {
       properties: { element: "shutoff", uid: sh.uid, link: l.id, position: sh.position, ...sh.props } as ShutoffProperties,
     });
   }
+  for (const h of Object.values(net.hydrants ?? {})) {
+    const n = net.nodes[h.node];
+    if (!n) continue;
+    features.push({
+      type: "Feature", id: h.id, geometry: { type: "Point", coordinates: [h.pos[0], h.pos[1]] },
+      properties: { element: "hydrant", uid: h.uid, node: n.id, ...h.props } as HydrantProperties,
+    });
+  }
+  for (const w of Object.values(net.wells ?? {})) {
+    const n = w.node ? net.nodes[w.node] : null;
+    features.push({
+      type: "Feature", id: w.id, geometry: { type: "Point", coordinates: [w.pos[0], w.pos[1]] },
+      properties: { element: "well", uid: w.uid, node: n ? n.id : null, ...w.props } as WellProperties,
+    });
+  }
   return { type: "FeatureCollection" as const, features };
 }
 
-const PREFIX: Record<NodeKind | LinkKind | "client" | "shutoff", string> = {
-  junction: "J", reservoir: "R", tank: "E", pipe: "P", pump: "B", valve: "V", client: "C", shutoff: "LL",
+export type IdKind = NodeKind | LinkKind | "client" | "shutoff" | "hydrant" | "well";
+const PREFIX: Record<IdKind, string> = {
+  junction: "J", reservoir: "R", tank: "E", pipe: "P", pump: "B", valve: "V", client: "C", shutoff: "LL", hydrant: "G", well: "PZ",
 };
 
-export function nextId(existing: Iterable<string>, kind: NodeKind | LinkKind | "client" | "shutoff"): string {
+/** ID nuevo único: prefijo del tipo + número mayor que cualquiera existente (nunca repite uno en uso). */
+export function nextId(existing: Iterable<string>, kind: IdKind): string {
   const prefix = PREFIX[kind];
   const used = new Set(existing);
   let max = 0;

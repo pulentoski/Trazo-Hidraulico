@@ -107,6 +107,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/import-excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Crear un proyecto nuevo desde una planilla */
+        post: operations["create_from_excel_api_projects_import_excel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}": {
         parameters: {
             query?: never;
@@ -154,6 +171,40 @@ export interface paths {
         get: operations["get_design_params_api_projects__project_id__design_params_get"];
         /** Editar parámetros de diseño del proyecto */
         put: operations["put_design_params_api_projects__project_id__design_params_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/export.dxf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** DXF por capas (UTM) */
+        get: operations["export_dxf_api_projects__project_id__export_dxf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/export.gpkg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GeoPackage para QGIS */
+        get: operations["export_gpkg_api_projects__project_id__export_gpkg_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -212,6 +263,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/hydrants/fire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Escenario de incendio: presión residual y caudal disponible por grifo */
+        post: operations["fire_scenario_api_projects__project_id__hydrants_fire_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/network": {
         parameters: {
             query?: never;
@@ -224,6 +292,145 @@ export interface paths {
         /** Guardar la red (crea una versión nueva inmutable) */
         put: operations["put_network_api_projects__project_id__network_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/orthophotos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ortofotos del proyecto (más reciente primero) */
+        get: operations["list_orthophotos_api_projects__project_id__orthophotos_get"];
+        put?: never;
+        /** Subir una ortofoto (GeoTIFF, o JPG/PNG con archivo world o para ajustar con puntos de control) */
+        post: operations["upload_orthophoto_api_projects__project_id__orthophotos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/orthophotos/{ortho_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Eliminar una ortofoto y sus archivos */
+        delete: operations["delete_orthophoto_api_projects__project_id__orthophotos__ortho_id__delete"];
+        options?: never;
+        head?: never;
+        /** Editar nombre, fecha, fuente, opacidad o visibilidad */
+        patch: operations["update_orthophoto_api_projects__project_id__orthophotos__ortho_id__patch"];
+        trace?: never;
+    };
+    "/api/projects/{project_id}/orthophotos/{ortho_id}/gcps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ajustar con puntos de control (mínimo 2): error residual y, si apply, procesar */
+        post: operations["gcps_api_projects__project_id__orthophotos__ortho_id__gcps_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/orthophotos/{ortho_id}/original": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Imagen original (para puntos de control) */
+        get: operations["original_api_projects__project_id__orthophotos__ortho_id__original_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/queries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultas guardadas */
+        get: operations["list_saved_api_projects__project_id__queries_get"];
+        put?: never;
+        /** Guardar una consulta (reemplaza la del mismo nombre) */
+        post: operations["save_query_api_projects__project_id__queries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/queries/{query_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Eliminar una consulta guardada */
+        delete: operations["delete_query_api_projects__project_id__queries__query_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ejecutar una consulta */
+        post: operations["run_query_api_projects__project_id__query_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/query/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Exportar los resultados de una consulta (Excel con el formato de la plantilla, o CSV) */
+        post: operations["export_query_api_projects__project_id__query_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -275,6 +482,125 @@ export interface paths {
         put?: never;
         /** Simular un escenario de llaves: suministro y presión por nudo y cliente */
         post: operations["simulate_scenario_api_projects__project_id__scenarios_simulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Búsqueda rápida por ID, nombre, dirección o N° de medidor */
+        get: operations["search_api_projects__project_id__search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/sectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cuarteles de corta */
+        get: operations["get_sectors_api_projects__project_id__sectors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/sectors/{sector_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista exportable de un cuartel: válvulas a cerrar y clientes sin agua */
+        get: operations["export_sector_api_projects__project_id__sectors__sector_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/sig/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar una hoja como CSV */
+        get: operations["export_csv_api_projects__project_id__sig_export_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/sig/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar el proyecto completo a la planilla */
+        get: operations["export_xlsx_api_projects__project_id__sig_export_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/sig/import/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aplicar la importación (todo o nada; crea una versión nueva) */
+        post: operations["import_apply_api_projects__project_id__sig_import_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/sig/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vista previa de la importación (no modifica el proyecto) */
+        post: operations["import_preview_api_projects__project_id__sig_import_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -366,6 +692,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sig/query-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tipos de elemento y campos consultables */
+        get: operations["query_fields_api_sig_query_fields_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sig/template.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plantilla Excel vacía */
+        get: operations["template_api_sig_template_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -385,6 +745,41 @@ export interface components {
             /** Node */
             node: string;
         };
+        /** Body_create_from_excel_api_projects_import_excel_post */
+        Body_create_from_excel_api_projects_import_excel_post: {
+            /** File */
+            file: string;
+            /**
+             * Hemisphere
+             * @default S
+             */
+            hemisphere: string;
+            /** Name */
+            name?: string | null;
+            /** Utm Zone */
+            utm_zone?: number | null;
+        };
+        /** Body_import_apply_api_projects__project_id__sig_import_apply_post */
+        Body_import_apply_api_projects__project_id__sig_import_apply_post: {
+            /** Base Version */
+            base_version?: number | null;
+            /**
+             * Delete Missing
+             * @default false
+             */
+            delete_missing: boolean;
+            /** File */
+            file: string;
+            /**
+             * Hemisphere
+             * @default S
+             */
+            hemisphere: string;
+            /** Sheet */
+            sheet?: string | null;
+            /** Utm Zone */
+            utm_zone?: number | null;
+        };
         /** Body_import_clients_api_projects__project_id__clients_import_post */
         Body_import_clients_api_projects__project_id__clients_import_post: {
             /** Base Version */
@@ -394,6 +789,34 @@ export interface components {
              * @description CSV con columnas lat, lon, nombre, consumo (L/s)
              */
             file: string;
+        };
+        /** Body_import_preview_api_projects__project_id__sig_import_preview_post */
+        Body_import_preview_api_projects__project_id__sig_import_preview_post: {
+            /**
+             * Delete Missing
+             * @default false
+             */
+            delete_missing: boolean;
+            /**
+             * File
+             * @description Planilla .xlsx o CSV de una hoja
+             */
+            file: string;
+            /**
+             * Hemisphere
+             * @default S
+             */
+            hemisphere: string;
+            /**
+             * Sheet
+             * @description Hoja del CSV (Nudos, Tramos, …)
+             */
+            sheet?: string | null;
+            /**
+             * Utm Zone
+             * @description Huso UTM de Este/Norte
+             */
+            utm_zone?: number | null;
         };
         /** Body_import_project_api_projects_import_post */
         Body_import_project_api_projects_import_post: {
@@ -410,6 +833,30 @@ export interface components {
             file: string;
             /** Name */
             name?: string | null;
+        };
+        /** Body_upload_orthophoto_api_projects__project_id__orthophotos_post */
+        Body_upload_orthophoto_api_projects__project_id__orthophotos_post: {
+            /** Captured On */
+            captured_on?: string | null;
+            /**
+             * File
+             * @description GeoTIFF, JPG o PNG
+             */
+            file: string;
+            /** Name */
+            name?: string | null;
+            /** Source */
+            source?: string | null;
+            /**
+             * Src Crs
+             * @description EPSG del archivo world (UTM del proyecto)
+             */
+            src_crs?: string | null;
+            /**
+             * World
+             * @description Archivo world (.jgw/.pgw/.wld)
+             */
+            world?: string | null;
         };
         /** CatalogPipeOut */
         CatalogPipeOut: {
@@ -441,6 +888,23 @@ export interface components {
             verified: boolean;
             /** Wall Mm */
             wall_mm: number | null;
+        };
+        /** ChangeItem */
+        ChangeItem: {
+            /** Changes */
+            changes?: components["schemas"]["FieldChange"][];
+            /** Id */
+            id: string;
+            /**
+             * Row
+             * @description Fila del archivo (None si el cambio no viene de una fila)
+             */
+            row?: number | null;
+            /**
+             * Sheet
+             * @description Nombre de la hoja
+             */
+            sheet: string;
         };
         /** ClientFeature */
         ClientFeature: {
@@ -489,6 +953,23 @@ export interface components {
         /** ClientProperties */
         ClientProperties: {
             /**
+             * Address
+             * @description Dirección
+             */
+            address?: string | null;
+            /**
+             * Attributes
+             * @description Atributos libres (columnas no reconocidas de la planilla): nombre → valor
+             */
+            attributes?: {
+                [key: string]: string | number | null;
+            };
+            /**
+             * Client Number
+             * @description N° de cliente
+             */
+            client_number?: string | null;
+            /**
              * Client Type
              * @default residencial
              * @enum {string}
@@ -536,6 +1017,11 @@ export interface components {
              */
             link?: string | null;
             /**
+             * Meter Number
+             * @description N° de medidor
+             */
+            meter_number?: string | null;
+            /**
              * Name
              * @description Nombre o dirección
              */
@@ -546,11 +1032,16 @@ export interface components {
              */
             node: string;
             /**
+             * Route
+             * @description Ruta de lectura
+             */
+            route?: string | null;
+            /**
              * Status
              * @default activo
              * @enum {string}
              */
-            status: "activo" | "proyectado";
+            status: "activo" | "proyectado" | "suspendido";
             /** Uid */
             uid?: string | null;
         };
@@ -615,6 +1106,41 @@ export interface components {
             supplied_a: boolean;
             /** Supplied B */
             supplied_b: boolean;
+        };
+        /** Condition */
+        Condition: {
+            /** Field */
+            field: string;
+            /**
+             * Op
+             * @default eq
+             * @enum {string}
+             */
+            op: "eq" | "ne" | "lt" | "le" | "gt" | "ge" | "contains" | "starts" | "in" | "empty" | "not_empty";
+            /** Value */
+            value?: string | number | boolean | (string | number | boolean | null)[] | null;
+        };
+        /** ConditionGroup */
+        "ConditionGroup-Input": {
+            /** Conditions */
+            conditions?: (components["schemas"]["Condition"] | components["schemas"]["ConditionGroup-Input"])[];
+            /**
+             * Logic
+             * @default and
+             * @enum {string}
+             */
+            logic: "and" | "or";
+        };
+        /** ConditionGroup */
+        "ConditionGroup-Output": {
+            /** Conditions */
+            conditions?: (components["schemas"]["Condition"] | components["schemas"]["ConditionGroup-Output"])[];
+            /**
+             * Logic
+             * @default and
+             * @enum {string}
+             */
+            logic: "and" | "or";
         };
         /** CriteriaAlert */
         CriteriaAlert: {
@@ -880,10 +1406,173 @@ export interface components {
             /** Verdict */
             verdict: string;
         };
+        /** FieldChange */
+        FieldChange: {
+            /**
+             * Field
+             * @description Encabezado de la columna
+             */
+            field: string;
+            /** New */
+            new?: string | number | boolean | null;
+            /** Old */
+            old?: string | number | boolean | null;
+        };
+        /** FireResult */
+        FireResult: {
+            /** Hydrants */
+            hydrants: components["schemas"]["HydrantResult"][];
+            /** Model Version */
+            model_version: number;
+            /** Project Id */
+            project_id: string;
+        };
+        /** Gcp */
+        Gcp: {
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
+            /**
+             * Px
+             * @description Columna en la imagen (píxeles, origen arriba a la izquierda)
+             */
+            px: number;
+            /**
+             * Py
+             * @description Fila en la imagen (píxeles)
+             */
+            py: number;
+        };
+        /** GcpFit */
+        GcpFit: {
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "similitud" | "afín";
+            /** Residuals M */
+            residuals_m: number[];
+            /** Rms M */
+            rms_m: number;
+            /** Srid */
+            srid: number;
+            /**
+             * World
+             * @description Parámetros del archivo world [A, D, B, E, C, F] en el SRID indicado
+             */
+            world: number[];
+        };
+        /** GcpRequest */
+        GcpRequest: {
+            /**
+             * Apply
+             * @description Procesar la ortofoto con este ajuste
+             * @default false
+             */
+            apply: boolean;
+            /** Gcps */
+            gcps: components["schemas"]["Gcp"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HydrantFeature */
+        HydrantFeature: {
+            geometry: components["schemas"]["PointGeometry"];
+            /**
+             * Id
+             * @description ID del grifo
+             */
+            id: string;
+            properties: components["schemas"]["HydrantProperties"];
+            /**
+             * Type
+             * @default Feature
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** HydrantProperties */
+        HydrantProperties: {
+            /**
+             * Attributes
+             * @description Atributos libres (columnas no reconocidas de la planilla): nombre → valor
+             */
+            attributes?: {
+                [key: string]: string | number | null;
+            };
+            /** Condition */
+            condition?: ("bueno" | "regular" | "malo" | "inoperativo") | null;
+            /**
+             * Description
+             * @description Observaciones
+             */
+            description?: string | null;
+            /**
+             * Diameter Mm
+             * @description Diámetro de salida (mm)
+             */
+            diameter_mm?: number | null;
+            /**
+             * Element
+             * @default hydrant
+             * @constant
+             */
+            element: "hydrant";
+            /**
+             * Fire Flow Lps
+             * @description Caudal de incendio requerido (L/s)
+             * @default 16
+             */
+            fire_flow_lps: number;
+            /** Hydrant Type */
+            hydrant_type?: ("columna" | "subterraneo") | null;
+            /**
+             * Min Pressure M
+             * @description Presión residual mínima durante el incendio (m)
+             * @default 5
+             */
+            min_pressure_m: number;
+            /**
+             * Node
+             * @description ID del nudo de consumo al que se conecta
+             */
+            node: string;
+            /** Uid */
+            uid?: string | null;
+        };
+        /** HydrantResult */
+        HydrantResult: {
+            /**
+             * Available Flow Lps
+             * @description Caudal disponible a la presión residual mínima
+             */
+            available_flow_lps?: number | null;
+            /** Fire Flow Lps */
+            fire_flow_lps: number;
+            /** Id */
+            id: string;
+            /** Message */
+            message?: string | null;
+            /** Min Pressure M */
+            min_pressure_m: number;
+            /** Node */
+            node: string;
+            /** Ok */
+            ok?: boolean | null;
+            /**
+             * Residual Pressure M
+             * @description Presión con el caudal de incendio (mínima)
+             */
+            residual_pressure_m?: number | null;
+            /**
+             * Static Pressure M
+             * @description Presión sin incendio (mínima del periodo)
+             */
+            static_pressure_m?: number | null;
         };
         /**
          * HydraulicOptions
@@ -933,6 +1622,53 @@ export interface components {
              * @default 15
              */
             required_pressure: number;
+        };
+        /** ImportApplyResult */
+        ImportApplyResult: {
+            /** Created */
+            created: boolean;
+            preview: components["schemas"]["ImportPreview"];
+            /** Project Id */
+            project_id: string;
+            /**
+             * Version
+             * @description Versión creada (None si no hubo cambios)
+             */
+            version?: number | null;
+        };
+        /** ImportPreview */
+        ImportPreview: {
+            /** Base Version */
+            base_version?: number | null;
+            /**
+             * Coord Srid
+             * @description SRID UTM usado para Este/Norte
+             */
+            coord_srid: number;
+            /**
+             * Delete Missing
+             * @default false
+             */
+            delete_missing: boolean;
+            /** Deleted */
+            deleted?: components["schemas"]["ChangeItem"][];
+            /** Errors */
+            errors?: components["schemas"]["RowError"][];
+            /** Modified */
+            modified?: components["schemas"]["ChangeItem"][];
+            /** New */
+            new?: components["schemas"]["ChangeItem"][];
+            /** Notes */
+            notes?: string[];
+            /**
+             * Ok
+             * @description Sin errores: se puede aplicar
+             */
+            ok: boolean;
+            /** Summary */
+            summary?: components["schemas"]["SheetSummary"][];
+            /** Unchanged */
+            unchanged?: components["schemas"]["ChangeItem"][];
         };
         /** ImportResult */
         ImportResult: {
@@ -1011,8 +1747,20 @@ export interface components {
         };
         /** LinkProperties */
         LinkProperties: {
+            /**
+             * Attributes
+             * @description Atributos libres (columnas no reconocidas de la planilla): nombre → valor
+             */
+            attributes?: {
+                [key: string]: string | number | null;
+            };
             /** Catalog Pipe Id */
             catalog_pipe_id?: number | null;
+            /**
+             * Condition
+             * @description Estado físico (gestión)
+             */
+            condition?: ("bueno" | "regular" | "malo" | "fuera_servicio") | null;
             /** Description */
             description?: string | null;
             /**
@@ -1050,6 +1798,11 @@ export interface components {
              */
             inner_diameter_source: "catalogo" | "manual";
             /**
+             * Install Year
+             * @description Año de instalación
+             */
+            install_year?: number | null;
+            /**
              * Kind
              * @default pipe
              * @enum {string}
@@ -1083,6 +1836,11 @@ export interface components {
              * @default 0
              */
             minor_loss: number;
+            /**
+             * Network Type
+             * @description Tipo de red
+             */
+            network_type?: ("matriz" | "distribucion" | "aduccion" | "impulsion") | null;
             /** Pipe Class */
             pipe_class?: string | null;
             /** Pump Curve */
@@ -1173,7 +1931,7 @@ export interface components {
         /** NetworkFeatureCollection */
         NetworkFeatureCollection: {
             /** Features */
-            features?: (components["schemas"]["NodeFeature"] | components["schemas"]["LinkFeature"] | components["schemas"]["ClientFeature"] | components["schemas"]["ShutoffFeature"])[];
+            features?: (components["schemas"]["NodeFeature"] | components["schemas"]["LinkFeature"] | components["schemas"]["ClientFeature"] | components["schemas"]["ShutoffFeature"] | components["schemas"]["HydrantFeature"] | components["schemas"]["WellFeature"])[];
             /**
              * Type
              * @default FeatureCollection
@@ -1246,6 +2004,13 @@ export interface components {
         };
         /** NodeProperties */
         NodeProperties: {
+            /**
+             * Attributes
+             * @description Atributos libres (columnas no reconocidas de la planilla): nombre → valor
+             */
+            attributes?: {
+                [key: string]: string | number | null;
+            };
             /**
              * Base Demand
              * @description Demanda base (L/s)
@@ -1361,6 +2126,70 @@ export interface components {
             /** Supplied */
             supplied: boolean;
         };
+        /** OrthophotoOut */
+        OrthophotoOut: {
+            /** Bounds */
+            bounds: number[] | null;
+            /** Captured On */
+            captured_on: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string | null;
+            /**
+             * Georef
+             * @enum {string}
+             */
+            georef: "geotiff" | "worldfile" | "gcp";
+            /** Height */
+            height: number | null;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Opacity */
+            opacity: number;
+            /** Original Name */
+            original_name: string;
+            /** Residual M */
+            residual_m: number | null;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Source */
+            source: string | null;
+            /** Src Crs */
+            src_crs: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "uploaded" | "pending" | "processing" | "ready" | "error";
+            /**
+             * Tile Url
+             * @description Plantilla XYZ de teselas ({z}/{x}/{y})
+             */
+            tile_url?: string | null;
+            /** Visible */
+            visible: boolean;
+            /** Width */
+            width: number | null;
+        };
+        /** OrthophotoUpdate */
+        OrthophotoUpdate: {
+            /** Captured On */
+            captured_on?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Opacity */
+            opacity?: number | null;
+            /** Source */
+            source?: string | null;
+            /** Visible */
+            visible?: boolean | null;
+        };
         /** PointGeometry */
         PointGeometry: {
             /**
@@ -1440,6 +2269,122 @@ export interface components {
             /** Name */
             name?: string | null;
         };
+        /** QueryDef */
+        "QueryDef-Input": {
+            /**
+             * Element
+             * @description Hoja/tipo de elemento: nudos, tramos, clientes, …
+             */
+            element: string;
+            where?: components["schemas"]["ConditionGroup-Input"];
+        };
+        /** QueryDef */
+        "QueryDef-Output": {
+            /**
+             * Element
+             * @description Hoja/tipo de elemento: nudos, tramos, clientes, …
+             */
+            element: string;
+            where?: components["schemas"]["ConditionGroup-Output"];
+        };
+        /** QueryElement */
+        QueryElement: {
+            /** Fields */
+            fields: components["schemas"]["QueryField"][];
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Sum Field */
+            sum_field?: string | null;
+        };
+        /** QueryField */
+        QueryField: {
+            /** Choices */
+            choices?: [
+                string,
+                string
+            ][] | null;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "str" | "float" | "int" | "choice" | "bool";
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+        };
+        /** QueryRequest */
+        QueryRequest: {
+            /**
+             * Element
+             * @description Hoja/tipo de elemento: nudos, tramos, clientes, …
+             */
+            element: string;
+            /** Model Version */
+            model_version?: number | null;
+            where?: components["schemas"]["ConditionGroup-Input"];
+        };
+        /** QueryResult */
+        QueryResult: {
+            /** Columns */
+            columns: components["schemas"]["QueryField"][];
+            /** Count */
+            count: number;
+            /** Element */
+            element: string;
+            /** Model Version */
+            model_version: number;
+            /** Rows */
+            rows: {
+                [key: string]: string | number | boolean | null;
+            }[];
+            /** Sums */
+            sums?: {
+                [key: string]: number;
+            };
+            /**
+             * Total
+             * @description Elementos del tipo en el modelo
+             */
+            total: number;
+        };
+        /** RowError */
+        RowError: {
+            /** Id */
+            id?: string | null;
+            /** Message */
+            message: string;
+            /** Row */
+            row?: number | null;
+            /** Sheet */
+            sheet?: string | null;
+        };
+        /** SavedQueryIn */
+        SavedQueryIn: {
+            definition: components["schemas"]["QueryDef-Input"];
+            /** Name */
+            name: string;
+        };
+        /** SavedQueryOut */
+        SavedQueryOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            definition: components["schemas"]["QueryDef-Output"];
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
         /** ScenarioRequest */
         ScenarioRequest: {
             /** Model Version */
@@ -1487,6 +2432,140 @@ export interface components {
             /** Unsupplied Nodes */
             unsupplied_nodes: string[];
         };
+        /** SearchHit */
+        SearchHit: {
+            /**
+             * Element
+             * @description Hoja del elemento
+             */
+            element: string;
+            /**
+             * Element Type
+             * @description node | link | client | shutoff | hydrant | well
+             */
+            element_type: string;
+            /** Id */
+            id: string;
+            /**
+             * Match
+             * @description Campo que coincide
+             */
+            match: string;
+            /** Text */
+            text: string;
+        };
+        /** Sector */
+        Sector: {
+            /** Affected Clients */
+            affected_clients: number;
+            /** Affected Consumption Lps */
+            affected_consumption_lps: number;
+            /**
+             * Clients
+             * @description Clientes del cuartel (quedan sin agua al cortarlo)
+             */
+            clients: string[];
+            /**
+             * Downstream Clients
+             * @description Clientes de otros sectores que también quedan sin agua
+             */
+            downstream_clients: string[];
+            /**
+             * Downstream Nodes
+             * @description Nudos de otros cuarteles que pierden su fuente al cerrar
+             */
+            downstream_nodes: string[];
+            /**
+             * Has Source
+             * @description El cuartel contiene una fuente (reservorio o estanque)
+             */
+            has_source: boolean;
+            /**
+             * Id
+             * @description Código del cuartel (C-01, C-02, …)
+             */
+            id: string;
+            /**
+             * Length M
+             * @description Metros de red dentro del cuartel
+             */
+            length_m: number;
+            /**
+             * Links
+             * @description Tramos (total o parcialmente) dentro del cuartel
+             */
+            links: string[];
+            /** Nodes */
+            nodes: string[];
+            /** Pieces */
+            pieces: components["schemas"]["SectorPiece"][];
+            /**
+             * Valves
+             * @description Válvulas a cerrar para aislar el cuartel
+             */
+            valves: string[];
+        };
+        /** SectorPiece */
+        SectorPiece: {
+            /**
+             * End
+             * @description Fracción final del tramo
+             */
+            end: number;
+            /** Link */
+            link: string;
+            /**
+             * Start
+             * @description Fracción inicial del tramo
+             */
+            start: number;
+        };
+        /** SectorsResult */
+        SectorsResult: {
+            /**
+             * Inoperative Valves
+             * @description Válvulas ignoradas (inoperativas)
+             */
+            inoperative_valves?: string[];
+            /** Model Version */
+            model_version: number;
+            /** Notes */
+            notes?: string[];
+            /** Project Id */
+            project_id: string;
+            /** Sectors */
+            sectors: components["schemas"]["Sector"][];
+        };
+        /** SheetSummary */
+        SheetSummary: {
+            /**
+             * Deleted
+             * @default 0
+             */
+            deleted: number;
+            /**
+             * Errors
+             * @default 0
+             */
+            errors: number;
+            /**
+             * Modified
+             * @default 0
+             */
+            modified: number;
+            /**
+             * New
+             * @default 0
+             */
+            new: number;
+            /** Sheet */
+            sheet: string;
+            /**
+             * Unchanged
+             * @default 0
+             */
+            unchanged: number;
+        };
         /** ShutoffFeature */
         ShutoffFeature: {
             geometry: components["schemas"]["PointGeometry"];
@@ -1505,6 +2584,28 @@ export interface components {
         };
         /** ShutoffProperties */
         ShutoffProperties: {
+            /**
+             * Attributes
+             * @description Atributos libres (columnas no reconocidas de la planilla): nombre → valor
+             */
+            attributes?: {
+                [key: string]: string | number | null;
+            };
+            /**
+             * Condition
+             * @description Condición; una válvula inoperativa no sirve para cortar
+             */
+            condition?: ("bueno" | "regular" | "malo" | "inoperativo") | null;
+            /**
+             * Depth M
+             * @description Profundidad (m)
+             */
+            depth_m?: number | null;
+            /**
+             * Diameter Mm
+             * @description Diámetro (mm)
+             */
+            diameter_mm?: number | null;
             /**
              * Element
              * @default shutoff
@@ -1532,6 +2633,11 @@ export interface components {
             state: "open" | "closed";
             /** Uid */
             uid?: string | null;
+            /**
+             * Valve Type
+             * @description Tipo de válvula de corte
+             */
+            valve_type?: ("compuerta" | "mariposa" | "bola" | "otra") | null;
         };
         /** SimulateRequest */
         SimulateRequest: {
@@ -1732,6 +2838,77 @@ export interface components {
             number: number;
             /** Parent Number */
             parent_number: number | null;
+        };
+        /** WellFeature */
+        WellFeature: {
+            geometry: components["schemas"]["PointGeometry"];
+            /**
+             * Id
+             * @description ID del pozo
+             */
+            id: string;
+            properties: components["schemas"]["WellProperties"];
+            /**
+             * Type
+             * @default Feature
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** WellProperties */
+        WellProperties: {
+            /**
+             * Attributes
+             * @description Atributos libres (columnas no reconocidas de la planilla): nombre → valor
+             */
+            attributes?: {
+                [key: string]: string | number | null;
+            };
+            /**
+             * Authorized Flow Lps
+             * @description Caudal autorizado (L/s)
+             */
+            authorized_flow_lps?: number | null;
+            /** Condition */
+            condition?: ("bueno" | "regular" | "malo" | "inoperativo") | null;
+            /**
+             * Depth M
+             * @description Profundidad (m)
+             */
+            depth_m?: number | null;
+            /**
+             * Description
+             * @description Observaciones
+             */
+            description?: string | null;
+            /**
+             * Dynamic Level M
+             * @description Nivel dinámico bajo el terreno (m)
+             */
+            dynamic_level_m?: number | null;
+            /**
+             * Element
+             * @default well
+             * @constant
+             */
+            element: "well";
+            /**
+             * Ground Elevation
+             * @description Cota de terreno (m)
+             */
+            ground_elevation?: number | null;
+            /**
+             * Node
+             * @description ID del reservorio que representa el pozo en el modelo
+             */
+            node?: string | null;
+            /**
+             * Static Level M
+             * @description Nivel estático bajo el terreno (m)
+             */
+            static_level_m?: number | null;
+            /** Uid */
+            uid?: string | null;
         };
         /** Criterion */
         app__schemas__analysis__Criterion: {
@@ -1938,6 +3115,39 @@ export interface operations {
             };
         };
     };
+    create_from_excel_api_projects_import_excel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_from_excel_api_projects_import_excel_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportApplyResult"];
+                };
+            };
+            /** @description Errores: no se creó el proyecto */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportApplyResult"];
+                };
+            };
+        };
+    };
     get_project_api_projects__project_id__get: {
         parameters: {
             query?: never;
@@ -2134,6 +3344,74 @@ export interface operations {
             };
         };
     };
+    export_dxf_api_projects__project_id__export_dxf_get: {
+        parameters: {
+            query?: {
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/dxf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_gpkg_api_projects__project_id__export_gpkg_get: {
+        parameters: {
+            query?: {
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geopackage+sqlite3": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_inp_api_projects__project_id__export_inp_get: {
         parameters: {
             query?: {
@@ -2238,6 +3516,42 @@ export interface operations {
             };
         };
     };
+    fire_scenario_api_projects__project_id__hydrants_fire_post: {
+        parameters: {
+            query?: {
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+                /** @description ID de un grifo (todos si se omite) */
+                hydrant?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FireResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_network_api_projects__project_id__network_get: {
         parameters: {
             query?: {
@@ -2309,6 +3623,373 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_orthophotos_api_projects__project_id__orthophotos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrthophotoOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_orthophoto_api_projects__project_id__orthophotos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_orthophoto_api_projects__project_id__orthophotos_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrthophotoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_orthophoto_api_projects__project_id__orthophotos__ortho_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                ortho_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_orthophoto_api_projects__project_id__orthophotos__ortho_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                ortho_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrthophotoUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrthophotoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gcps_api_projects__project_id__orthophotos__ortho_id__gcps_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                ortho_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GcpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GcpFit"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    original_api_projects__project_id__orthophotos__ortho_id__original_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                ortho_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_saved_api_projects__project_id__queries_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedQueryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_query_api_projects__project_id__queries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedQueryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedQueryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_query_api_projects__project_id__queries__query_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                query_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_query_api_projects__project_id__query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QueryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueryResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_query_api_projects__project_id__query_export_post: {
+        parameters: {
+            query?: {
+                fmt?: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QueryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -2410,6 +4091,258 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SimulationBlocked"];
+                };
+            };
+        };
+    };
+    search_api_projects__project_id__search_get: {
+        parameters: {
+            query: {
+                q: string;
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchHit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_sectors_api_projects__project_id__sectors_get: {
+        parameters: {
+            query?: {
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectorsResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_sector_api_projects__project_id__sectors__sector_id__export_get: {
+        parameters: {
+            query?: {
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+                fmt?: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                sector_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_csv_api_projects__project_id__sig_export_csv_get: {
+        parameters: {
+            query: {
+                sheet: string;
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_xlsx_api_projects__project_id__sig_export_xlsx_get: {
+        parameters: {
+            query?: {
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_apply_api_projects__project_id__sig_import_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_apply_api_projects__project_id__sig_import_apply_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportApplyResult"];
+                };
+            };
+            /** @description La versión base no es la última */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Errores: no se aplicó nada */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportApplyResult"];
+                };
+            };
+        };
+    };
+    import_preview_api_projects__project_id__sig_import_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_preview_api_projects__project_id__sig_import_preview_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2565,6 +4498,46 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    query_fields_api_sig_query_fields_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueryElement"][];
+                };
+            };
+        };
+    };
+    template_api_sig_template_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
                 };
             };
         };

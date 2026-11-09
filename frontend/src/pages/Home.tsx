@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { api } from "../api/client";
-import type { ProjectOut } from "../api/types";
+import type { ImportPreview, ProjectOut } from "../api/types";
+import { PreviewView } from "../components/ExcelImport";
 import { Icon } from "../components/Icons";
 import { PageHeader } from "../components/PageHeader";
 import { fmtDate } from "../lib/format";
@@ -161,6 +162,48 @@ function ImportInp() {
   );
 }
 
+function ImportExcel() {
+  const navigate = useNavigate();
+  const toast = useEditor((s) => s.toast);
+  const [file, setFile] = useState<File | null>(null);
+  const [name, setName] = useState("");
+  const [zone, setZone] = useState("19");
+  const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return;
+    setBusy(true);
+    try {
+      const r = await api.createFromExcel(file, { name: name.trim() || undefined, utm_zone: Number(zone) || null });
+      if (!r.preview.ok) { setPreview(r.preview); toast("La planilla tiene errores: no se creó el proyecto.", "error"); return; }
+      toast(`Proyecto creado desde la planilla: ${r.preview.new?.length ?? 0} elementos.`);
+      navigate(PATHS.project(r.project_id));
+    } catch (err) {
+      toast(errorText(err), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="card">
+      <h2><Icon.table /> Crear desde Excel</h2>
+      <form onSubmit={submit}>
+        <label className="field stacked"><span>Planilla (.xlsx)</span>
+          <input type="file" accept=".xlsx" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setPreview(null); }} />
+        </label>
+        <label className="field stacked"><span>Nombre del proyecto (opcional)</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: APR Demo" /></label>
+        <label className="field stacked"><span>Huso UTM (hemisferio sur)</span>
+          <input type="number" min={1} max={60} value={zone} onChange={(e) => setZone(e.target.value)} /></label>
+        <p className="muted small"><a href={api.templateUrl}>Descargar plantilla</a>: una hoja por tipo de elemento, con instrucciones.</p>
+        <button className="primary" disabled={busy || !file}>{busy ? "Creando…" : "Crear proyecto"}</button>
+      </form>
+      {preview && <PreviewView p={preview} />}
+    </section>
+  );
+}
+
 export function Home() {
   return (
     <div className="page">
@@ -170,6 +213,7 @@ export function Home() {
         <div className="stack">
           <NewProject />
           <ImportInp />
+          <ImportExcel />
           <section className="card links">
             <Link className="btn ghost" to={PATHS.settings}><Icon.gear /><span>Configuración</span></Link>
             <Link className="btn ghost" to={PATHS.about}><Icon.info /><span>Acerca de</span></Link>

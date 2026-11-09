@@ -60,6 +60,104 @@
         "title": "AffectedClient",
         "type": "object"
       },
+      "Body_create_from_excel_api_projects_import_excel_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "hemisphere": {
+            "default": "S",
+            "title": "Hemisphere",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "utm_zone": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Zone"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_create_from_excel_api_projects_import_excel_post",
+        "type": "object"
+      },
+      "Body_import_apply_api_projects__project_id__sig_import_apply_post": {
+        "properties": {
+          "base_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version"
+          },
+          "delete_missing": {
+            "default": false,
+            "title": "Delete Missing",
+            "type": "boolean"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "hemisphere": {
+            "default": "S",
+            "title": "Hemisphere",
+            "type": "string"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "utm_zone": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Zone"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_apply_api_projects__project_id__sig_import_apply_post",
+        "type": "object"
+      },
       "Body_import_clients_api_projects__project_id__clients_import_post": {
         "properties": {
           "base_version": {
@@ -84,6 +182,55 @@
           "file"
         ],
         "title": "Body_import_clients_api_projects__project_id__clients_import_post",
+        "type": "object"
+      },
+      "Body_import_preview_api_projects__project_id__sig_import_preview_post": {
+        "properties": {
+          "delete_missing": {
+            "default": false,
+            "title": "Delete Missing",
+            "type": "boolean"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "Planilla .xlsx o CSV de una hoja",
+            "title": "File",
+            "type": "string"
+          },
+          "hemisphere": {
+            "default": "S",
+            "title": "Hemisphere",
+            "type": "string"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hoja del CSV (Nudos, Tramos, …)",
+            "title": "Sheet"
+          },
+          "utm_zone": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Huso UTM de Este/Norte",
+            "title": "Utm Zone"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_preview_api_projects__project_id__sig_import_preview_post",
         "type": "object"
       },
       "Body_import_project_api_projects_import_post": {
@@ -116,6 +263,80 @@
           "file"
         ],
         "title": "Body_import_project_api_projects_import_post",
+        "type": "object"
+      },
+      "Body_upload_orthophoto_api_projects__project_id__orthophotos_post": {
+        "properties": {
+          "captured_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured On"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "GeoTIFF, JPG o PNG",
+            "title": "File",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "src_crs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "EPSG del archivo world (UTM del proyecto)",
+            "title": "Src Crs"
+          },
+          "world": {
+            "anyOf": [
+              {
+                "contentMediaType": "application/octet-stream",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Archivo world (.jgw/.pgw/.wld)",
+            "title": "World"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_orthophoto_api_projects__project_id__orthophotos_post",
         "type": "object"
       },
       "CatalogPipeOut": {
@@ -214,6 +435,44 @@
           "source"
         ],
         "title": "CatalogPipeOut",
+        "type": "object"
+      },
+      "ChangeItem": {
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/FieldChange"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "row": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fila del archivo (None si el cambio no viene de una fila)",
+            "title": "Row"
+          },
+          "sheet": {
+            "description": "Nombre de la hoja",
+            "title": "Sheet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sheet",
+          "id"
+        ],
+        "title": "ChangeItem",
         "type": "object"
       },
       "ClientFeature": {
@@ -333,6 +592,53 @@
       },
       "ClientProperties": {
         "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dirección",
+            "title": "Address"
+          },
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Atributos libres (columnas no reconocidas de la planilla): nombre → valor",
+            "title": "Attributes",
+            "type": "object"
+          },
+          "client_number": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "N° de cliente",
+            "title": "Client Number"
+          },
           "client_type": {
             "default": "residencial",
             "enum": [
@@ -420,6 +726,19 @@
             "description": "Tubería sobre la que se proyectó el arranque",
             "title": "Link"
           },
+          "meter_number": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "N° de medidor",
+            "title": "Meter Number"
+          },
           "name": {
             "anyOf": [
               {
@@ -437,11 +756,25 @@
             "title": "Node",
             "type": "string"
           },
+          "route": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ruta de lectura",
+            "title": "Route"
+          },
           "status": {
             "default": "activo",
             "enum": [
               "activo",
-              "proyectado"
+              "proyectado",
+              "suspendido"
             ],
             "title": "Status",
             "type": "string"
@@ -654,6 +987,137 @@
           "supplied_b"
         ],
         "title": "CompareRow",
+        "type": "object"
+      },
+      "Condition": {
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "op": {
+            "default": "eq",
+            "enum": [
+              "eq",
+              "ne",
+              "lt",
+              "le",
+              "gt",
+              "ge",
+              "contains",
+              "starts",
+              "in",
+              "empty",
+              "not_empty"
+            ],
+            "title": "Op",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "title": "Condition",
+        "type": "object"
+      },
+      "ConditionGroup-Input": {
+        "properties": {
+          "conditions": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Condition"
+                },
+                {
+                  "$ref": "#/components/schemas/ConditionGroup-Input"
+                }
+              ]
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "logic": {
+            "default": "and",
+            "enum": [
+              "and",
+              "or"
+            ],
+            "title": "Logic",
+            "type": "string"
+          }
+        },
+        "title": "ConditionGroup",
+        "type": "object"
+      },
+      "ConditionGroup-Output": {
+        "properties": {
+          "conditions": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Condition"
+                },
+                {
+                  "$ref": "#/components/schemas/ConditionGroup-Output"
+                }
+              ]
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "logic": {
+            "default": "and",
+            "enum": [
+              "and",
+              "or"
+            ],
+            "title": "Logic",
+            "type": "string"
+          }
+        },
+        "title": "ConditionGroup",
         "type": "object"
       },
       "CriteriaAlert": {
@@ -1395,6 +1859,184 @@
         "title": "FeasibilityResult",
         "type": "object"
       },
+      "FieldChange": {
+        "properties": {
+          "field": {
+            "description": "Encabezado de la columna",
+            "title": "Field",
+            "type": "string"
+          },
+          "new": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New"
+          },
+          "old": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old"
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "title": "FieldChange",
+        "type": "object"
+      },
+      "FireResult": {
+        "properties": {
+          "hydrants": {
+            "items": {
+              "$ref": "#/components/schemas/HydrantResult"
+            },
+            "title": "Hydrants",
+            "type": "array"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "model_version",
+          "hydrants"
+        ],
+        "title": "FireResult",
+        "type": "object"
+      },
+      "Gcp": {
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "px": {
+            "description": "Columna en la imagen (píxeles, origen arriba a la izquierda)",
+            "title": "Px",
+            "type": "number"
+          },
+          "py": {
+            "description": "Fila en la imagen (píxeles)",
+            "title": "Py",
+            "type": "number"
+          }
+        },
+        "required": [
+          "px",
+          "py",
+          "lon",
+          "lat"
+        ],
+        "title": "Gcp",
+        "type": "object"
+      },
+      "GcpFit": {
+        "properties": {
+          "method": {
+            "enum": [
+              "similitud",
+              "afín"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "residuals_m": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Residuals M",
+            "type": "array"
+          },
+          "rms_m": {
+            "title": "Rms M",
+            "type": "number"
+          },
+          "srid": {
+            "title": "Srid",
+            "type": "integer"
+          },
+          "world": {
+            "description": "Parámetros del archivo world [A, D, B, E, C, F] en el SRID indicado",
+            "items": {
+              "type": "number"
+            },
+            "title": "World",
+            "type": "array"
+          }
+        },
+        "required": [
+          "method",
+          "world",
+          "srid",
+          "residuals_m",
+          "rms_m"
+        ],
+        "title": "GcpFit",
+        "type": "object"
+      },
+      "GcpRequest": {
+        "properties": {
+          "apply": {
+            "default": false,
+            "description": "Procesar la ortofoto con este ajuste",
+            "title": "Apply",
+            "type": "boolean"
+          },
+          "gcps": {
+            "items": {
+              "$ref": "#/components/schemas/Gcp"
+            },
+            "maxItems": 50,
+            "minItems": 2,
+            "title": "Gcps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "gcps"
+        ],
+        "title": "GcpRequest",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1406,6 +2048,242 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HydrantFeature": {
+        "properties": {
+          "geometry": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "id": {
+            "description": "ID del grifo",
+            "title": "Id",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/HydrantProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "default": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "HydrantFeature",
+        "type": "object"
+      },
+      "HydrantProperties": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Atributos libres (columnas no reconocidas de la planilla): nombre → valor",
+            "title": "Attributes",
+            "type": "object"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bueno",
+                  "regular",
+                  "malo",
+                  "inoperativo"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observaciones",
+            "title": "Description"
+          },
+          "diameter_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Diámetro de salida (mm)",
+            "title": "Diameter Mm"
+          },
+          "element": {
+            "const": "hydrant",
+            "default": "hydrant",
+            "title": "Element",
+            "type": "string"
+          },
+          "fire_flow_lps": {
+            "default": 16.0,
+            "description": "Caudal de incendio requerido (L/s)",
+            "exclusiveMinimum": 0.0,
+            "title": "Fire Flow Lps",
+            "type": "number"
+          },
+          "hydrant_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "columna",
+                  "subterraneo"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hydrant Type"
+          },
+          "min_pressure_m": {
+            "default": 5.0,
+            "description": "Presión residual mínima durante el incendio (m)",
+            "minimum": 0.0,
+            "title": "Min Pressure M",
+            "type": "number"
+          },
+          "node": {
+            "description": "ID del nudo de consumo al que se conecta",
+            "title": "Node",
+            "type": "string"
+          },
+          "uid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uid"
+          }
+        },
+        "required": [
+          "node"
+        ],
+        "title": "HydrantProperties",
+        "type": "object"
+      },
+      "HydrantResult": {
+        "properties": {
+          "available_flow_lps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Caudal disponible a la presión residual mínima",
+            "title": "Available Flow Lps"
+          },
+          "fire_flow_lps": {
+            "title": "Fire Flow Lps",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "min_pressure_m": {
+            "title": "Min Pressure M",
+            "type": "number"
+          },
+          "node": {
+            "title": "Node",
+            "type": "string"
+          },
+          "ok": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ok"
+          },
+          "residual_pressure_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Presión con el caudal de incendio (mínima)",
+            "title": "Residual Pressure M"
+          },
+          "static_pressure_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Presión sin incendio (mínima del periodo)",
+            "title": "Static Pressure M"
+          }
+        },
+        "required": [
+          "id",
+          "node",
+          "fire_flow_lps",
+          "min_pressure_m"
+        ],
+        "title": "HydrantResult",
         "type": "object"
       },
       "HydraulicOptions": {
@@ -1466,6 +2344,125 @@
           }
         },
         "title": "HydraulicOptions",
+        "type": "object"
+      },
+      "ImportApplyResult": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/ImportPreview"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Versión creada (None si no hubo cambios)",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "created",
+          "project_id",
+          "preview"
+        ],
+        "title": "ImportApplyResult",
+        "type": "object"
+      },
+      "ImportPreview": {
+        "properties": {
+          "base_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version"
+          },
+          "coord_srid": {
+            "description": "SRID UTM usado para Este/Norte",
+            "title": "Coord Srid",
+            "type": "integer"
+          },
+          "delete_missing": {
+            "default": false,
+            "title": "Delete Missing",
+            "type": "boolean"
+          },
+          "deleted": {
+            "items": {
+              "$ref": "#/components/schemas/ChangeItem"
+            },
+            "title": "Deleted",
+            "type": "array"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/RowError"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "modified": {
+            "items": {
+              "$ref": "#/components/schemas/ChangeItem"
+            },
+            "title": "Modified",
+            "type": "array"
+          },
+          "new": {
+            "items": {
+              "$ref": "#/components/schemas/ChangeItem"
+            },
+            "title": "New",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "ok": {
+            "description": "Sin errores: se puede aplicar",
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "summary": {
+            "items": {
+              "$ref": "#/components/schemas/SheetSummary"
+            },
+            "title": "Summary",
+            "type": "array"
+          },
+          "unchanged": {
+            "items": {
+              "$ref": "#/components/schemas/ChangeItem"
+            },
+            "title": "Unchanged",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "coord_srid"
+        ],
+        "title": "ImportPreview",
         "type": "object"
       },
       "ImportResult": {
@@ -1671,6 +2668,27 @@
       },
       "LinkProperties": {
         "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Atributos libres (columnas no reconocidas de la planilla): nombre → valor",
+            "title": "Attributes",
+            "type": "object"
+          },
           "catalog_pipe_id": {
             "anyOf": [
               {
@@ -1681,6 +2699,24 @@
               }
             ],
             "title": "Catalog Pipe Id"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bueno",
+                  "regular",
+                  "malo",
+                  "fuera_servicio"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estado físico (gestión)",
+            "title": "Condition"
           },
           "description": {
             "anyOf": [
@@ -1748,6 +2784,20 @@
             ],
             "title": "Inner Diameter Source",
             "type": "string"
+          },
+          "install_year": {
+            "anyOf": [
+              {
+                "maximum": 2200.0,
+                "minimum": 1850.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Año de instalación",
+            "title": "Install Year"
           },
           "kind": {
             "default": "pipe",
@@ -1820,6 +2870,24 @@
             "default": 0.0,
             "title": "Minor Loss",
             "type": "number"
+          },
+          "network_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "matriz",
+                  "distribucion",
+                  "aduccion",
+                  "impulsion"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tipo de red",
+            "title": "Network Type"
           },
           "pipe_class": {
             "anyOf": [
@@ -2090,6 +3158,12 @@
                 },
                 {
                   "$ref": "#/components/schemas/ShutoffFeature"
+                },
+                {
+                  "$ref": "#/components/schemas/HydrantFeature"
+                },
+                {
+                  "$ref": "#/components/schemas/WellFeature"
                 }
               ]
             },
@@ -2255,6 +3329,27 @@
       },
       "NodeProperties": {
         "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Atributos libres (columnas no reconocidas de la planilla): nombre → valor",
+            "title": "Attributes",
+            "type": "object"
+          },
           "base_demand": {
             "default": 0.0,
             "description": "Demanda base (L/s)",
@@ -2547,6 +3642,251 @@
         "title": "NodeState",
         "type": "object"
       },
+      "OrthophotoOut": {
+        "properties": {
+          "bounds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bounds"
+          },
+          "captured_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured On"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "georef": {
+            "enum": [
+              "geotiff",
+              "worldfile",
+              "gcp"
+            ],
+            "title": "Georef",
+            "type": "string"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opacity": {
+            "title": "Opacity",
+            "type": "number"
+          },
+          "original_name": {
+            "title": "Original Name",
+            "type": "string"
+          },
+          "residual_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual M"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "src_crs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Src Crs"
+          },
+          "status": {
+            "enum": [
+              "uploaded",
+              "pending",
+              "processing",
+              "ready",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tile_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Plantilla XYZ de teselas ({z}/{x}/{y})",
+            "title": "Tile Url"
+          },
+          "visible": {
+            "title": "Visible",
+            "type": "boolean"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "source",
+          "captured_on",
+          "georef",
+          "status",
+          "error",
+          "original_name",
+          "src_crs",
+          "residual_m",
+          "width",
+          "height",
+          "bounds",
+          "size_bytes",
+          "opacity",
+          "visible",
+          "created_at"
+        ],
+        "title": "OrthophotoOut",
+        "type": "object"
+      },
+      "OrthophotoUpdate": {
+        "properties": {
+          "captured_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured On"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "opacity": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opacity"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "visible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visible"
+          }
+        },
+        "title": "OrthophotoUpdate",
+        "type": "object"
+      },
       "PointGeometry": {
         "properties": {
           "coordinates": {
@@ -2753,6 +4093,330 @@
         "title": "ProjectUpdate",
         "type": "object"
       },
+      "QueryDef-Input": {
+        "properties": {
+          "element": {
+            "description": "Hoja/tipo de elemento: nudos, tramos, clientes, …",
+            "title": "Element",
+            "type": "string"
+          },
+          "where": {
+            "$ref": "#/components/schemas/ConditionGroup-Input"
+          }
+        },
+        "required": [
+          "element"
+        ],
+        "title": "QueryDef",
+        "type": "object"
+      },
+      "QueryDef-Output": {
+        "properties": {
+          "element": {
+            "description": "Hoja/tipo de elemento: nudos, tramos, clientes, …",
+            "title": "Element",
+            "type": "string"
+          },
+          "where": {
+            "$ref": "#/components/schemas/ConditionGroup-Output"
+          }
+        },
+        "required": [
+          "element"
+        ],
+        "title": "QueryDef",
+        "type": "object"
+      },
+      "QueryElement": {
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/QueryField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "sum_field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sum Field"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "fields"
+        ],
+        "title": "QueryElement",
+        "type": "object"
+      },
+      "QueryField": {
+        "properties": {
+          "choices": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choices"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "str",
+              "float",
+              "int",
+              "choice",
+              "bool"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "unit": {
+            "default": "",
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "type"
+        ],
+        "title": "QueryField",
+        "type": "object"
+      },
+      "QueryRequest": {
+        "properties": {
+          "element": {
+            "description": "Hoja/tipo de elemento: nudos, tramos, clientes, …",
+            "title": "Element",
+            "type": "string"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "where": {
+            "$ref": "#/components/schemas/ConditionGroup-Input"
+          }
+        },
+        "required": [
+          "element"
+        ],
+        "title": "QueryRequest",
+        "type": "object"
+      },
+      "QueryResult": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/QueryField"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "element": {
+            "title": "Element",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "integer"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "sums": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Sums",
+            "type": "object"
+          },
+          "total": {
+            "description": "Elementos del tipo en el modelo",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "element",
+          "model_version",
+          "count",
+          "total",
+          "columns",
+          "rows"
+        ],
+        "title": "QueryResult",
+        "type": "object"
+      },
+      "RowError": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "row": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "RowError",
+        "type": "object"
+      },
+      "SavedQueryIn": {
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/QueryDef-Input"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "definition"
+        ],
+        "title": "SavedQueryIn",
+        "type": "object"
+      },
+      "SavedQueryOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "definition": {
+            "$ref": "#/components/schemas/QueryDef-Output"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "definition",
+          "id",
+          "created_at"
+        ],
+        "title": "SavedQueryOut",
+        "type": "object"
+      },
       "ScenarioRequest": {
         "additionalProperties": false,
         "properties": {
@@ -2876,6 +4540,247 @@
         "title": "ScenarioResult",
         "type": "object"
       },
+      "SearchHit": {
+        "properties": {
+          "element": {
+            "description": "Hoja del elemento",
+            "title": "Element",
+            "type": "string"
+          },
+          "element_type": {
+            "description": "node | link | client | shutoff | hydrant | well",
+            "title": "Element Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "match": {
+            "description": "Campo que coincide",
+            "title": "Match",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "element",
+          "element_type",
+          "id",
+          "text",
+          "match"
+        ],
+        "title": "SearchHit",
+        "type": "object"
+      },
+      "Sector": {
+        "properties": {
+          "affected_clients": {
+            "title": "Affected Clients",
+            "type": "integer"
+          },
+          "affected_consumption_lps": {
+            "title": "Affected Consumption Lps",
+            "type": "number"
+          },
+          "clients": {
+            "description": "Clientes del cuartel (quedan sin agua al cortarlo)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Clients",
+            "type": "array"
+          },
+          "downstream_clients": {
+            "description": "Clientes de otros sectores que también quedan sin agua",
+            "items": {
+              "type": "string"
+            },
+            "title": "Downstream Clients",
+            "type": "array"
+          },
+          "downstream_nodes": {
+            "description": "Nudos de otros cuarteles que pierden su fuente al cerrar",
+            "items": {
+              "type": "string"
+            },
+            "title": "Downstream Nodes",
+            "type": "array"
+          },
+          "has_source": {
+            "description": "El cuartel contiene una fuente (reservorio o estanque)",
+            "title": "Has Source",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Código del cuartel (C-01, C-02, …)",
+            "title": "Id",
+            "type": "string"
+          },
+          "length_m": {
+            "description": "Metros de red dentro del cuartel",
+            "title": "Length M",
+            "type": "number"
+          },
+          "links": {
+            "description": "Tramos (total o parcialmente) dentro del cuartel",
+            "items": {
+              "type": "string"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "nodes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "pieces": {
+            "items": {
+              "$ref": "#/components/schemas/SectorPiece"
+            },
+            "title": "Pieces",
+            "type": "array"
+          },
+          "valves": {
+            "description": "Válvulas a cerrar para aislar el cuartel",
+            "items": {
+              "type": "string"
+            },
+            "title": "Valves",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "valves",
+          "links",
+          "pieces",
+          "length_m",
+          "nodes",
+          "clients",
+          "downstream_nodes",
+          "downstream_clients",
+          "affected_clients",
+          "affected_consumption_lps",
+          "has_source"
+        ],
+        "title": "Sector",
+        "type": "object"
+      },
+      "SectorPiece": {
+        "properties": {
+          "end": {
+            "description": "Fracción final del tramo",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "End",
+            "type": "number"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          },
+          "start": {
+            "description": "Fracción inicial del tramo",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Start",
+            "type": "number"
+          }
+        },
+        "required": [
+          "link",
+          "start",
+          "end"
+        ],
+        "title": "SectorPiece",
+        "type": "object"
+      },
+      "SectorsResult": {
+        "properties": {
+          "inoperative_valves": {
+            "description": "Válvulas ignoradas (inoperativas)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Inoperative Valves",
+            "type": "array"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "integer"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "sectors": {
+            "items": {
+              "$ref": "#/components/schemas/Sector"
+            },
+            "title": "Sectors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "project_id",
+          "model_version",
+          "sectors"
+        ],
+        "title": "SectorsResult",
+        "type": "object"
+      },
+      "SheetSummary": {
+        "properties": {
+          "deleted": {
+            "default": 0,
+            "title": "Deleted",
+            "type": "integer"
+          },
+          "errors": {
+            "default": 0,
+            "title": "Errors",
+            "type": "integer"
+          },
+          "modified": {
+            "default": 0,
+            "title": "Modified",
+            "type": "integer"
+          },
+          "new": {
+            "default": 0,
+            "title": "New",
+            "type": "integer"
+          },
+          "sheet": {
+            "title": "Sheet",
+            "type": "string"
+          },
+          "unchanged": {
+            "default": 0,
+            "title": "Unchanged",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sheet"
+        ],
+        "title": "SheetSummary",
+        "type": "object"
+      },
       "ShutoffFeature": {
         "properties": {
           "geometry": {
@@ -2906,6 +4811,69 @@
       },
       "ShutoffProperties": {
         "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Atributos libres (columnas no reconocidas de la planilla): nombre → valor",
+            "title": "Attributes",
+            "type": "object"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bueno",
+                  "regular",
+                  "malo",
+                  "inoperativo"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Condición; una válvula inoperativa no sirve para cortar",
+            "title": "Condition"
+          },
+          "depth_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Profundidad (m)",
+            "title": "Depth M"
+          },
+          "diameter_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Diámetro (mm)",
+            "title": "Diameter Mm"
+          },
           "element": {
             "const": "shutoff",
             "default": "shutoff",
@@ -2955,6 +4923,24 @@
               }
             ],
             "title": "Uid"
+          },
+          "valve_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "compuerta",
+                  "mariposa",
+                  "bola",
+                  "otra"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tipo de válvula de corte",
+            "title": "Valve Type"
           }
         },
         "required": [
@@ -3525,6 +5511,183 @@
         "title": "VersionOut",
         "type": "object"
       },
+      "WellFeature": {
+        "properties": {
+          "geometry": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "id": {
+            "description": "ID del pozo",
+            "title": "Id",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/WellProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "default": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "WellFeature",
+        "type": "object"
+      },
+      "WellProperties": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Atributos libres (columnas no reconocidas de la planilla): nombre → valor",
+            "title": "Attributes",
+            "type": "object"
+          },
+          "authorized_flow_lps": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Caudal autorizado (L/s)",
+            "title": "Authorized Flow Lps"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bueno",
+                  "regular",
+                  "malo",
+                  "inoperativo"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "depth_m": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Profundidad (m)",
+            "title": "Depth M"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observaciones",
+            "title": "Description"
+          },
+          "dynamic_level_m": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nivel dinámico bajo el terreno (m)",
+            "title": "Dynamic Level M"
+          },
+          "element": {
+            "const": "well",
+            "default": "well",
+            "title": "Element",
+            "type": "string"
+          },
+          "ground_elevation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cota de terreno (m)",
+            "title": "Ground Elevation"
+          },
+          "node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ID del reservorio que representa el pozo en el modelo",
+            "title": "Node"
+          },
+          "static_level_m": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nivel estático bajo el terreno (m)",
+            "title": "Static Level M"
+          },
+          "uid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uid"
+          }
+        },
+        "title": "WellProperties",
+        "type": "object"
+      },
       "app__schemas__analysis__Criterion": {
         "properties": {
           "key": {
@@ -3818,6 +5981,47 @@
         ]
       }
     },
+    "/api/projects/import-excel": {
+      "post": {
+        "operationId": "create_from_excel_api_projects_import_excel_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_from_excel_api_projects_import_excel_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportApplyResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportApplyResult"
+                }
+              }
+            },
+            "description": "Errores: no se creó el proyecto"
+          }
+        },
+        "summary": "Crear un proyecto nuevo desde una planilla",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
     "/api/projects/{project_id}": {
       "delete": {
         "operationId": "delete_project_api_projects__project_id__delete",
@@ -4097,6 +6301,120 @@
         ]
       }
     },
+    "/api/projects/{project_id}/export.dxf": {
+      "get": {
+        "operationId": "export_dxf_api_projects__project_id__export_dxf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/dxf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "DXF por capas (UTM)",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/export.gpkg": {
+      "get": {
+        "operationId": "export_gpkg_api_projects__project_id__export_gpkg_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/geopackage+sqlite3": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "GeoPackage para QGIS",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
     "/api/projects/{project_id}/export.inp": {
       "get": {
         "operationId": "export_inp_api_projects__project_id__export_inp_get",
@@ -4256,6 +6574,85 @@
         ]
       }
     },
+    "/api/projects/{project_id}/hydrants/fire": {
+      "post": {
+        "operationId": "fire_scenario_api_projects__project_id__hydrants_fire_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          },
+          {
+            "description": "ID de un grifo (todos si se omite)",
+            "in": "query",
+            "name": "hydrant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ID de un grifo (todos si se omite)",
+              "title": "Hydrant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FireResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Escenario de incendio: presión residual y caudal disponible por grifo",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
     "/api/projects/{project_id}/network": {
       "get": {
         "operationId": "get_network_api_projects__project_id__network_get",
@@ -4361,6 +6758,577 @@
         "summary": "Guardar la red (crea una versión nueva inmutable)",
         "tags": [
           "red y simulación"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/orthophotos": {
+      "get": {
+        "operationId": "list_orthophotos_api_projects__project_id__orthophotos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OrthophotoOut"
+                  },
+                  "title": "Response List Orthophotos Api Projects  Project Id  Orthophotos Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ortofotos del proyecto (más reciente primero)",
+        "tags": [
+          "ortofotos"
+        ]
+      },
+      "post": {
+        "operationId": "upload_orthophoto_api_projects__project_id__orthophotos_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_orthophoto_api_projects__project_id__orthophotos_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrthophotoOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Subir una ortofoto (GeoTIFF, o JPG/PNG con archivo world o para ajustar con puntos de control)",
+        "tags": [
+          "ortofotos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/orthophotos/{ortho_id}": {
+      "delete": {
+        "operationId": "delete_orthophoto_api_projects__project_id__orthophotos__ortho_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ortho_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ortho Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Eliminar una ortofoto y sus archivos",
+        "tags": [
+          "ortofotos"
+        ]
+      },
+      "patch": {
+        "operationId": "update_orthophoto_api_projects__project_id__orthophotos__ortho_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ortho_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ortho Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrthophotoUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrthophotoOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar nombre, fecha, fuente, opacidad o visibilidad",
+        "tags": [
+          "ortofotos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/orthophotos/{ortho_id}/gcps": {
+      "post": {
+        "operationId": "gcps_api_projects__project_id__orthophotos__ortho_id__gcps_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ortho_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ortho Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GcpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GcpFit"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ajustar con puntos de control (mínimo 2): error residual y, si apply, procesar",
+        "tags": [
+          "ortofotos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/orthophotos/{ortho_id}/original": {
+      "get": {
+        "operationId": "original_api_projects__project_id__orthophotos__ortho_id__original_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ortho_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ortho Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Imagen original (para puntos de control)",
+        "tags": [
+          "ortofotos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/queries": {
+      "get": {
+        "operationId": "list_saved_api_projects__project_id__queries_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SavedQueryOut"
+                  },
+                  "title": "Response List Saved Api Projects  Project Id  Queries Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultas guardadas",
+        "tags": [
+          "SIG"
+        ]
+      },
+      "post": {
+        "operationId": "save_query_api_projects__project_id__queries_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedQueryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedQueryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Guardar una consulta (reemplaza la del mismo nombre)",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/queries/{query_id}": {
+      "delete": {
+        "operationId": "delete_query_api_projects__project_id__queries__query_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "title": "Query Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Eliminar una consulta guardada",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/query": {
+      "post": {
+        "operationId": "run_query_api_projects__project_id__query_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ejecutar una consulta",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/query/export": {
+      "post": {
+        "operationId": "export_query_api_projects__project_id__query_export_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fmt",
+            "required": false,
+            "schema": {
+              "default": "xlsx",
+              "pattern": "^(csv|xlsx)$",
+              "title": "Fmt",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
+              "text/csv": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar los resultados de una consulta (Excel con el formato de la plantilla, o CSV)",
+        "tags": [
+          "SIG"
         ]
       }
     },
@@ -4520,6 +7488,453 @@
         "summary": "Simular un escenario de llaves: suministro y presión por nudo y cliente",
         "tags": [
           "análisis"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/search": {
+      "get": {
+        "operationId": "search_api_projects__project_id__search_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SearchHit"
+                  },
+                  "title": "Response Search Api Projects  Project Id  Search Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Búsqueda rápida por ID, nombre, dirección o N° de medidor",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/sectors": {
+      "get": {
+        "operationId": "get_sectors_api_projects__project_id__sectors_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectorsResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cuarteles de corta",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/sectors/{sector_id}/export": {
+      "get": {
+        "operationId": "export_sector_api_projects__project_id__sectors__sector_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sector_id",
+            "required": true,
+            "schema": {
+              "title": "Sector Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fmt",
+            "required": false,
+            "schema": {
+              "default": "xlsx",
+              "pattern": "^(csv|xlsx)$",
+              "title": "Fmt",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
+              "text/csv": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lista exportable de un cuartel: válvulas a cerrar y clientes sin agua",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/sig/export.csv": {
+      "get": {
+        "operationId": "export_csv_api_projects__project_id__sig_export_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sheet",
+            "required": true,
+            "schema": {
+              "title": "Sheet",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar una hoja como CSV",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/sig/export.xlsx": {
+      "get": {
+        "operationId": "export_xlsx_api_projects__project_id__sig_export_xlsx_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar el proyecto completo a la planilla",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/sig/import/apply": {
+      "post": {
+        "operationId": "import_apply_api_projects__project_id__sig_import_apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_apply_api_projects__project_id__sig_import_apply_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportApplyResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "La versión base no es la última"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportApplyResult"
+                }
+              }
+            },
+            "description": "Errores: no se aplicó nada"
+          }
+        },
+        "summary": "Aplicar la importación (todo o nada; crea una versión nueva)",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/sig/import/preview": {
+      "post": {
+        "operationId": "import_preview_api_projects__project_id__sig_import_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_preview_api_projects__project_id__sig_import_preview_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Vista previa de la importación (no modifica el proyecto)",
+        "tags": [
+          "SIG"
         ]
       }
     },
@@ -4750,6 +8165,48 @@
         "summary": "Significado de la rugosidad por fórmula",
         "tags": [
           "catálogo y motor"
+        ]
+      }
+    },
+    "/api/sig/query-fields": {
+      "get": {
+        "operationId": "query_fields_api_sig_query_fields_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QueryElement"
+                  },
+                  "title": "Response Query Fields Api Sig Query Fields Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Tipos de elemento y campos consultables",
+        "tags": [
+          "SIG"
+        ]
+      }
+    },
+    "/api/sig/template.xlsx": {
+      "get": {
+        "operationId": "template_api_sig_template_xlsx_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Plantilla Excel vacía",
+        "tags": [
+          "SIG"
         ]
       }
     }

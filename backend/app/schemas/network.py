@@ -17,10 +17,18 @@ LinkStatus = Literal["open", "closed", "cv", "active"]
 ValveType = Literal["PRV", "PSV", "PBV", "FCV", "TCV", "GPV", "PCV"]
 InnerDiameterSource = Literal["catalogo", "manual"]
 ClientType = Literal["residencial", "comercial", "industrial", "publico"]
-ClientStatus = Literal["activo", "proyectado"]
+ClientStatus = Literal["activo", "proyectado", "suspendido"]
 ConsumptionUnit = Literal["L/s", "m3/mes"]
 ConnectionMode = Literal["nearest", "new_node"]
 ShutoffState = Literal["open", "closed"]
+PipeCondition = Literal["bueno", "regular", "malo", "fuera_servicio"]
+NetworkType = Literal["matriz", "distribucion", "aduccion", "impulsion"]
+ShutoffType = Literal["compuerta", "mariposa", "bola", "otra"]
+AssetCondition = Literal["bueno", "regular", "malo", "inoperativo"]
+HydrantType = Literal["columna", "subterraneo"]
+AttrValue = str | int | float | None
+Attributes = dict[str, AttrValue]
+ATTRIBUTES_DESC = "Atributos libres (columnas no reconocidas de la planilla): nombre → valor"
 
 # Conversión de m³/mes a L/s con mes de 30 días (facturación habitual).
 SECONDS_PER_MONTH = 30 * 86400
@@ -92,6 +100,7 @@ class NodeProperties(BaseModel):
     min_volume: float | None = Field(None, description="Estanque: volumen mínimo (m³)")
     volume_curve: str | None = None
     can_overflow: bool = False
+    attributes: Attributes = Field(default_factory=dict, description=ATTRIBUTES_DESC)
 
 
 class LinkProperties(BaseModel):
@@ -122,6 +131,10 @@ class LinkProperties(BaseModel):
     valve_type: ValveType | None = None
     valve_setting: float | None = None
     valve_curve: str | None = None
+    condition: PipeCondition | None = Field(None, description="Estado físico (gestión)")
+    install_year: int | None = Field(None, ge=1850, le=2200, description="Año de instalación")
+    network_type: NetworkType | None = Field(None, description="Tipo de red")
+    attributes: Attributes = Field(default_factory=dict, description=ATTRIBUTES_DESC)
 
 
 class ClientProperties(BaseModel):
@@ -137,6 +150,11 @@ class ClientProperties(BaseModel):
     connection: tuple[float, float] | None = Field(None, description="Punto de conexión [lon, lat]")
     connection_mode: ConnectionMode = "nearest"
     elevation: float | None = Field(None, description="Cota del terreno en el cliente (m)")
+    client_number: str | None = Field(None, max_length=40, description="N° de cliente")
+    address: str | None = Field(None, max_length=200, description="Dirección")
+    route: str | None = Field(None, max_length=40, description="Ruta de lectura")
+    meter_number: str | None = Field(None, max_length=40, description="N° de medidor")
+    attributes: Attributes = Field(default_factory=dict, description=ATTRIBUTES_DESC)
 
     @property
     def consumption_lps(self) -> float:
@@ -150,6 +168,38 @@ class ShutoffProperties(BaseModel):
     link: str = Field(description="ID de la tubería donde está la llave")
     position: float = Field(0.5, ge=0, le=1, description="Posición a lo largo de la tubería (0 = inicio, 1 = fin)")
     state: ShutoffState = "open"
+    valve_type: ShutoffType | None = Field(None, description="Tipo de válvula de corte")
+    condition: AssetCondition | None = Field(None, description="Condición; una válvula inoperativa no sirve para cortar")
+    diameter_mm: float | None = Field(None, description="Diámetro (mm)")
+    depth_m: float | None = Field(None, description="Profundidad (m)")
+    attributes: Attributes = Field(default_factory=dict, description=ATTRIBUTES_DESC)
+
+
+class HydrantProperties(BaseModel):
+    element: Literal["hydrant"] = "hydrant"
+    uid: str | None = None
+    node: str = Field(description="ID del nudo de consumo al que se conecta")
+    description: str | None = Field(None, description="Observaciones")
+    hydrant_type: HydrantType | None = None
+    condition: AssetCondition | None = None
+    diameter_mm: float | None = Field(None, description="Diámetro de salida (mm)")
+    fire_flow_lps: float = Field(16.0, gt=0, description="Caudal de incendio requerido (L/s)")
+    min_pressure_m: float = Field(5.0, ge=0, description="Presión residual mínima durante el incendio (m)")
+    attributes: Attributes = Field(default_factory=dict, description=ATTRIBUTES_DESC)
+
+
+class WellProperties(BaseModel):
+    element: Literal["well"] = "well"
+    uid: str | None = None
+    node: str | None = Field(None, description="ID del reservorio que representa el pozo en el modelo")
+    description: str | None = Field(None, description="Observaciones")
+    condition: AssetCondition | None = None
+    ground_elevation: float | None = Field(None, description="Cota de terreno (m)")
+    depth_m: float | None = Field(None, ge=0, description="Profundidad (m)")
+    static_level_m: float | None = Field(None, ge=0, description="Nivel estático bajo el terreno (m)")
+    dynamic_level_m: float | None = Field(None, ge=0, description="Nivel dinámico bajo el terreno (m)")
+    authorized_flow_lps: float | None = Field(None, ge=0, description="Caudal autorizado (L/s)")
+    attributes: Attributes = Field(default_factory=dict, description=ATTRIBUTES_DESC)
 
 
 class ValveScenario(BaseModel):
@@ -188,20 +238,36 @@ class ShutoffFeature(BaseModel):
     properties: ShutoffProperties
 
 
+class HydrantFeature(BaseModel):
+    type: Literal["Feature"] = "Feature"
+    id: str = Field(description="ID del grifo")
+    geometry: PointGeometry
+    properties: HydrantProperties
+
+
+class WellFeature(BaseModel):
+    type: Literal["Feature"] = "Feature"
+    id: str = Field(description="ID del pozo")
+    geometry: PointGeometry
+    properties: WellProperties
+
+
 def _feature_tag(v: Any) -> str:
     if isinstance(v, dict):
         props = v.get("properties") or {}
         geom = v.get("geometry") or {}
         element = props.get("element")
-        if element in ("node", "link", "client", "shutoff"):
+        if element in ("node", "link", "client", "shutoff", "hydrant", "well"):
             return element
         return "node" if geom.get("type") == "Point" else "link"
-    return {NodeFeature: "node", LinkFeature: "link", ClientFeature: "client", ShutoffFeature: "shutoff"}[type(v)]
+    return {NodeFeature: "node", LinkFeature: "link", ClientFeature: "client", ShutoffFeature: "shutoff",
+            HydrantFeature: "hydrant", WellFeature: "well"}[type(v)]
 
 
 Feature = Annotated[
     Annotated[NodeFeature, Tag("node")] | Annotated[LinkFeature, Tag("link")]
-    | Annotated[ClientFeature, Tag("client")] | Annotated[ShutoffFeature, Tag("shutoff")],
+    | Annotated[ClientFeature, Tag("client")] | Annotated[ShutoffFeature, Tag("shutoff")]
+    | Annotated[HydrantFeature, Tag("hydrant")] | Annotated[WellFeature, Tag("well")],
     Discriminator(_feature_tag),
 ]
 
@@ -221,6 +287,12 @@ class NetworkFeatureCollection(BaseModel):
 
     def shutoffs(self) -> list[ShutoffFeature]:
         return [f for f in self.features if isinstance(f, ShutoffFeature)]
+
+    def hydrants(self) -> list[HydrantFeature]:
+        return [f for f in self.features if isinstance(f, HydrantFeature)]
+
+    def wells(self) -> list[WellFeature]:
+        return [f for f in self.features if isinstance(f, WellFeature)]
 
 
 class NetworkModel(BaseModel):
@@ -244,8 +316,9 @@ class NetworkModel(BaseModel):
         return out
 
     def closed_links(self, closed_shutoffs: set[str] | None = None) -> set[str]:
-        """Tuberías cerradas por llaves (estado propio de cada llave, o el conjunto dado por un escenario)."""
-        out = set()
+        """Tuberías cerradas por llaves (estado propio de cada llave, o el conjunto dado por un escenario) y
+        tuberías marcadas «fuera de servicio»."""
+        out = {lk.id for lk in self.network.links() if lk.properties.condition == "fuera_servicio"}
         for sh in self.network.shutoffs():
             closed = sh.id in closed_shutoffs if closed_shutoffs is not None else sh.properties.state == "closed"
             if closed:

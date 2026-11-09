@@ -18,13 +18,14 @@ dependencies = [
     "redis>=5.2",
     "python-multipart>=0.0.18",
     "numpy>=2.1",
+    "openpyxl>=3.1.5",
+    "defusedxml>=0.7.1",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3",
     "httpx>=0.28",
-    "openpyxl>=3.1.5",  # lectura de planillas de referencia (docs/referencias) en pruebas y scripts
 ]
 
 [tool.uv]

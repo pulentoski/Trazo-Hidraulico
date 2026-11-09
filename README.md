@@ -1,4 +1,4 @@
-# Trazo Hidráulico — Etapa 1
+# Trazo Hidráulico — Etapas 1 y 2
 
 Plataforma local para diseñar y simular redes de agua potable. Editor tipo CAD/GIS sobre Google Maps,
 motor hidráulico **OWA-EPANET 2.3.5** en el backend (único motor), resultados reproducibles y ligados
@@ -60,16 +60,36 @@ responden 413). `/healthz` queda sin autenticación para monitores externos.
 ## Levantar
 
 ```bash
-make up           # construye y levanta todo; espera a que los 5 servicios estén healthy
+make up           # construye y levanta todo; espera a que los 7 servicios estén healthy
 ```
 
 Abra http://localhost:8080: la pantalla de inicio lista los proyectos recientes y permite crear,
 importar `.inp`, ir a Configuración y a Acerca de. Cada proyecto se edita en `/proyecto/<id>`.
 Comandos útiles: `make logs`, `make ps`, `make down`, `make reset-db`
 (borra la base de datos) y `make gen-types` (regenera los tipos TypeScript desde OpenAPI).
-`make backup` crea un respaldo local completo (base de datos, imágenes Docker, git bundle y copia del
+`make backup` crea un respaldo local completo (base de datos, ortofotos, imágenes Docker, git bundle y copia del
 `.env`) en `~/Documentos/respaldos/trazo-hidraulico/<fecha-hora>/`, con un `RESTAURAR.md` con los pasos.
 La documentación interactiva de la API está en http://localhost:8080/api/docs.
+
+## SIG de agua potable (etapa 2)
+
+Detalle en [docs/sig.md](docs/sig.md). En resumen:
+
+- **Planillas Excel**: plantilla descargable (una hoja por tipo de elemento + «Instrucciones», listas de
+  validación), exportación del proyecto completo e importación en dos pasos (vista previa → aplicar, todo o
+  nada, crea una versión). Actualiza por ID solo las columnas presentes; las columnas desconocidas quedan
+  como atributos libres. También CSV por hoja. Menú **Planilla y SIG** del editor y «Crear desde Excel» en
+  el inicio. Ejemplo: `examples/apr-demo.xlsx` (proyecto «APR Demo», La Serena).
+- **Ortofotos** (pestaña Capas): GeoTIFF, JPG/PNG con archivo world o con puntos de control (error residual).
+  El servicio `worker` (GDAL 3.10.3) genera un Cloud Optimized GeoTIFF y `tiler` (TiTiler 2.3.0, fijado por
+  digest) sirve las teselas en `/tiles/…`; funcionan sin key de Google. Límite `MAX_ORTHO_MB` (500 MB).
+- **Gestión**: estado, año y tipo de red en tramos; tipo, condición, diámetro y profundidad en válvulas;
+  grifos (escenario de incendio) y pozos; datos comerciales de clientes.
+- **Cuarteles de corta** (pestaña Cuarteles): válvulas a cerrar, metros de red y clientes sin agua (incluidos
+  los de aguas abajo). Clic en un tramo → «Para cortar aquí, cierre …», exportable.
+- **Consultas** (pestaña Consultas) con condiciones Y/O, resaltado en el mapa, sumas, consultas guardadas y
+  exportación Excel/CSV; búsqueda rápida sobre el mapa.
+- **Exportaciones**: DXF por capas en UTM y GeoPackage para QGIS.
 
 ## Publicar en un dominio con HTTPS
 
@@ -112,6 +132,9 @@ Ejecuta todo dentro de contenedores y sin depender de Google:
 - Validador (un caso por error y advertencia) y pruebas funcionales de la API.
 - Batería QA hidráulica (`backend/tests/qa/`), protección (límite de solicitudes y de subida) y verificación de
   que las pruebas solo usan la base `trazo_test` y la base Redis 1 (abortan si no).
+- SIG: ida y vuelta Excel sin cambios, errores por fila, actualización parcial, CSV/UTM, demostración «APR Demo»,
+  cuarteles con resultado conocido, consultas con conteo esperado, grifos, DXF/GeoPackage (leídos con GDAL) y
+  ortofotos (GeoTIFF, JPG + world y puntos de control en su posición, tolerancia 1 m).
 - Frontend: `tsc --noEmit`, pruebas unitarias (vitest) y verificación de que `schema.d.ts` está al día con OpenAPI.
 
 Los resultados y las tolerancias quedan en [`docs/validation/`](docs/validation/tolerancias.md).

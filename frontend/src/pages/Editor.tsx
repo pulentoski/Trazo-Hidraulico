@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { BottomPanel } from "../components/BottomPanel";
 import { ClientDialog } from "../components/ClientDialog";
 import { ConfirmDelete, VersionsDialog } from "../components/Dialogs";
+import { ExcelImportDialog } from "../components/ExcelImport";
 import { FeasibilityDialog } from "../components/FeasibilityDialog";
 import { PropertiesPanel } from "../components/PropertiesPanel";
 import { TOOLS, ToolPanel } from "../components/ToolPanel";
@@ -78,6 +79,7 @@ export function EditorPage() {
       <ConfirmDelete />
       <ClientDialog />
       <FeasibilityDialog />
+      <ExcelImportDialog />
     </div>
   );
 }

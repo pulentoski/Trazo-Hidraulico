@@ -2,7 +2,8 @@
 
 Errores bloqueantes (impiden simular):
   E_EMPTY_NETWORK, E_NO_SOURCE, E_LINK_NODE, E_DIAMETER_NOT_IN_CATALOG, E_DUPLICATE_ID,
-  E_INVALID_ID, E_ISOLATED_NODE, E_DISCONNECTED_NODE, E_MISSING_PARAM, E_CLIENT_NODE, E_SHUTOFF_LINK
+  E_INVALID_ID, E_ISOLATED_NODE, E_DISCONNECTED_NODE, E_MISSING_PARAM, E_CLIENT_NODE, E_SHUTOFF_LINK,
+  E_HYDRANT_NODE, E_WELL_NODE
 Advertencias:
   W_ELEVATION_ASSUMED, W_ELEVATION_DOUBTFUL, W_SHORT_PIPE, W_NO_DEMAND, W_CRITERIA, W_SCENARIO_VALVE
 
@@ -92,7 +93,9 @@ def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
     # Clientes y llaves: referencias a elementos existentes (estructural: sin esto no se puede guardar).
     link_by_id = {lk.id: lk for lk in links}
     clients, shutoffs = model.network.clients(), model.network.shutoffs()
-    for kind, items, etype in (("cliente", clients, "client"), ("llave", shutoffs, "shutoff")):
+    hydrants, wells = model.network.hydrants(), model.network.wells()
+    for kind, items, etype in (("cliente", clients, "client"), ("llave", shutoffs, "shutoff"),
+                               ("grifo", hydrants, "hydrant"), ("pozo", wells, "well")):
         for ident, count in Counter(f.id for f in items).items():
             if count > 1:
                 err("E_DUPLICATE_ID", f"El ID de {kind} «{ident}» está repetido {count} veces.", etype, ident)
@@ -110,6 +113,25 @@ def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
         if lk is None or lk.properties.kind != "pipe":
             err("E_SHUTOFF_LINK", f"La llave {sh.id} debe estar sobre una tubería existente "
                                   f"(«{sh.properties.link}» no lo es).", "shutoff", sh.id)
+
+    for kind, items, etype in (("cliente", clients, "client"), ("llave", shutoffs, "shutoff"),
+                               ("grifo", hydrants, "hydrant"), ("pozo", wells, "well")):
+        for f in items:
+            if not ID_RE.match(f.id):
+                err("E_INVALID_ID", f"El ID de {kind} «{f.id}» no es válido: máximo 31 caracteres, "
+                                    "sin espacios, punto y coma ni comillas.", etype, f.id)
+    for h in hydrants:
+        target = node_by_id.get(h.properties.node)
+        if target is None or target.properties.kind != "junction":
+            err("E_HYDRANT_NODE", f"El grifo {h.id} debe conectarse a un nudo de consumo existente "
+                                  f"(«{h.properties.node}» no lo es).", "hydrant", h.id)
+    for w in wells:
+        if w.properties.node is None:
+            continue
+        target = node_by_id.get(w.properties.node)
+        if target is None or target.properties.kind != "reservoir":
+            err("E_WELL_NODE", f"El pozo {w.id} debe asociarse a un reservorio existente "
+                               f"(«{w.properties.node}» no lo es).", "well", w.id)
 
     if structural_only:
         return ValidationReport(ok=not errors, errors=errors, warnings=warnings)

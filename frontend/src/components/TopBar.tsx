@@ -69,6 +69,31 @@ function StatusDetail({ onClose }: { onClose: () => void }) {
   );
 }
 
+function SigMenu({ dirty }: { dirty: boolean }) {
+  const s = useEditor();
+  const [open, setOpen] = useState(false);
+  const pid = s.project?.id;
+  if (!pid) return null;
+  const item = (href: string, text: string, title: string) => (
+    <a className={`menu-item ${dirty ? "disabled" : ""}`} href={href} title={title} onClick={() => setOpen(false)}>{text}</a>
+  );
+  return (
+    <div className="menu-wrap">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} title="Planillas Excel y exportaciones SIG/CAD"><Icon.table /><span>Planilla y SIG ▾</span></button>
+      {open && (
+        <div className="menu-pop" onMouseLeave={() => setOpen(false)}>
+          <button className="menu-item" onClick={() => { setOpen(false); s.set({ importOpen: true }); }}>Importar Excel o CSV…</button>
+          {item(api.excelUrl(pid), "Exportar Excel (planilla completa)", "Misma estructura de la plantilla: se puede editar y volver a importar")}
+          {item(api.templateUrl, "Descargar plantilla vacía", "Una hoja por tipo de elemento, con instrucciones y listas")}
+          {item(api.dxfUrl(pid), "Exportar DXF (UTM, por capas)", "Red por diámetro, válvulas, clientes, estanques…")}
+          {item(api.gpkgUrl(pid), "Exportar GeoPackage (QGIS)", "Una capa por tipo de elemento, más los cuarteles de corta")}
+          {dirty && <p className="muted small pad">Esperando el guardado de los cambios…</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TopBar() {
   const s = useEditor();
   const navigate = useNavigate();
@@ -108,6 +133,7 @@ export function TopBar() {
         <button className="primary" onClick={simulateNow} disabled={!s.project} title="Simular ahora (F5)"><Icon.play /><span>Simular</span></button>
         <a className={`btn ${!s.project || dirty ? "disabled" : ""}`} href={s.project ? api.exportUrl(s.project.id, s.serverVersion ?? undefined) : undefined}
           aria-disabled={!s.project || dirty} title={dirty ? "Esperando guardado" : "Exportar la versión actual como .inp"}><Icon.download /><span>Exportar .inp</span></a>
+        <SigMenu dirty={dirty} />
       </div>
       <div className="tb-spacer" />
       <div className="status-wrap">

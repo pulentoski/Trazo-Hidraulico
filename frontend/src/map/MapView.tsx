@@ -9,7 +9,10 @@ import { fitBounds, zoomAt } from "../lib/geo";
 import type { MapType } from "../state/store";
 import { useEditor, writePref } from "../state/store";
 import { BlankBase, GoogleBase, useGeocoder } from "./GoogleBase";
+import { QuickSearch } from "../components/QuickSearch";
+import { useOrthos } from "../components/LayersTab";
 import { NetworkLayer } from "./NetworkLayer";
+import { OrthoLayer } from "./OrthoLayer";
 
 const DEFAULT_CENTER: LngLat = [
   Number(import.meta.env.VITE_DEFAULT_MAP_CENTER_LNG || -70.6693),
@@ -58,6 +61,8 @@ export function MapView() {
   const theme = useEditor((s) => s.theme);
   const setStore = useEditor((s) => s.set);
   const useGoogle = Boolean(API_KEY) && !mapFailed;
+  const { orthos } = useOrthos();
+  const hasOrtho = orthos.some((o) => o.status === "ready" && o.visible);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -80,11 +85,13 @@ export function MapView() {
   const content = (
     <div className="map" ref={ref}>
       {useGoogle ? <GoogleBase camera={camera} mapType={mapType} theme={theme} /> : <BlankBase camera={camera} />}
+      <OrthoLayer camera={camera} size={size} />
       <NetworkLayer camera={camera} size={size} setCamera={setCamera} />
       <div className="map-controls top-left">
         {useGoogle ? <AddressSearch onLocate={setCamera} /> : (
           <div className="map-search disabled" title="Requiere la key de Google Maps"><input disabled placeholder="Búsqueda no disponible sin mapa base" /></div>
         )}
+        <QuickSearch />
         <LabelsControl />
       </div>
       <div className="map-controls top-right">
@@ -101,11 +108,11 @@ export function MapView() {
         </div>
       </div>
       <Legend />
-      {!useGoogle && (
+      {!useGoogle && !hasOrtho && (
         <div className="map-notice" role="status">
           <strong>Mapa base no disponible.</strong>{" "}
           {API_KEY ? "No se pudo cargar Google Maps (revise la key y sus restricciones)." :
-            "Configure VITE_GOOGLE_MAPS_API_KEY en .env y ejecute make up."} El editor y la simulación funcionan igual sobre este lienzo.
+            "Configure VITE_GOOGLE_MAPS_API_KEY en .env y ejecute make up."} El editor y la simulación funcionan igual sobre este lienzo; también puede usar una ortofoto propia como fondo (pestaña Capas).
         </div>
       )}
       <ScaleBar camera={camera} />

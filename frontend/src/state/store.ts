@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type {
-  CatalogPipe, DesignParam, DesignProfile, EngineInfo, HydraulicOptions, NetworkDocument, ProjectOut, ScenarioResult,
-  SimulationResult, ValidationReport, ValveScenario,
+  CatalogPipe, DesignParam, DesignProfile, EngineInfo, HydraulicOptions, NetworkDocument, OrthophotoOut, ProjectOut,
+  ScenarioResult, SectorsResult, SimulationResult, ValidationReport, ValveScenario,
 } from "../api/types";
 import type { Criteria, LinkColorMode } from "../lib/colors";
 import { DEFAULT_CRITERIA } from "../lib/colors";
@@ -10,7 +10,7 @@ import type { ELink, ENode, Network } from "../lib/network";
 import { EMPTY, fromDocument } from "../lib/network";
 
 export type Tool = "select" | "multiselect" | "junction" | "pipe" | "tank" | "reservoir" | "move" | "delete" | "measure"
-  | "client" | "shutoff" | "feasibility";
+  | "client" | "shutoff" | "feasibility" | "hydrant" | "well";
 export type SimStatus = "idle" | "pending" | "running" | "ok" | "error";
 export type MapType = "roadmap" | "terrain" | "satellite" | "hybrid";
 export type Theme = "light" | "dark";
@@ -89,6 +89,16 @@ export interface EditorState {
   clientDraft: { pos: LngLat } | null;
   feasibilityDraft: { pos: LngLat; link: string } | null;
   bottomTab: string | null;
+  /** Ortofotos del proyecto (capas bajo la red). */
+  orthos: OrthophotoOut[];
+  /** Cuarteles de corta calculados para la versión guardada y cuartel destacado. */
+  sectors: SectorsResult | null;
+  sectorFocus: string | null;
+  /** Resultado de consulta destacado en el mapa (uids). */
+  highlight: string[];
+  /** Selección de un punto en el mapa para otro componente (p. ej. puntos de control). */
+  mapPick: ((pos: LngLat) => void) | null;
+  importOpen: boolean;
 
   loadDocument: (project: ProjectOut, doc: NetworkDocument) => void;
   closeProject: () => void;
@@ -151,6 +161,10 @@ export function criteriaOf(profile: DesignProfile | undefined, params?: DesignPa
   };
 }
 
+function exists(net: Network, u: string): boolean {
+  return Boolean(net.nodes[u] || net.links[u] || net.clients[u] || net.shutoffs[u] || net.hydrants[u] || net.wells[u]);
+}
+
 function allPoints(net: Network): LngLat[] {
   const pts: LngLat[] = Object.values(net.nodes).map((n) => n.pos);
   for (const l of Object.values(net.links)) pts.push(...l.vertices);
@@ -171,7 +185,11 @@ export function removeElements(net: Network, uids: string[]): Network {
   for (const [k, c] of Object.entries(net.clients)) if (!kill.has(k) && nodes[c.node]) clients[k] = c;
   const shutoffs: Network["shutoffs"] = {};
   for (const [k, sh] of Object.entries(net.shutoffs)) if (!kill.has(k) && links[sh.link]) shutoffs[k] = sh;
-  return { nodes, links, clients, shutoffs };
+  const hydrants: Network["hydrants"] = {};
+  for (const [k, h] of Object.entries(net.hydrants)) if (!kill.has(k) && nodes[h.node]) hydrants[k] = h;
+  const wells: Network["wells"] = {};
+  for (const [k, w] of Object.entries(net.wells)) if (!kill.has(k)) wells[k] = w.node && !nodes[w.node] ? { ...w, node: null } : w;
+  return { nodes, links, clients, shutoffs, hydrants, wells };
 }
 
 export const useEditor = create<EditorState>()((set, get) => ({
@@ -215,6 +233,12 @@ export const useEditor = create<EditorState>()((set, get) => ({
   clientDraft: null,
   feasibilityDraft: null,
   bottomTab: null,
+  orthos: [],
+  sectors: null,
+  sectorFocus: null,
+  highlight: [],
+  mapPick: null,
+  importOpen: false,
 
   loadDocument: (project, doc) => {
     const net = fromDocument(doc);
@@ -223,7 +247,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
       aux: doc.aux, options: doc.options, net, revision: 0, savedRevision: 0, past: [], future: [],
       dragging: false, dragOrigin: null, selection: [], result: null, resultRevision: null, validation: null,
       simStatus: "idle", simError: null, period: 0, pendingDelete: null, scenarios: doc.scenarios ?? [],
-      scenarioView: null, clientDraft: null, feasibilityDraft: null,
+      scenarioView: null, clientDraft: null, feasibilityDraft: null, sectors: null, sectorFocus: null, highlight: [],
       cameraRequest: { points: allPoints(net), nonce: Date.now() },
     });
     writePref("lastProject", project.id);
@@ -232,6 +256,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     project: null, net: EMPTY, result: null, validation: null, serverVersion: null, revision: 0, savedRevision: 0,
     past: [], future: [], selection: [], simStatus: "idle", simError: null, versionsOpen: false, pendingDelete: null,
     scenarios: [], designParams: null, scenarioView: null, clientDraft: null, feasibilityDraft: null,
+    orthos: [], sectors: null, sectorFocus: null, highlight: [], mapPick: null,
   }),
 
   commit: (fn, options) => {
@@ -251,7 +276,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     set({
       past: s.past.slice(0, -1), future: [{ net: s.net, options: s.options }, ...s.future],
       net: prev.net, options: prev.options, revision: s.revision + 1,
-      selection: s.selection.filter((u) => prev.net.nodes[u] || prev.net.links[u]),
+      selection: s.selection.filter((u) => exists(prev.net, u)),
     });
   },
   redo: () => {
@@ -261,7 +286,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     set({
       future: s.future.slice(1), past: [...s.past, { net: s.net, options: s.options }],
       net: next.net, options: next.options, revision: s.revision + 1,
-      selection: s.selection.filter((u) => next.net.nodes[u] || next.net.links[u]),
+      selection: s.selection.filter((u) => exists(next.net, u)),
     });
   },
   beginDrag: () => {
@@ -302,6 +327,12 @@ export const useEditor = create<EditorState>()((set, get) => ({
     const pts: LngLat[] = [];
     for (const u of uids) {
       if (net.nodes[u]) pts.push(net.nodes[u].pos);
+      for (const pool of [net.clients, net.hydrants, net.wells] as Record<string, { pos: LngLat }>[]) if (pool[u]) pts.push(pool[u].pos);
+      const sh = net.shutoffs[u];
+      if (sh && net.links[sh.link]) {
+        const l = net.links[sh.link];
+        for (const n of [net.nodes[l.from], net.nodes[l.to]]) if (n) pts.push(n.pos);
+      }
       const l = net.links[u];
       if (l) {
         const a = net.nodes[l.from];

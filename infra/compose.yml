@@ -22,6 +22,8 @@ services:
       BASIC_AUTH_USER: ${BASIC_AUTH_USER:-}
       BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:-}
       MAX_INP_MB: ${MAX_INP_MB:-20}
+      MAX_ORTHO_MB: ${MAX_ORTHO_MB:-500}
+      MAX_XLSX_MB: ${MAX_XLSX_MB:-20}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/entrypoint.sh:/etc/caddy/entrypoint.sh:ro
@@ -29,10 +31,11 @@ services:
       - /config:uid=1000,gid=1000,mode=0700
       - /data:uid=1000,gid=1000,mode=0700
       - /tmp:uid=1000,gid=1000
-    networks: [front]
+    networks: [front, tiles]
     depends_on:
       web: { condition: service_healthy }
       api: { condition: service_healthy }
+      tiler: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8099/healthz"]
       interval: 10s
@@ -69,6 +72,8 @@ services:
     environment:
       DB_HOST: db
       REDIS_HOST: cache
+    volumes:
+      - ortho:/data/ortho
     tmpfs:
       - /tmp:uid=10001,gid=10001
     networks: [front, back]
@@ -81,6 +86,56 @@ services:
       timeout: 5s
       retries: 6
       start_period: 20s
+
+  # Worker de ortofotos: GDAL → Cloud Optimized GeoTIFF (EPSG:3857) en el volumen compartido.
+  worker:
+    <<: *hardening
+    build:
+      context: ../backend
+      target: worker
+    image: trazo-hidraulico/worker:local
+    env_file: ../.env
+    environment:
+      DB_HOST: db
+      REDIS_HOST: cache
+    volumes:
+      - ortho:/data/ortho
+    tmpfs:
+      - /tmp:uid=10001,gid=10001
+    networks: [back]
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "sh", "-c", "gdalinfo --version >/dev/null && test -w /data/ortho"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Teselas XYZ de las ortofotos. Solo es alcanzable por el proxy, que fija la ruta del archivo
+  # (el cliente nunca controla el parámetro url). Sin salida a Internet (red interna).
+  tiler:
+    <<: *hardening
+    image: ghcr.io/developmentseed/titiler:2.3.0@sha256:8993b4fdd26ba71917ca902354543697950aa43f00c30dc7c8b16e38001c03a4
+    environment:
+      PORT: "8000"
+      WEB_CONCURRENCY: "2"
+      GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+      GDAL_CACHEMAX: "200"
+      CPL_VSIL_CURL_ALLOWED_EXTENSIONS: ".none"
+      TITILER_API_DISABLE_STAC: "TRUE"
+      TITILER_API_DISABLE_MOSAIC: "TRUE"
+    volumes:
+      - ortho:/data/ortho:ro
+    tmpfs:
+      - /tmp:uid=65532,gid=65532
+      - /home/nonroot:uid=65532,gid=65532
+    networks: [tiles]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
 
   db:
     <<: *hardening
@@ -135,8 +190,10 @@ services:
       # El límite de solicitudes se prueba aparte (tests/test_proteccion.py) con un cupo bajo.
       RATE_LIMIT_PER_MINUTE: "0"
       REPORT_DIR: /reports
+      ORTHO_DIR: /tmp/ortho
+      EXAMPLES_DIR: /app/examples
     volumes:
-      - ../examples/networks:/app/examples/networks:ro
+      - ../examples:/app/examples:ro
       - ../docs/validation:/reports
       - ../docs/referencias:/app/docs/referencias:ro
       - ../frontend/src/api/openapi.json:/app/openapi.committed.json:ro
@@ -164,6 +221,9 @@ networks:
   front: {}
   back:
     internal: true
+  tiles:
+    internal: true
 
 volumes:
   pgdata: {}
+  ortho: {}

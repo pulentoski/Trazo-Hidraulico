@@ -46,12 +46,25 @@ COPY app ./app
 COPY scripts ./scripts
 # Verificación de compilación: wheel owa-epanet == 2.3.5 y runepanet operativo.
 RUN python scripts/check_engine.py --build
+# Almacenamiento de ortofotos (volumen compartido con el worker y TiTiler): hereda este dueño al crearse.
+RUN mkdir -p /data/ortho && chown app:app /data/ortho
 USER app
 EXPOSE 8000
 CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*' --no-server-header"]
 
-# ── Etapa 4: imagen de pruebas ───────────────────────────────────────────
-FROM runtime AS test
+# ── Etapa 4: worker de ortofotos (GDAL de Debian trixie, versión fijada) ──
+FROM runtime AS worker
+USER root
+ARG GDAL_VERSION=3.10.3+dfsg-1
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends gdal-bin=${GDAL_VERSION} \
+ && rm -rf /var/lib/apt/lists/* \
+ && gdalinfo --version
+USER app
+CMD ["python", "-m", "app.workers.ortho"]
+
+# ── Etapa 5: imagen de pruebas (incluye GDAL para probar el procesamiento de ortofotos) ──
+FROM worker AS test
 USER root
 COPY --from=deps-test /opt/venv /opt/venv
 COPY pyproject.toml ./

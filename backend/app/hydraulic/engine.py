@@ -123,7 +123,8 @@ def negative_pressure_details(res: OutResults, limit: int = 8) -> list[EngineMes
     if p.size == 0:
         return []
     worst = p.min(axis=0)
-    idx = [i for i in range(len(res.node_ids)) if worst[i] < -1e-6]
+    # Umbral de medio centímetro: evita informar «−0,00 m» por redondeo float32 del .out (p. ej. en reservorios).
+    idx = [i for i in range(len(res.node_ids)) if worst[i] < -0.005]
     idx.sort(key=lambda i: worst[i])
     out = []
     for i in idx[:limit]:

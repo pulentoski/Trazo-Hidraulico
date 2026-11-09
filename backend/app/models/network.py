@@ -105,7 +105,12 @@ class NetworkLink(Base):
     valve_setting: Mapped[float | None] = mapped_column(Float, nullable=True)
     valve_curve: Mapped[str | None] = mapped_column(String(31), nullable=True)
 
-    extra: Mapped[dict] = mapped_column(JSONB, default=dict)
+    # Gestión (SIG): estado físico, año de instalación y tipo de red. Observaciones = description.
+    condition: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    install_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    network_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
+    extra: Mapped[dict] = mapped_column(JSONB, default=dict)  # atributos libres
 
 
 class NetworkClient(Base):
@@ -130,6 +135,11 @@ class NetworkClient(Base):
     elevation: Mapped[float | None] = mapped_column(Float, nullable=True)
     geom = mapped_column(Geometry("POINT", srid=4326, spatial_index=False), nullable=False)
     connection_geom = mapped_column(Geometry("POINT", srid=4326, spatial_index=False), nullable=True)
+    client_number: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    route: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    meter_number: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    extra: Mapped[dict] = mapped_column(JSONB, default=dict)
 
 
 class NetworkShutoff(Base):
@@ -147,3 +157,52 @@ class NetworkShutoff(Base):
     position: Mapped[float] = mapped_column(Float)
     state: Mapped[str] = mapped_column(String(8))
     geom = mapped_column(Geometry("POINT", srid=4326, spatial_index=False), nullable=False)
+    valve_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    condition: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    diameter_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    depth_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    extra: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+
+class NetworkHydrant(Base):
+    """Grifo contra incendio conectado a un nudo de consumo."""
+
+    __tablename__ = "network_hydrant"
+    __table_args__ = (UniqueConstraint("version_id", "label", name="uq_hydrant_label"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("project_version.id", ondelete="CASCADE"), index=True)
+    uid: Mapped[uuid.UUID] = mapped_column(Uuid)
+    label: Mapped[str] = mapped_column(String(31))
+    geom = mapped_column(Geometry("POINT", srid=4326, spatial_index=False), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    condition: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    extra: Mapped[dict] = mapped_column(JSONB, default=dict)
+    node_id: Mapped[int] = mapped_column(ForeignKey("network_node.id", ondelete="CASCADE"), index=True)
+    hydrant_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    diameter_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    fire_flow_lps: Mapped[float] = mapped_column(Float, default=16.0)
+    min_pressure_m: Mapped[float] = mapped_column(Float, default=5.0)
+
+
+class NetworkWell(Base):
+    """Pozo (captación). Puede asociarse al reservorio que lo representa en el modelo hidráulico."""
+
+    __tablename__ = "network_well"
+    __table_args__ = (UniqueConstraint("version_id", "label", name="uq_well_label"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("project_version.id", ondelete="CASCADE"), index=True)
+    uid: Mapped[uuid.UUID] = mapped_column(Uuid)
+    label: Mapped[str] = mapped_column(String(31))
+    geom = mapped_column(Geometry("POINT", srid=4326, spatial_index=False), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    condition: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    extra: Mapped[dict] = mapped_column(JSONB, default=dict)
+    node_id: Mapped[int | None] = mapped_column(ForeignKey("network_node.id", ondelete="CASCADE"), nullable=True,
+                                                index=True)
+    ground_elevation: Mapped[float | None] = mapped_column(Float, nullable=True)
+    depth_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    static_level_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    dynamic_level_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    authorized_flow_lps: Mapped[float | None] = mapped_column(Float, nullable=True)

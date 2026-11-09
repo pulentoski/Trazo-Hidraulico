@@ -7,6 +7,7 @@ import { ROUGHNESS_LABEL, estimatedLength, nodeDemand, roughnessFor, tankStorage
 import { errorText } from "../state/projects";
 import { CLIENT_TYPES } from "./ClientDialog";
 import { useEditor } from "../state/store";
+import { Attributes, ClientManagement, HydrantPanel, PipeManagement, ShutoffManagement, WellPanel } from "./AssetPanels";
 import { FieldLabel, Help, NumField, Readout, TextField } from "./Fields";
 
 const ID_RE = /^[^\s;"]{1,31}$/;
@@ -145,6 +146,7 @@ function NodePanel({ node }: { node: ENode }) {
           <Readout label={node.kind === "junction" ? "Demanda" : "Aporte (−) / consumo (+)"} value={fmt(r.demand[period], 3)} unit="L/s" />
         </fieldset>
       )}
+      <Attributes attrs={node.props.attributes} onChange={(a) => updateNode(node.uid, { props: { attributes: a } })} />
       <Issues id={node.id} type="node" />
     </>
   );
@@ -254,6 +256,7 @@ function LinkPanel({ link }: { link: ELink }) {
               hint={HELP.lengthHydraulic}
               onCommit={(v) => updateLinks([link.uid], { length_hydraulic_m: v, length_choice: "manual" })} />
           </fieldset>
+          <PipeManagement link={link} />
         </>
       ) : link.kind === "pump" ? (
         <fieldset><legend>Bomba</legend>
@@ -418,7 +421,7 @@ function ClientPanel({ c }: { c: EClient }) {
       <Readout label="Consumo en L/s" value={fmt(toLps(c.props.consumption_value, c.props.consumption_unit), 4)} unit="L/s" />
       <label className="field"><span>Estado</span>
         <select value={c.props.status} onChange={(e) => upd({ status: e.target.value as EClient["props"]["status"] })}>
-          <option value="activo">Activo</option><option value="proyectado">Proyectado</option></select></label>
+          <option value="activo">Activo</option><option value="proyectado">Proyectado</option><option value="suspendido">Suspendido</option></select></label>
       <fieldset>
         <legend>Conexión</legend>
         <Readout label="Nudo asignado" value={node?.id ?? "—"} />
@@ -431,6 +434,7 @@ function ClientPanel({ c }: { c: EClient }) {
         <fieldset className="results"><legend>Resultados</legend>
           <Readout label="Presión en el cliente" value={fmt(pressure, 2)} unit="m" tone={pmin !== undefined && pressure < pmin ? "bad" : ""} />
         </fieldset>)}
+      <ClientManagement c={c} />
       <Issues id={c.id} type="client" />
     </>
   );
@@ -451,6 +455,7 @@ function ShutoffPanel({ sh }: { sh: EShutoff }) {
         <select value={sh.props.state} onChange={(e) => upd({ props: { ...sh.props, state: e.target.value as EShutoff["props"]["state"] } })}>
           <option value="open">Abierta</option><option value="closed">Cerrada</option></select></label>
       {used.length > 0 && <p className="muted small">Cerrada en los escenarios: {used.join(", ")}.</p>}
+      <ShutoffManagement sh={sh} />
     </>
   );
 }
@@ -527,6 +532,8 @@ export function PropertiesPanel() {
   if (selection.length > 1) body = <MultiPanel uids={selection} />;
   else if (selection.length === 1 && net.clients[selection[0]]) body = <ClientPanel c={net.clients[selection[0]]} />;
   else if (selection.length === 1 && net.shutoffs[selection[0]]) body = <ShutoffPanel sh={net.shutoffs[selection[0]]} />;
+  else if (selection.length === 1 && net.hydrants[selection[0]]) body = <HydrantPanel h={net.hydrants[selection[0]]} />;
+  else if (selection.length === 1 && net.wells[selection[0]]) body = <WellPanel w={net.wells[selection[0]]} />;
   else if (selection.length === 1 && net.nodes[selection[0]]) body = <NodePanel node={net.nodes[selection[0]]} />;
   else if (selection.length === 1 && net.links[selection[0]]) body = <LinkPanel link={net.links[selection[0]]} />;
   else body = <ProjectPanel />;

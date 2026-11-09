@@ -1,18 +1,27 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fmt, fmtTime } from "../lib/format";
 import { useEditor } from "../state/store";
 import { ClientsTab } from "./ClientsTab";
+import { HydrantsTab } from "./HydrantsTab";
+import { LayersTab } from "./LayersTab";
+import { QueryTab } from "./QueryTab";
 import { ScenariosTab } from "./ScenariosTab";
+import { SectorsTab } from "./SectorsTab";
 
-type Tab = "alerts" | "nodes" | "links" | "clients" | "scenarios" | "engine";
+type Tab = "alerts" | "nodes" | "links" | "clients" | "scenarios" | "sectors" | "query" | "hydrants" | "layers" | "engine";
 type SortKey = { col: string; dir: 1 | -1 };
 
 interface AlertRow { sev: "error" | "warning"; origin: string; text: string; type?: string | null; id?: string | null }
 
 export function BottomPanel() {
-  const { result, validation, period, set, net, simError, focus } = useEditor();
-  const [tab, setTab] = useState<Tab>("alerts");
+  const { result, validation, period, set, net, simError, focus, bottomTab } = useEditor();
+  const [tab, setTabState] = useState<Tab>("alerts");
   const [collapsed, setCollapsed] = useState(false);
+  const setTab = (t: Tab) => { setTabState(t); set({ bottomTab: t }); };
+  useEffect(() => {
+    if (bottomTab && bottomTab !== tab) { setTabState(bottomTab as Tab); setCollapsed(false); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bottomTab]);
   const [sort, setSort] = useState<SortKey>({ col: "id", dir: 1 });
 
   const byLabel = useMemo(() => {
@@ -33,8 +42,8 @@ export function BottomPanel() {
 
   const goto = (type?: string | null, id?: string | null) => {
     if (!id) return;
-    if (type === "client" || type === "shutoff") {
-      const pool = type === "client" ? Object.values(net.clients) : Object.values(net.shutoffs);
+    if (type === "client" || type === "shutoff" || type === "hydrant" || type === "well") {
+      const pool = Object.values({ client: net.clients, shutoff: net.shutoffs, hydrant: net.hydrants, well: net.wells }[type]);
       const hit = pool.find((x) => x.id === id);
       if (hit) focus([hit.uid]);
       return;
@@ -79,6 +88,10 @@ export function BottomPanel() {
         <button className={tab === "links" ? "on" : ""} onClick={() => setTab("links")}>Tramos <span className="count">{linkRows.length}</span></button>
         <button className={tab === "clients" ? "on" : ""} onClick={() => setTab("clients")}>Clientes <span className="count">{Object.keys(net.clients).length}</span></button>
         <button className={tab === "scenarios" ? "on" : ""} onClick={() => setTab("scenarios")}>Escenarios</button>
+        <button className={tab === "sectors" ? "on" : ""} onClick={() => setTab("sectors")}>Cuarteles</button>
+        <button className={tab === "query" ? "on" : ""} onClick={() => setTab("query")}>Consultas</button>
+        <button className={tab === "hydrants" ? "on" : ""} onClick={() => setTab("hydrants")}>Grifos <span className="count">{Object.keys(net.hydrants).length}</span></button>
+        <button className={tab === "layers" ? "on" : ""} onClick={() => setTab("layers")}>Capas</button>
         <button className={tab === "engine" ? "on" : ""} onClick={() => setTab("engine")}>Corrida</button>
         <div className="tabs-spacer" />
         {result && result.times.length > 1 && (
@@ -136,6 +149,10 @@ export function BottomPanel() {
           )}
           {tab === "clients" && <ClientsTab />}
           {tab === "scenarios" && <ScenariosTab />}
+          {tab === "sectors" && <SectorsTab />}
+          {tab === "query" && <QueryTab />}
+          {tab === "hydrants" && <HydrantsTab />}
+          {tab === "layers" && <LayersTab />}
           {tab === "engine" && (
             <div className="pad engine-info">
               {result ? (

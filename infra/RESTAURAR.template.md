@@ -6,7 +6,8 @@ Respaldo creado con `make backup` (commit `@COMMIT@`).
 |---|---|
 | `trazo.dump` | Base de datos PostgreSQL/PostGIS (`pg_dump -Fc`) |
 | `trazo.dump.list` | Índice del dump (`pg_restore --list`), para revisión |
-| `imagenes-docker.tar.gz` | Imágenes api, web, caddy, postgis y redis (`docker save`); listado en `imagenes-docker.txt` |
+| `ortofotos.tar.gz` | Archivos de las ortofotos (originales y COG) del volumen `ortho` |
+| `imagenes-docker.tar.gz` | Imágenes api, web, worker, titiler, caddy, postgis y redis (`docker save`); listado en `imagenes-docker.txt` |
 | `trazo-hidraulico.bundle` | Repositorio git completo, con todo el historial |
 | `env` | Copia del `.env` (claves de PostgreSQL y Redis, key de Google, basic auth). **Confidencial** |
 | `compose.offline.yml` | Override para levantar sin Internet (PostGIS por etiqueta en vez de digest) |
@@ -64,6 +65,13 @@ docker compose --env-file .env -f infra/compose.yml exec -T db \
 
 Sin Internet, agregue `-f "$R/compose.offline.yml"` después de `-f infra/compose.yml` en estos comandos
 (y en el paso 5).
+
+Ortofotos (volumen `trazo-hidraulico_ortho`):
+
+```bash
+docker compose --env-file .env -f infra/compose.yml run --rm --no-deps -T --entrypoint tar \
+  api -C /data/ortho -xzf - < "$R/ortofotos.tar.gz"
+```
 
 Comprobación rápida:
 
