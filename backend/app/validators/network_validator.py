@@ -75,8 +75,8 @@ def pump_curve_problem(points) -> str | None:
     pts = [(float(q), float(h)) for q, h in points]
     if len(pts) == 2:
         return "la curva debe tener 1 punto (de diseño) o 3 o más puntos."
-    if any(q < 0 or h <= 0 for q, h in pts):
-        return "caudales no negativos y alturas positivas."
+    if any(q < 0 or h < 0 for q, h in pts) or pts[0][1] <= 0:
+        return "caudales y alturas no negativos (la primera altura, positiva)."
     if len(pts) == 1:
         return None if pts[0][0] > 0 else "el punto de diseño necesita un caudal mayor que 0."
     for (q1, h1), (q2, h2) in zip(pts, pts[1:]):

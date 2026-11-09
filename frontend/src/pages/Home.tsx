@@ -15,7 +15,7 @@ import { useEditor } from "../state/store";
 export const MAX_INP_MB = 20;
 
 export const CRS_OPTIONS = [
-  { value: "auto", label: "Detectar (UTM 19S o locales)" },
+  { value: "auto", label: "Detectar (UTM, lat/lon o locales)" },
   { value: "local", label: "Locales: ubicar en el centro configurado" },
   { value: "EPSG:32719", label: "EPSG:32719 (UTM 19S)" },
   { value: "EPSG:32718", label: "EPSG:32718 (UTM 18S)" },

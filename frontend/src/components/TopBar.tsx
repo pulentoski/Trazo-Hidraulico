@@ -79,12 +79,13 @@ function SigMenu({ dirty }: { dirty: boolean }) {
   );
   return (
     <div className="menu-wrap">
-      <button onClick={() => setOpen(!open)} aria-expanded={open} title="Planillas Excel y exportaciones SIG/CAD"><Icon.table /><span>Planilla y SIG ▾</span></button>
+      <button onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Planilla y SIG" title="Planillas Excel y exportaciones SIG/CAD"><Icon.table /><span>Planilla y SIG ▾</span></button>
       {open && (
         <div className="menu-pop" onMouseLeave={() => setOpen(false)}>
           <button className="menu-item" onClick={() => { setOpen(false); s.set({ importOpen: true }); }}>Importar Excel o CSV…</button>
           {item(api.excelUrl(pid), "Exportar Excel (planilla completa)", "Misma estructura de la plantilla: se puede editar y volver a importar")}
           {item(api.templateUrl, "Descargar plantilla vacía", "Una hoja por tipo de elemento, con instrucciones y listas")}
+          {item(api.reportUrl(pid), "Informe técnico (HTML imprimible)", "Proyecto, criterios, resultados, gráficos y diagnóstico")}
           {item(api.trazoUrl(pid), "Exportar proyecto .trazo", "Zip con el .inp y todos los datos propios (clientes, llaves, escenarios, atributos…)")}
           {item(api.dxfUrl(pid), "Exportar DXF (UTM, por capas)", "Red por diámetro, válvulas, clientes, estanques…")}
           {item(api.gpkgUrl(pid), "Exportar GeoPackage (QGIS)", "Una capa por tipo de elemento, más los cuarteles de corta")}

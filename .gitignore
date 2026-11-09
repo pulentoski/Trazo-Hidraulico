@@ -13,3 +13,6 @@ __pycache__/
 # Claves privadas y certificados: nunca al repositorio
 *.pem
 *.key
+
+# Captura de diagnóstico del recorrido e2e
+e2e/fallo.png

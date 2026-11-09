@@ -3,6 +3,7 @@ import type { EClient, EHydrant, ELink, EShutoff, EWell, LinkProps } from "../li
 import { fmt } from "../lib/format";
 import { useEditor } from "../state/store";
 import { NumField, Readout, TextField } from "./Fields";
+import { WellPump } from "./WellPump";
 
 type Opt = [string, string];
 export const PIPE_CONDITION: Opt[] = [["bueno", "Bueno"], ["regular", "Regular"], ["malo", "Malo"], ["fuera_servicio", "Fuera de servicio"]];
@@ -157,6 +158,7 @@ export function WellPanel({ w }: { w: EWell }) {
         <button className="small" onClick={() => useEditor.getState().commit((n) => ({ ...n, nodes: { ...n.nodes, [res.uid]: { ...res, props: { ...res.props, head } } } }))}>
           Usar como carga del reservorio {res.id}</button>
       )}
+      <WellPump w={w} />
       <Attributes attrs={w.props.attributes} onChange={(a) => props({ attributes: a })} />
     </>
   );

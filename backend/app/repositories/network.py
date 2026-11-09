@@ -97,6 +97,7 @@ def insert_network(session: Session, version: ProjectVersion, fc: NetworkFeature
         version_id=version.id, uid=_uid(w.properties.uid), label=w.id,
         node_id=ids[w.properties.node] if w.properties.node else None,
         geom=_pt(*w.geometry.coordinates), extra=dict(w.properties.attributes),
+        pump_design=w.properties.pump_design.model_dump(mode="json") if w.properties.pump_design else None,
         **{f: getattr(w.properties, f) for f in WELL_FIELDS},
     ) for w in fc.wells()]
     session.add_all(client_rows + shutoff_rows + hydrant_rows + well_rows)
@@ -159,7 +160,8 @@ def load_network(session: Session, version_id: uuid.UUID) -> NetworkFeatureColle
         features.append(WellFeature(
             id=w.label, geometry=PointGeometry(coordinates=(pt.x, pt.y)),
             properties=WellProperties(uid=str(w.uid), node=labels[w.node_id] if w.node_id else None,
-                                      attributes=w.extra or {}, **{f: getattr(w, f) for f in WELL_FIELDS}),
+                                      attributes=w.extra or {}, pump_design=w.pump_design,
+                                      **{f: getattr(w, f) for f in WELL_FIELDS}),
         ))
     return NetworkFeatureCollection(features=features)
 

@@ -448,3 +448,44 @@ button.status { cursor: pointer; }
 .demand-inputs { overflow: auto; padding: 4px 8px; border-right: 1px solid var(--line); }
 .demand-out { overflow: auto; }
 @media (max-width: 900px) { .sim-tab, .demand-tab { grid-template-columns: 1fr; } .grid4 { grid-template-columns: 1fr 1fr; } .pattern-grid { grid-template-columns: repeat(6, 1fr); } }
+
+/* ── Etapa 4: mediciones y diagnóstico ───────────────────────────────── */
+.meas-tab { display: grid; grid-template-columns: minmax(340px, 1fr) minmax(380px, 1.3fr); gap: 10px; height: 100%; }
+.meas-form { overflow: auto; padding: 0 8px; border-right: 1px solid var(--line); }
+.meas-cmp { overflow: auto; }
+.diag-tab { padding: 4px 12px; }
+.diag-status { font-weight: 700; padding: 3px 10px; border-radius: 6px; text-transform: capitalize; }
+.diag-status.ok { background: var(--accent-soft); color: var(--ok); }
+.diag-status.warn { background: var(--warn-soft); color: var(--warn); }
+.diag-status.bad { background: var(--bad-soft); color: var(--bad); }
+.diag-summary { font-size: 1.05rem; margin: 6px 0; }
+.diag-list { list-style: none; padding: 0; margin: 0 0 8px; }
+.diag-list li { padding: 6px 8px; border-bottom: 1px solid var(--line); line-height: 1.5; }
+.diag-list li.ok b:first-child { color: var(--ok); }
+.diag-list li.warning b:first-child { color: var(--warn); }
+.diag-list li.problem b:first-child { color: var(--bad); }
+.ref-chip { height: 20px; padding: 0 6px; font-family: var(--mono); font-size: 0.85rem; margin-left: 3px; border-radius: 4px; background: var(--accent-soft); border-color: transparent; }
+@media (max-width: 1100px) { .meas-tab { grid-template-columns: 1fr; } }
+
+/* ── Ajustes de la revisión visual (etapa 4) ─────────────────────────── */
+.tabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.tabs > button { flex: none; white-space: nowrap; }
+.bottom { height: 290px; overflow: hidden; }
+.tab-body { min-width: 0; }
+.map-controls.top-left { flex-wrap: wrap; max-width: calc(100% - 90px); }
+.map-notice { max-width: 440px; font-size: 0.885rem; padding: 6px 30px 6px 10px; top: 54px; }
+.notice-close { position: absolute; top: 2px; right: 2px; height: 22px; padding: 0 6px; }
+.hour-slider { left: auto; right: 10px; bottom: 56px; transform: none; padding: 3px 10px; }
+.hour-slider input { width: 180px; }
+.diag-status { text-transform: none; }
+.grid2 .field, .grid4 .field { grid-template-columns: 1fr; gap: 2px; }
+@media (max-width: 1400px) { .sim-tab { grid-template-columns: 1fr; } }
+@media (max-width: 1280px) {
+  .version-info { display: none; }
+  .project-name { max-width: 150px; }
+  .tb-group > a.btn span, .menu-wrap > button span { display: none; }
+  .quick-search input { width: 220px; }
+}
+.hour-slider { top: 150px; bottom: auto; }
+.grid4 { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+@media (max-width: 1280px) { .query-tab { grid-template-columns: 1fr; } .query-form { border-right: 0; } }

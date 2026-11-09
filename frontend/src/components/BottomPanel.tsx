@@ -4,6 +4,8 @@ import { useEditor } from "../state/store";
 import { ChartsTab } from "./ChartsTab";
 import { ClientsTab } from "./ClientsTab";
 import { DemandTab } from "./DemandTab";
+import { DiagnosisTab } from "./DiagnosisTab";
+import { MeasurementsTab } from "./MeasurementsTab";
 import { SimulationTab } from "./SimulationTab";
 import { HydrantsTab } from "./HydrantsTab";
 import { LayersTab } from "./LayersTab";
@@ -12,7 +14,7 @@ import { ScenariosTab } from "./ScenariosTab";
 import { SectorsTab } from "./SectorsTab";
 
 type Tab = "alerts" | "nodes" | "links" | "clients" | "scenarios" | "sectors" | "query" | "hydrants" | "layers" | "engine"
-  | "simulation" | "demand" | "charts";
+  | "simulation" | "demand" | "charts" | "diagnosis" | "measurements";
 type SortKey = { col: string; dir: 1 | -1 };
 
 interface AlertRow { sev: "error" | "warning"; origin: string; text: string; type?: string | null; id?: string | null }
@@ -94,6 +96,8 @@ export function BottomPanel() {
         <button className={tab === "simulation" ? "on" : ""} onClick={() => setTab("simulation")}>Simulación</button>
         <button className={tab === "demand" ? "on" : ""} onClick={() => setTab("demand")}>Demanda</button>
         <button className={tab === "charts" ? "on" : ""} onClick={() => setTab("charts")}>Gráficos</button>
+        <button className={tab === "diagnosis" ? "on" : ""} onClick={() => setTab("diagnosis")}>Diagnóstico</button>
+        <button className={tab === "measurements" ? "on" : ""} onClick={() => setTab("measurements")}>Mediciones</button>
         <button className={tab === "scenarios" ? "on" : ""} onClick={() => setTab("scenarios")}>Escenarios</button>
         <button className={tab === "sectors" ? "on" : ""} onClick={() => setTab("sectors")}>Cuarteles</button>
         <button className={tab === "query" ? "on" : ""} onClick={() => setTab("query")}>Consultas</button>
@@ -160,6 +164,8 @@ export function BottomPanel() {
           {tab === "simulation" && <SimulationTab />}
           {tab === "demand" && <DemandTab />}
           {tab === "charts" && <ChartsTab />}
+          {tab === "diagnosis" && <DiagnosisTab />}
+          {tab === "measurements" && <MeasurementsTab />}
           {tab === "query" && <QueryTab />}
           {tab === "hydrants" && <HydrantsTab />}
           {tab === "layers" && <LayersTab />}

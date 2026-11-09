@@ -63,6 +63,9 @@ export function MapView() {
   const setStore = useEditor((s) => s.set);
   const useGoogle = Boolean(API_KEY) && !mapFailed;
   const { orthos } = useOrthos();
+  const [noticeClosed, setNoticeClosed] = useState(() => {
+    try { return localStorage.getItem("trazo.hideMapNotice") === "true"; } catch { return false; }
+  });
   const hasOrtho = orthos.some((o) => o.status === "ready" && o.visible);
 
   useLayoutEffect(() => {
@@ -89,19 +92,19 @@ export function MapView() {
       <OrthoLayer camera={camera} size={size} />
       <NetworkLayer camera={camera} size={size} setCamera={setCamera} />
       <div className="map-controls top-left">
-        {useGoogle ? <AddressSearch onLocate={setCamera} /> : (
-          <div className="map-search disabled" title="Requiere la key de Google Maps"><input disabled placeholder="Búsqueda no disponible sin mapa base" /></div>
-        )}
+        {useGoogle && <AddressSearch onLocate={setCamera} />}
         <QuickSearch />
         <LabelsControl />
       </div>
       <div className="map-controls top-right">
-        <div className="seg" role="group" aria-label="Tipo de mapa">
-          {MAP_TYPES.map((t) => (
-            <button key={t.id} className={mapType === t.id ? "on" : ""} disabled={!useGoogle}
-              onClick={() => { setStore({ mapType: t.id }); writePref("mapType", t.id); }}>{t.label}</button>
-          ))}
-        </div>
+        {useGoogle && (
+          <div className="seg" role="group" aria-label="Tipo de mapa">
+            {MAP_TYPES.map((t) => (
+              <button key={t.id} className={mapType === t.id ? "on" : ""}
+                onClick={() => { setStore({ mapType: t.id }); writePref("mapType", t.id); }}>{t.label}</button>
+            ))}
+          </div>
+        )}
         <div className="zoom-btns">
           <button onClick={() => zoom(1)} title="Acercar">+</button>
           <button onClick={() => zoom(-1)} title="Alejar">−</button>
@@ -109,8 +112,9 @@ export function MapView() {
         </div>
       </div>
       <Legend />
-      {!useGoogle && !hasOrtho && (
+      {!useGoogle && !hasOrtho && !noticeClosed && (
         <div className="map-notice" role="status">
+          <button className="ghost small notice-close" aria-label="Cerrar aviso" onClick={() => { setNoticeClosed(true); writePref("hideMapNotice", true); }}>✕</button>
           <strong>Mapa base no disponible.</strong>{" "}
           {API_KEY ? "No se pudo cargar Google Maps (revise la key y sus restricciones)." :
             "Configure VITE_GOOGLE_MAPS_API_KEY en .env y ejecute make up."} El editor y la simulación funcionan igual sobre este lienzo; también puede usar una ortofoto propia como fondo (pestaña Capas).

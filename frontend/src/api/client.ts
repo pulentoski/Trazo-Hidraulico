@@ -1,7 +1,8 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
 import type {
-  CatalogPipe, ClientImportResult, CompareResult, DemandInputs, DemandResult, DesignParamsOut, TrazoImportResult, DesignParamUpdate, DesignProfile, EngineInfo,
+  CatalogPipe, ClientImportResult, CompareResult, DemandInputs, DemandResult, DesignParamsOut, TrazoImportResult,
+  DiagnosisResult, MeasureCompare, MeasurementIn, MeasurementOut, MonitoringSettings, PumpCalc, DesignParamUpdate, DesignProfile, EngineInfo,
   FeasibilityRequest, FeasibilityResult, FireResult, Gcp, GcpFit, ImportApplyResult, ImportPreview, ImportResult,
   NetworkDocument, NetworkSave, NetworkSaveResult, OrthophotoOut, ProjectOut, QueryDef, QueryElement, QueryResult,
   SavedQueryOut, ScenarioResult, SearchHit, SectorsResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
@@ -134,6 +135,44 @@ export const api = {
     if (!res.ok) fail(res.status, body);
     return body as ClientImportResult;
   },
+  // ── Pozo, mediciones y diagnóstico ──
+  pumpCalc: (id: string, well: string, conventions: "trazo" | "planilla" = "trazo") =>
+    unwrap<PumpCalc>(client.GET("/api/projects/{project_id}/wells/{well_id}/pump", {
+      params: { path: { project_id: id, well_id: well }, query: { conventions } },
+    })),
+  wellReportUrl: (id: string, well: string, conventions: "trazo" | "planilla" = "trazo") =>
+    `/api/projects/${encodeURIComponent(id)}/wells/${encodeURIComponent(well)}/report.html?conventions=${conventions}`,
+  applyWellCurve: (id: string, well: string) =>
+    unwrap<{ version: number; pump: string; curve_points: [number, number][] }>(client.POST("/api/projects/{project_id}/wells/{well_id}/apply-curve", {
+      params: { path: { project_id: id, well_id: well } },
+    })),
+  measurements: (id: string) =>
+    unwrap<MeasurementOut[]>(client.GET("/api/projects/{project_id}/measurements", { params: { path: { project_id: id } } })),
+  addMeasurements: (id: string, body: MeasurementIn[]) =>
+    unwrap<MeasurementOut[]>(client.POST("/api/projects/{project_id}/measurements", { params: { path: { project_id: id } }, body })),
+  deleteMeasurements: (id: string, ids: number[]) =>
+    unwrap<unknown>(client.POST("/api/projects/{project_id}/measurements/delete", { params: { path: { project_id: id } }, body: { ids } })),
+  importMeasurements: async (id: string, file: File): Promise<{ created: number; errors: string[] }> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/measurements/import`, { method: "POST", body: fd });
+    const body = await res.json().catch(() => null);
+    if (res.status === 422 && body && "errors" in body) return body;
+    if (!res.ok) fail(res.status, body);
+    return body;
+  },
+  measurementsTemplateUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/measurements/template.xlsx`,
+  monitoring: (id: string) =>
+    unwrap<MonitoringSettings>(client.GET("/api/projects/{project_id}/monitoring", { params: { path: { project_id: id } } })),
+  saveMonitoring: (id: string, body: MonitoringSettings) =>
+    unwrap<MonitoringSettings>(client.PUT("/api/projects/{project_id}/monitoring", { params: { path: { project_id: id } }, body })),
+  compareMeasurements: (id: string) =>
+    unwrap<MeasureCompare>(client.GET("/api/projects/{project_id}/measurements/compare", { params: { path: { project_id: id } } })),
+  diagnosis: (id: string, version?: number) =>
+    unwrap<DiagnosisResult>(client.GET("/api/projects/{project_id}/diagnosis", {
+      params: { path: { project_id: id }, query: version ? { version } : {} },
+    })),
+  reportUrl: (id: string, version?: number) => `/api/projects/${encodeURIComponent(id)}/report.html${version ? `?version=${version}` : ""}`,
   // ── Demanda y formato .trazo ──
   demandProjection: (id: string) =>
     unwrap<DemandResult>(client.GET("/api/projects/{project_id}/demand/projection", { params: { path: { project_id: id } } })),

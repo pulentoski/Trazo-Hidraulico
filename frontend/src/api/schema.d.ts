@@ -248,6 +248,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/diagnosis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Diagnóstico de la simulación en español simple, con sugerencias verificadas */
+        get: operations["get_diagnosis_api_projects__project_id__diagnosis_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/export.dxf": {
         parameters: {
             query?: never;
@@ -361,6 +378,110 @@ export interface paths {
         put?: never;
         /** Escenario de incendio: presión residual y caudal disponible por grifo */
         post: operations["fire_scenario_api_projects__project_id__hydrants_fire_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/measurements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mediciones registradas */
+        get: operations["list_measurements_api_projects__project_id__measurements_get"];
+        put?: never;
+        /** Agregar mediciones */
+        post: operations["add_measurements_api_projects__project_id__measurements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/measurements/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comparación modelo contra medición */
+        get: operations["compare_api_projects__project_id__measurements_compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/measurements/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Eliminar mediciones */
+        post: operations["delete_measurements_api_projects__project_id__measurements_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/measurements/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Importar mediciones (todo o nada) */
+        post: operations["import_measurements_api_projects__project_id__measurements_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/measurements/template.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plantilla de mediciones */
+        get: operations["template_api_projects__project_id__measurements_template_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/monitoring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tolerancias de comparación */
+        get: operations["get_settings_api_projects__project_id__monitoring_get"];
+        /** Editar tolerancias de comparación */
+        put: operations["put_settings_api_projects__project_id__monitoring_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -518,6 +639,23 @@ export interface paths {
         put?: never;
         /** Exportar los resultados de una consulta (Excel con el formato de la plantilla, o CSV) */
         post: operations["export_query_api_projects__project_id__query_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/report.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Informe técnico (HTML imprimible): proyecto, criterios, resultados, gráficos y diagnóstico */
+        get: operations["report_api_projects__project_id__report_html_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -762,6 +900,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/wells/{well_id}/apply-curve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aplicar la curva de 3 puntos a la bomba del pozo y la cota del nivel dinámico al reservorio */
+        post: operations["apply_curve_api_projects__project_id__wells__well_id__apply_curve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/wells/{well_id}/pump": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Altura manométrica, potencia, corriente y velocidades */
+        get: operations["pump_calc_api_projects__project_id__wells__well_id__pump_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/wells/{well_id}/report.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ficha del pozo (HTML imprimible) */
+        get: operations["report_api_projects__project_id__wells__well_id__report_html_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/roughness-meaning": {
         parameters: {
             query?: never;
@@ -885,6 +1074,11 @@ export interface components {
              * File
              * @description CSV con columnas lat, lon, nombre, consumo (L/s)
              */
+            file: string;
+        };
+        /** Body_import_measurements_api_projects__project_id__measurements_import_post */
+        Body_import_measurements_api_projects__project_id__measurements_import_post: {
+            /** File */
             file: string;
         };
         /** Body_import_preview_api_projects__project_id__sig_import_preview_post */
@@ -1176,6 +1370,22 @@ export interface components {
             /** Supplied */
             supplied: boolean;
         };
+        /** ComparePoint */
+        ComparePoint: {
+            /** Diff */
+            diff: number | null;
+            /** Measured */
+            measured: number;
+            /** Model */
+            model: number | null;
+            /** Ok */
+            ok: boolean | null;
+            /**
+             * Time
+             * Format: date-time
+             */
+            time: string;
+        };
         /** CompareRequest */
         CompareRequest: {
             /**
@@ -1213,6 +1423,43 @@ export interface components {
             supplied_a: boolean;
             /** Supplied B */
             supplied_b: boolean;
+        };
+        /** CompareSeries */
+        CompareSeries: {
+            /** Alert */
+            alert: boolean;
+            /**
+             * Average Measured
+             * @description Medidor: caudal medio entre la primera y la última lectura
+             */
+            average_measured?: number | null;
+            /** Element Id */
+            element_id: string;
+            /**
+             * Element Type
+             * @enum {string}
+             */
+            element_type: "node" | "link" | "client" | "well";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "meter" | "pressure" | "level";
+            /** Max Abs Diff */
+            max_abs_diff: number | null;
+            /** Message */
+            message: string;
+            /** Points */
+            points: components["schemas"]["ComparePoint"][];
+            /**
+             * Quantity
+             * @description Magnitud comparada (caudal L/s, presión m, nivel m)
+             */
+            quantity: string;
+            /** Tolerance */
+            tolerance: number;
+            /** Unit */
+            unit: string;
         };
         /** Condition */
         Condition: {
@@ -1279,6 +1526,22 @@ export interface components {
             unit: string;
             /** Value */
             value: number;
+        };
+        /** CurveApplied */
+        CurveApplied: {
+            /** Curve Points */
+            curve_points: [
+                number,
+                number
+            ][];
+            /** Pump */
+            pump: string;
+            /** Reservoir */
+            reservoir: string | null;
+            /** Reservoir Head */
+            reservoir_head: number | null;
+            /** Version */
+            version: number;
         };
         /** DemandCategory */
         DemandCategory: {
@@ -1540,6 +1803,53 @@ export interface components {
             verified: boolean;
             /** Version */
             version: string;
+        };
+        /** DiagItem */
+        DiagItem: {
+            /**
+             * Data
+             * @description Datos que respaldan la afirmación
+             */
+            data?: {
+                [key: string]: unknown;
+            };
+            /** Refs */
+            refs?: components["schemas"]["Ref"][];
+            /**
+             * Section
+             * @enum {string}
+             */
+            section: "general" | "presion" | "velocidad" | "cuello" | "estanque" | "bomba" | "sugerencia";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "ok" | "warning" | "problem";
+            /** Text */
+            text: string;
+        };
+        /** DiagnosisResult */
+        DiagnosisResult: {
+            /** Criteria */
+            criteria: {
+                [key: string]: number;
+            };
+            /** Items */
+            items: components["schemas"]["DiagItem"][];
+            /** Model Version */
+            model_version: number;
+            /** Project Id */
+            project_id: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "cumple" | "cumple con observaciones" | "no cumple";
+            /** Suggestions */
+            suggestions: components["schemas"]["Suggestion"][];
+            summary: components["schemas"]["DiagItem"];
         };
         /** EngineInfo */
         EngineInfo: {
@@ -1941,6 +2251,11 @@ export interface components {
              */
             required_pressure: number;
         };
+        /** IdList */
+        IdList: {
+            /** Ids */
+            ids: number[];
+        };
         /** ImportApplyResult */
         ImportApplyResult: {
             /** Created */
@@ -2246,6 +2561,96 @@ export interface components {
              * @description Velocidad (m/s)
              */
             velocity: number[];
+        };
+        /** MeasureCompareResult */
+        MeasureCompareResult: {
+            /** Model Version */
+            model_version: number;
+            /** Project Id */
+            project_id: string;
+            /** Series */
+            series: components["schemas"]["CompareSeries"][];
+            settings: components["schemas"]["MonitoringSettings"];
+        };
+        /** MeasurementImportResult */
+        MeasurementImportResult: {
+            /** Created */
+            created: number;
+            /** Errors */
+            errors: string[];
+        };
+        /** MeasurementIn */
+        MeasurementIn: {
+            /** Element Id */
+            element_id: string;
+            /**
+             * Element Type
+             * @enum {string}
+             */
+            element_type: "node" | "link" | "client" | "well";
+            /**
+             * Kind
+             * @description meter: lectura de medidor (m³); pressure: presión (m); level: nivel (m)
+             * @enum {string}
+             */
+            kind: "meter" | "pressure" | "level";
+            /**
+             * Measured At
+             * Format: date-time
+             */
+            measured_at: string;
+            /** Note */
+            note?: string | null;
+            /** Value */
+            value: number;
+        };
+        /** MeasurementOut */
+        MeasurementOut: {
+            /** Element Id */
+            element_id: string;
+            /**
+             * Element Type
+             * @enum {string}
+             */
+            element_type: "node" | "link" | "client" | "well";
+            /** Id */
+            id: number;
+            /**
+             * Kind
+             * @description meter: lectura de medidor (m³); pressure: presión (m); level: nivel (m)
+             * @enum {string}
+             */
+            kind: "meter" | "pressure" | "level";
+            /**
+             * Measured At
+             * Format: date-time
+             */
+            measured_at: string;
+            /** Note */
+            note?: string | null;
+            /** Value */
+            value: number;
+        };
+        /** MonitoringSettings */
+        MonitoringSettings: {
+            /**
+             * Flow Pct
+             * @description Tolerancia de caudal (% del medido)
+             * @default 10
+             */
+            flow_pct: number;
+            /**
+             * Level M
+             * @description Tolerancia de nivel (m)
+             * @default 0.3
+             */
+            level_m: number;
+            /**
+             * Pressure M
+             * @description Tolerancia de presión (m)
+             * @default 2
+             */
+            pressure_m: number;
         };
         /**
          * NetworkDocument
@@ -2623,6 +3028,114 @@ export interface components {
             /** Name */
             name?: string | null;
         };
+        /** PumpCalc */
+        PumpCalc: {
+            /** Arrival Elevation */
+            arrival_elevation: number;
+            /** Conventions */
+            conventions: string;
+            /**
+             * Current A
+             * @description Corriente trifásica (A)
+             */
+            current_a: number;
+            /**
+             * Curve Points
+             * @description Curva de 3 puntos desde el punto de diseño (L/s, m)
+             */
+            curve_points: [
+                number,
+                number
+            ][];
+            /** Design Flow Lps */
+            design_flow_lps: number;
+            /** Dynamic Level Elevation */
+            dynamic_level_elevation: number;
+            /** Electric Power Kw */
+            electric_power_kw: number;
+            /** Formula */
+            formula: string;
+            /** Friction Loss M */
+            friction_loss_m: number;
+            /**
+             * Geometric Head M
+             * @description Cota de llegada − cota del nivel dinámico (m)
+             */
+            geometric_head_m: number;
+            /** Ground Elevation */
+            ground_elevation: number;
+            /** Hydraulic Power Kw */
+            hydraulic_power_kw: number;
+            /** Manometric Head M */
+            manometric_head_m: number;
+            /** Minor Loss Pct */
+            minor_loss_pct: number;
+            /** Notes */
+            notes: string[];
+            /** Pump Elevation */
+            pump_elevation: number;
+            /** Segments */
+            segments: components["schemas"]["PumpSegment"][];
+            /** Shaft Power Cv */
+            shaft_power_cv: number;
+            /** Shaft Power Hp */
+            shaft_power_hp: number;
+            /** Shaft Power Kw */
+            shaft_power_kw: number;
+            /** Static Level Elevation */
+            static_level_elevation: number | null;
+            /** Warnings */
+            warnings: string[];
+            /** Well */
+            well: string;
+        };
+        /**
+         * PumpLine
+         * @description Tramo de la columna o de la impulsión del pozo.
+         */
+        PumpLine: {
+            /**
+             * Dn
+             * @description Diámetro nominal (mm)
+             */
+            dn?: number | null;
+            /**
+             * Inner Diameter Mm
+             * @description Diámetro interior (mm)
+             */
+            inner_diameter_mm: number;
+            /**
+             * Length M
+             * @description Largo (m)
+             */
+            length_m: number;
+            /** Material */
+            material?: string | null;
+            /** Pipe Class */
+            pipe_class?: string | null;
+            /**
+             * Roughness
+             * @description C (H-W), ε mm (D-W) o n (C-M); vacío = 140 / 0,0015 / 0,009
+             */
+            roughness?: number | null;
+        };
+        /** PumpSegment */
+        PumpSegment: {
+            /** Dn */
+            dn: number | null;
+            /** Headloss M */
+            headloss_m: number;
+            /** Inner Diameter Mm */
+            inner_diameter_mm: number;
+            /** Length M */
+            length_m: number;
+            /** Material */
+            material: string | null;
+            /** Name */
+            name: string;
+            /** Velocity Ms */
+            velocity_ms: number;
+        };
         /** QueryDef */
         "QueryDef-Input": {
             /**
@@ -2708,6 +3221,16 @@ export interface components {
              * @description Elementos del tipo en el modelo
              */
             total: number;
+        };
+        /** Ref */
+        Ref: {
+            /** Id */
+            id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "node" | "link" | "client" | "well" | "hydrant" | "shutoff";
         };
         /** RowError */
         RowError: {
@@ -3088,6 +3611,26 @@ export interface components {
             times: number[];
             validation: components["schemas"]["ValidationReport"];
         };
+        /** Suggestion */
+        Suggestion: {
+            /** Action */
+            action?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "upgrade_dn" | "pump_schedule" | "level_control";
+            /** Refs */
+            refs?: components["schemas"]["Ref"][];
+            /** Text */
+            text: string;
+            /** Verification */
+            verification: string;
+            /** Verified */
+            verified: boolean;
+        };
         /** TrazoImportResult */
         TrazoImportResult: {
             /** Notes */
@@ -3279,6 +3822,8 @@ export interface components {
              * @description ID del reservorio que representa el pozo en el modelo
              */
             node?: string | null;
+            /** @description Diseño del bombeo (columna, impulsión, rendimientos) */
+            pump_design?: components["schemas"]["WellPumpDesign"] | null;
             /**
              * Static Level M
              * @description Nivel estático bajo el terreno (m)
@@ -3286,6 +3831,66 @@ export interface components {
             static_level_m?: number | null;
             /** Uid */
             uid?: string | null;
+        };
+        /**
+         * WellPumpDesign
+         * @description Datos de diseño del bombeo del pozo (hoja BombaPozo1 de ModeloPozo).
+         */
+        WellPumpDesign: {
+            /**
+             * Arrival Elevation M
+             * @description Cota de llegada (m). Vacío = cota de rebalse del estanque
+             */
+            arrival_elevation_m?: number | null;
+            /**
+             * Arrival Tank
+             * @description Estanque de llegada (ID)
+             */
+            arrival_tank?: string | null;
+            /** @description Columna (de la bomba a la superficie) */
+            column: components["schemas"]["PumpLine"];
+            /**
+             * Design Flow Lps
+             * @description Caudal de diseño (L/s)
+             */
+            design_flow_lps: number;
+            /** @description Impulsión (de la superficie a la llegada) */
+            impulsion: components["schemas"]["PumpLine"];
+            /**
+             * Minor Loss Pct
+             * @description Pérdidas singulares (% de la altura)
+             * @default 5
+             */
+            minor_loss_pct: number;
+            /**
+             * Motor Efficiency
+             * @description Rendimiento del motor (0–1)
+             * @default 0.9
+             */
+            motor_efficiency: number;
+            /**
+             * Power Factor
+             * @description Factor de potencia
+             * @default 0.85
+             */
+            power_factor: number;
+            /**
+             * Pump Depth M
+             * @description Profundidad de instalación de la bomba bajo el terreno (m)
+             */
+            pump_depth_m: number;
+            /**
+             * Pump Efficiency
+             * @description Rendimiento de la bomba (0–1)
+             * @default 0.75
+             */
+            pump_efficiency: number;
+            /**
+             * Voltage V
+             * @description Tensión trifásica (V)
+             * @default 380
+             */
+            voltage_v: number;
         };
         /** Criterion */
         app__schemas__analysis__Criterion: {
@@ -3917,6 +4522,39 @@ export interface operations {
             };
         };
     };
+    get_diagnosis_api_projects__project_id__diagnosis_get: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosisResult"];
+                };
+            };
+            /** @description Errores bloqueantes: no se simuló */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationBlocked"];
+                };
+            };
+        };
+    };
     export_dxf_api_projects__project_id__export_dxf_get: {
         parameters: {
             query?: {
@@ -4146,6 +4784,277 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FireResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_measurements_api_projects__project_id__measurements_get: {
+        parameters: {
+            query?: {
+                element_type?: string | null;
+                element_id?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_measurements_api_projects__project_id__measurements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeasurementIn"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_api_projects__project_id__measurements_compare_get: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasureCompareResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_measurements_api_projects__project_id__measurements_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdList"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_measurements_api_projects__project_id__measurements_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_measurements_api_projects__project_id__measurements_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementImportResult"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementImportResult"];
+                };
+            };
+        };
+    };
+    template_api_projects__project_id__measurements_template_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_projects__project_id__monitoring_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_settings_api_projects__project_id__monitoring_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonitoringSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringSettings"];
                 };
             };
             /** @description Validation Error */
@@ -4596,6 +5505,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_api_projects__project_id__report_html_get: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": unknown;
+                };
+            };
+            /** @description Errores bloqueantes: no se simuló */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationBlocked"];
                 };
             };
         };
@@ -5074,6 +6016,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_curve_api_projects__project_id__wells__well_id__apply_curve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                well_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurveApplied"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pump_calc_api_projects__project_id__wells__well_id__pump_get: {
+        parameters: {
+            query?: {
+                /** @description trazo (γ 9.810, π) o planilla (γ 10.000, π 3,14) */
+                conventions?: "trazo" | "planilla";
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                well_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PumpCalc"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_api_projects__project_id__wells__well_id__report_html_get: {
+        parameters: {
+            query?: {
+                /** @description trazo (γ 9.810, π) o planilla (γ 10.000, π 3,14) */
+                conventions?: "trazo" | "planilla";
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                well_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": unknown;
                 };
             };
             /** @description Validation Error */

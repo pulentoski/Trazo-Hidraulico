@@ -35,6 +35,22 @@ class Orthophoto(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class Measurement(Base):
+    """Medición real: lectura de medidor (m³), presión (m) o nivel (m) de un elemento, con fecha y hora."""
+
+    __tablename__ = "measurement"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("project.id", ondelete="CASCADE"), index=True)
+    element_type: Mapped[str] = mapped_column(String(12))
+    element_id: Mapped[str] = mapped_column(String(31))
+    kind: Mapped[str] = mapped_column(String(12))
+    measured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    value: Mapped[float] = mapped_column(Float)
+    note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class SavedQuery(Base):
     __tablename__ = "saved_query"
 
@@ -45,4 +61,4 @@ class SavedQuery(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-__all__ = ["Orthophoto", "SavedQuery"]
+__all__ = ["Measurement", "Orthophoto", "SavedQuery"]

@@ -2,11 +2,11 @@
 from app.models.catalog import CatalogPipe, DesignProfile
 from app.models.network import NetworkClient, NetworkHydrant, NetworkLink, NetworkNode, NetworkShutoff, NetworkWell
 from app.models.project import Project, ProjectVersion
-from app.models.sig import Orthophoto, SavedQuery
+from app.models.sig import Measurement, Orthophoto, SavedQuery
 from app.models.simulation import ResultLink, ResultNode, SimulationRun
 
 __all__ = [
     "CatalogPipe", "DesignProfile", "NetworkClient", "NetworkLink", "NetworkNode", "NetworkShutoff",
-    "NetworkHydrant", "NetworkWell", "Orthophoto", "SavedQuery",
+    "NetworkHydrant", "NetworkWell", "Orthophoto", "SavedQuery", "Measurement",
     "Project", "ProjectVersion", "ResultLink", "ResultNode", "SimulationRun",
 ]

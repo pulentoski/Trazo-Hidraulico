@@ -211,3 +211,4 @@ class NetworkWell(Base):
     static_level_m: Mapped[float | None] = mapped_column(Float, nullable=True)
     dynamic_level_m: Mapped[float | None] = mapped_column(Float, nullable=True)
     authorized_flow_lps: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pump_design: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

@@ -1,4 +1,4 @@
-# Trazo Hidráulico — Etapas 1 a 3
+# Trazo Hidráulico — Etapas 1 a 4
 
 Plataforma local para diseñar y simular redes de agua potable. Editor tipo CAD/GIS sobre Google Maps,
 motor hidráulico **OWA-EPANET 2.3.5** en el backend (único motor), resultados reproducibles y ligados
@@ -100,6 +100,13 @@ simulación de 24 h con curvas de modulación, estanques, bombas con horario, co
 puntos (pestaña Simulación y panel de la bomba), alertas de operación, gráficos con exportación PNG/CSV y
 deslizador de hora en el mapa. Referencia SimulaEST1 en [docs/validation/simulaest1.md](docs/validation/simulaest1.md).
 
+## Etapa 4: pozo y bombeo, mediciones y diagnóstico
+
+Detalle en [docs/etapa4.md](docs/etapa4.md): cálculo de bombeo del pozo (altura manométrica, potencia, corriente
+trifásica, velocidades; reproduce BombaPozo1) con ficha imprimible y curva de bomba, registro de mediciones con
+comparación contra el modelo, diagnóstico automático con sugerencias verificadas por simulación e informe
+técnico imprimible. `make test-e2e` hace el recorrido visual con Playwright (capturas en [docs/capturas/](docs/capturas/)).
+
 ## Publicar en un dominio con HTTPS
 
 Caddy obtiene y renueva el certificado automáticamente (Let's Encrypt) cuando el sitio tiene un
@@ -131,7 +138,8 @@ Copie también `.env` fuera del servidor de forma segura: contiene las claves de
 ## Probar
 
 ```bash
-make test
+make test        # backend y frontend en contenedores
+make test-e2e    # recorrido visual con Playwright (con la pila levantada: make up)
 ```
 
 Ejecuta todo dentro de contenedores y sin depender de Google:
@@ -147,6 +155,8 @@ Ejecuta todo dentro de contenedores y sin depender de Google:
 - Etapa 3: SimulaEST1 (nivel horario contra la planilla), operación de bombas, alertas de período extendido,
   proyección contra la hoja de la planilla, escenarios de demanda, ida y vuelta .trazo, .inp con etiquetas en
   lat/lon y demo de 24 h.
+- Etapa 4: BombaPozo1 (Hman 138,4 m, 12,3 kW), lecturas de medidor (15,49 L/s), comparación con tolerancias,
+  diagnóstico con sugerencia verificada e informe técnico.
 - Frontend: `tsc --noEmit`, pruebas unitarias (vitest) y verificación de que `schema.d.ts` está al día con OpenAPI.
 
 Los resultados y las tolerancias quedan en [`docs/validation/`](docs/validation/tolerancias.md).

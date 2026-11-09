@@ -209,6 +209,35 @@ class HydrantProperties(BaseModel):
     attributes: Attributes = Field(default_factory=dict, description=ATTRIBUTES_DESC)
 
 
+class PumpLine(BaseModel):
+    """Tramo de la columna o de la impulsión del pozo."""
+
+    model_config = ConfigDict(extra="forbid")
+    material: str | None = None
+    dn: int | None = Field(None, description="Diámetro nominal (mm)")
+    pipe_class: str | None = None
+    inner_diameter_mm: float = Field(gt=0, description="Diámetro interior (mm)")
+    length_m: float = Field(ge=0, description="Largo (m)")
+    roughness: float | None = Field(None, gt=0, description="C (H-W), ε mm (D-W) o n (C-M); vacío = 140 / 0,0015 / 0,009")
+
+
+class WellPumpDesign(BaseModel):
+    """Datos de diseño del bombeo del pozo (hoja BombaPozo1 de ModeloPozo)."""
+
+    model_config = ConfigDict(extra="forbid")
+    pump_depth_m: float = Field(ge=0, description="Profundidad de instalación de la bomba bajo el terreno (m)")
+    design_flow_lps: float = Field(gt=0, description="Caudal de diseño (L/s)")
+    column: PumpLine = Field(description="Columna (de la bomba a la superficie)")
+    impulsion: PumpLine = Field(description="Impulsión (de la superficie a la llegada)")
+    arrival_elevation_m: float | None = Field(None, description="Cota de llegada (m). Vacío = cota de rebalse del estanque")
+    arrival_tank: str | None = Field(None, description="Estanque de llegada (ID)")
+    minor_loss_pct: float = Field(5.0, ge=0, le=100, description="Pérdidas singulares (% de la altura)")
+    pump_efficiency: float = Field(0.75, gt=0, le=1, description="Rendimiento de la bomba (0–1)")
+    motor_efficiency: float = Field(0.9, gt=0, le=1, description="Rendimiento del motor (0–1)")
+    power_factor: float = Field(0.85, gt=0, le=1, description="Factor de potencia")
+    voltage_v: float = Field(380.0, gt=0, description="Tensión trifásica (V)")
+
+
 class WellProperties(BaseModel):
     element: Literal["well"] = "well"
     uid: str | None = None
@@ -220,6 +249,7 @@ class WellProperties(BaseModel):
     static_level_m: float | None = Field(None, ge=0, description="Nivel estático bajo el terreno (m)")
     dynamic_level_m: float | None = Field(None, ge=0, description="Nivel dinámico bajo el terreno (m)")
     authorized_flow_lps: float | None = Field(None, ge=0, description="Caudal autorizado (L/s)")
+    pump_design: WellPumpDesign | None = Field(None, description="Diseño del bombeo (columna, impulsión, rendimientos)")
     attributes: Attributes = Field(default_factory=dict, description=ATTRIBUTES_DESC)
 
 
