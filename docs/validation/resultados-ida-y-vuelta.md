@@ -2,7 +2,7 @@
 
 Generado automáticamente por `tests/test_roundtrip_inp.py`. Se importa el `.inp` original, se guarda en PostGIS, se exporta con GET /export.inp y se simula el archivo exportado con `runepanet` y re-importado en la API. Ambos se comparan contra `runepanet` sobre el original, en todos los pasos de reporte.
 
-| Caso | Variable | Valores comparados | Máx. diferencia absoluta | Máx. dif. relativa (|ref| > 10·atol) | Uso de la tolerancia | Resultado |
+| Caso | Variable | Valores comparados | Máx. diferencia absoluta | Máx. dif. relativa (ref > 10·atol) | Uso de la tolerancia | Resultado |
 |---|---|---:|---:|---:|---:|---|
 | Net1 (exportado, runepanet) | Presión (m) | 275 | 7.957e-06 | 8.449e-08 | 0.4 % | cumple |
 | Net1 (exportado, runepanet) | Cota piezométrica (m) | 275 | 1.523e-05 | 5.177e-08 | 1.2 % | cumple |

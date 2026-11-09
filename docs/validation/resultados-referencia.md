@@ -3,7 +3,7 @@
 Generado automáticamente por `tests/test_reference_networks.py` en cada `make test`.
 Referencia: binario `.out` de `runepanet` (OWA-EPANET v2.3.5, SHA 444725f) sobre el `.inp` original, convertido a SI con las constantes internas de EPANET. Comparado con los resultados de la API (importación → base de datos → .inp generado → simulación) en todos los pasos de reporte. «Uso de la tolerancia» = máx(|Δ| / (atol + rtol·|ref|)); ≤ 100 % cumple.
 
-| Caso | Variable | Valores comparados | Máx. diferencia absoluta | Máx. dif. relativa (|ref| > 10·atol) | Uso de la tolerancia | Resultado |
+| Caso | Variable | Valores comparados | Máx. diferencia absoluta | Máx. dif. relativa (ref > 10·atol) | Uso de la tolerancia | Resultado |
 |---|---|---:|---:|---:|---:|---|
 | Net1 | Presión (m) | 275 | 7.725e-06 | 8.202e-08 | 0.4 % | cumple |
 | Net1 | Cota piezométrica (m) | 275 | 1.549e-05 | 5.254e-08 | 1.2 % | cumple |

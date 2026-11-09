@@ -79,7 +79,7 @@ class Collector:
 
     def write_markdown(self, path: Path, title: str, intro: str) -> None:
         lines = [f"# {title}", "", intro, "",
-                 "| Caso | Variable | Valores comparados | Máx. diferencia absoluta | Máx. dif. relativa (|ref| > 10·atol) "
+                 "| Caso | Variable | Valores comparados | Máx. diferencia absoluta | Máx. dif. relativa (ref > 10·atol) "
                  "| Uso de la tolerancia | Resultado |",
                  "|---|---|---:|---:|---:|---:|---|"]
         for r in self.rows:
