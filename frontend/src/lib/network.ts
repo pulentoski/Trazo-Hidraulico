@@ -356,3 +356,19 @@ export function nodeDemand(net: Network, nodeUid: string, includeProjected: bool
   const fromClients = counted.reduce((s, c) => s + toLps(c.props.consumption_value, c.props.consumption_unit), 0);
   return { manual, clients, counted, fromClients, total: manual + fromClients };
 }
+
+/** Aplica una mejora de factibilidad (DN sugerido) a un tramo por su ID; si el tramo se dividió al conectar el
+ * cliente, también a la otra parte (`alsoUid`). Usa el ítem del catálogo (material, clase y DN). */
+export function applyUpgrade(net: Network, upgrade: { link: string; material?: string | null; pipe_class?: string | null; dn_to?: number | null; inner_to?: number | null },
+  catalog: { id: number; material: string; pipe_class: string; dn: number; inner_diameter_mm: number }[], alsoUid?: string | null): { net: Network; changed: string[] } {
+  const item = catalog.find((c) => c.material === upgrade.material && c.pipe_class === upgrade.pipe_class && c.dn === upgrade.dn_to);
+  const links = { ...net.links };
+  const changed: string[] = [];
+  for (const [k, l] of Object.entries(links)) {
+    if (l.id !== upgrade.link && k !== alsoUid) continue;
+    links[k] = { ...l, props: { ...l.props, dn: upgrade.dn_to ?? l.props.dn, inner_diameter_mm: item?.inner_diameter_mm ?? upgrade.inner_to ?? l.props.inner_diameter_mm,
+      catalog_pipe_id: item?.id ?? l.props.catalog_pipe_id, inner_diameter_source: item ? "catalogo" : l.props.inner_diameter_source } };
+    changed.push(l.id);
+  }
+  return { net: { ...net, links }, changed };
+}

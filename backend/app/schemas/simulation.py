@@ -38,7 +38,8 @@ class LinkSeries(BaseModel):
 
 
 class CriteriaAlert(BaseModel):
-    code: Literal["PRESSURE_LOW", "PRESSURE_HIGH", "VELOCITY_LOW", "VELOCITY_HIGH", "BOTTLENECK"]
+    code: Literal["PRESSURE_LOW", "PRESSURE_HIGH", "VELOCITY_LOW", "VELOCITY_HIGH", "BOTTLENECK", "PRESSURE_PEAK",
+                  "TANK_OVERFLOW", "TANK_EMPTY", "PUMP_OFF_CURVE"]
     severity: Literal["warning"] = "warning"
     message: str
     element_type: Literal["node", "link"]

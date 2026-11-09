@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from app.schemas.network import NetworkModel
+from app.hydraulic.operation import build as build_operation
+from app.hydraulic.operation import curve_id
+from app.schemas.network import HydraulicOptions, NetworkModel
 
 # Secciones complementarias que se transcriben tal cual desde `aux`.
 AUX_SECTIONS = ("patterns", "curves", "controls", "rules", "energy", "quality", "sources",
@@ -17,6 +19,26 @@ MANAGED_OPTIONS = {"UNITS", "PRESSURE", "HEADLOSS", "DEMAND MODEL", "MINIMUM PRE
                    "PRESSURE EXPONENT", "MAP", "HYDRAULICS"}
 
 Projector = Callable[[float, float], tuple[float, float]]
+TAG_KEY = "__tag"  # etiqueta [TAGS] de EPANET, guardada como atributo reservado
+
+
+def parse_labels(text: str | None) -> list[tuple[float, float, str, str | None]]:
+    """aux «labels»: una línea por rótulo «lon lat "texto" [nudo de anclaje]» (coordenadas EPSG:4326)."""
+    import shlex
+
+    out = []
+    for raw in (text or "").splitlines():
+        try:
+            toks = shlex.split(raw)
+        except ValueError:
+            continue
+        if len(toks) < 3:
+            continue
+        try:
+            out.append((float(toks[0]), float(toks[1]), toks[2], toks[3] if len(toks) > 3 else None))
+        except ValueError:
+            continue
+    return out
 
 
 def num(x: float | int | None) -> str:
@@ -35,7 +57,22 @@ def _pad(*cols: str) -> str:
     return " " + "\t".join(c for c in cols)
 
 
-def _times_lines(aux: dict[str, str]) -> list[str]:
+def _hm(minutes: float) -> str:
+    m = int(round(minutes))
+    return f"{m // 60}:{m % 60:02d}"
+
+
+def _times_lines(aux: dict[str, str], opts: HydraulicOptions | None = None) -> list[str]:
+    if opts is not None and opts.duration_h is not None:
+        # Tiempos estructurados del proyecto (simulación de período extendido); reemplazan [TIMES] importado.
+        keep = []
+        for raw in (aux.get("times") or "").splitlines():
+            s = raw.strip().upper()
+            if s.startswith(("START CLOCKTIME", "QUALITY TIMESTEP", "RULE TIMESTEP")):
+                keep.append(" " + raw.strip())
+        return [f" DURATION\t{_hm(opts.duration_h * 60)}", f" HYDRAULIC TIMESTEP\t{_hm(opts.hydraulic_step_min)}",
+                f" PATTERN TIMESTEP\t{_hm(opts.pattern_step_min)}", f" REPORT TIMESTEP\t{_hm(opts.report_step_min)}",
+                *keep, " STATISTIC\tNONE"]
     lines = []
     for raw in (aux.get("times") or "").splitlines():
         s = raw.strip()
@@ -62,6 +99,7 @@ def write_inp(model: NetworkModel, *, projector: Projector | None = None, title:
     nodes = model.network.nodes()
     links = model.network.links()
     opts = model.options
+    operation = build_operation(model)
     out: list[str] = []
 
     def section(name: str) -> None:
@@ -112,9 +150,11 @@ def write_inp(model: NetworkModel, *, projector: Projector | None = None, title:
     for lk in pumps:
         p = lk.properties
         cols = [lk.id, p.from_node, p.to_node]
-        if p.pump_curve:
+        if p.curve_points:
+            cols += ["HEAD", curve_id(lk.id)]
+        elif p.pump_curve:
             cols += ["HEAD", p.pump_curve]
-        if p.pump_power:
+        if p.pump_power and not p.curve_points and not p.pump_curve:
             cols += ["POWER", num(p.pump_power)]
         if p.pump_speed is not None and p.pump_speed != 1.0:
             cols += ["SPEED", num(p.pump_speed)]
@@ -155,23 +195,32 @@ def write_inp(model: NetworkModel, *, projector: Projector | None = None, title:
 
     section("STATUS")
     for lk in pumps:
-        if lk.properties.initial_status == "closed":
-            out.append(_pad(lk.id, "Closed"))
+        st = operation.initial.get(lk.id) or ("Closed" if lk.properties.initial_status == "closed" else None)
+        if st:
+            out.append(_pad(lk.id, st))
     for lk in valves:
-        if lk.properties.initial_status in ("open", "closed"):
+        st = operation.initial.get(lk.id)
+        if st:
+            out.append(_pad(lk.id, st))
+        elif lk.properties.initial_status in ("open", "closed"):
             out.append(_pad(lk.id, lk.properties.initial_status.capitalize()))
 
+    generated = {"curves": operation.curves, "controls": operation.controls, "rules": operation.rules}
     for name in AUX_SECTIONS:
         text = model.aux.get(name)
-        if not text:
+        extra_lines = generated.get(name, [])
+        if not text and not extra_lines:
             continue
         section(name.upper())
-        for raw in text.splitlines():
+        for raw in (text or "").splitlines():
             if raw.strip():
                 out.append(raw if raw.startswith(" ") or raw.startswith(";") else " " + raw)
+        if extra_lines:
+            out.append(" ;Operación definida en Trazo Hidráulico")
+            out.extend(extra_lines)
 
     section("TIMES")
-    out.extend(_times_lines(model.aux))
+    out.extend(_times_lines(model.aux, opts))
 
     section("REPORT")
     out += [" STATUS\tYES", " SUMMARY\tNO", " PAGE\t0"]
@@ -182,8 +231,10 @@ def write_inp(model: NetworkModel, *, projector: Projector | None = None, title:
         out += [f" MINIMUM PRESSURE\t{num(opts.minimum_pressure)}",
                 f" REQUIRED PRESSURE\t{num(opts.required_pressure)}",
                 f" PRESSURE EXPONENT\t{num(opts.pressure_exponent)}"]
+    if opts.demand_multiplier != 1.0:
+        out.append(f" DEMAND MULTIPLIER\t{num(opts.demand_multiplier)}")
     for key, value in opts.extra.items():
-        if key.upper() in MANAGED_OPTIONS:
+        if key.upper() in MANAGED_OPTIONS or (key.upper() == "DEMAND MULTIPLIER" and opts.demand_multiplier != 1.0):
             continue
         out.append(f" {key}\t{value}")
 
@@ -197,6 +248,19 @@ def write_inp(model: NetworkModel, *, projector: Projector | None = None, title:
             for lon, lat in lk.geometry.coordinates[1:-1]:
                 x, y = projector(lon, lat)
                 out.append(_pad(lk.id, f"{x:.3f}", f"{y:.3f}"))
+        labels = parse_labels(model.aux.get("labels"))
+        if labels:
+            section("LABELS")
+            for lon, lat, text, anchor in labels:
+                x, y = projector(lon, lat)
+                out.append(_pad(f"{x:.3f}", f"{y:.3f}", f'"{text}"', anchor or ""))
+    tags = [("NODE", f.id, f.properties.attributes.get(TAG_KEY)) for f in nodes] + \
+           [("LINK", f.id, f.properties.attributes.get(TAG_KEY)) for f in links]
+    tags = [t for t in tags if t[2]]
+    if tags:
+        section("TAGS")
+        for kind, ident, tag in tags:
+            out.append(_pad(kind, ident, str(tag)))
 
     out.append("")
     out.append("[END]")

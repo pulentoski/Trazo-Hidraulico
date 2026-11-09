@@ -85,6 +85,7 @@ function SigMenu({ dirty }: { dirty: boolean }) {
           <button className="menu-item" onClick={() => { setOpen(false); s.set({ importOpen: true }); }}>Importar Excel o CSV…</button>
           {item(api.excelUrl(pid), "Exportar Excel (planilla completa)", "Misma estructura de la plantilla: se puede editar y volver a importar")}
           {item(api.templateUrl, "Descargar plantilla vacía", "Una hoja por tipo de elemento, con instrucciones y listas")}
+          {item(api.trazoUrl(pid), "Exportar proyecto .trazo", "Zip con el .inp y todos los datos propios (clientes, llaves, escenarios, atributos…)")}
           {item(api.dxfUrl(pid), "Exportar DXF (UTM, por capas)", "Red por diámetro, válvulas, clientes, estanques…")}
           {item(api.gpkgUrl(pid), "Exportar GeoPackage (QGIS)", "Una capa por tipo de elemento, más los cuarteles de corta")}
           {dirty && <p className="muted small pad">Esperando el guardado de los cambios…</p>}

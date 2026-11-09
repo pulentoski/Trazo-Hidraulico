@@ -66,12 +66,29 @@ def _id_or_none(getter, ph, index: int) -> str | None:
     return getter(ph, int(index))
 
 
-def _detect_crs(xy: list[tuple[float, float]], length_srid: int) -> str:
+def _detect_crs(xy: list[tuple[float, float]], length_srid: int,
+                pairs: list[tuple[tuple[float, float], tuple[float, float], float]] | None = None) -> str:
+    """UTM (rango de coordenadas métricas), lat/lon (rango geográfico y largos coherentes) o locales.
+
+    `pairs` = (punto inicial, punto final, largo del tramo en m): con coordenadas geográficas la distancia
+    geodésica entre extremos se parece al largo; con coordenadas locales chicas (p. ej. Net1) no.
+    """
     if not xy:
         return "local"
     xs, ys = [p[0] for p in xy], [p[1] for p in xy]
     if 100_000 <= min(xs) and max(xs) <= 900_000 and 1_000_000 <= min(ys) and max(ys) <= 10_000_000:
         return f"EPSG:{length_srid}"
+    if -180 <= min(xs) and max(xs) <= 180 and -90 <= min(ys) and max(ys) <= 90 and pairs:
+        from pyproj import Geod
+
+        geod = Geod(ellps="WGS84")
+        ratios = []
+        for (x1, y1), (x2, y2), length in pairs:
+            if length and length > 0:
+                _, _, d = geod.inv(x1, y1, x2, y2)
+                ratios.append(d / length)
+        if ratios and 0.3 <= statistics.median(ratios) <= 1.5:
+            return "EPSG:4326"
     return "local"
 
 
@@ -105,7 +122,9 @@ def read_inp(path: str, *, crs: str = "auto", length_srid: int = 32719,
                 pass
             en.deleteproject(ph)
 
-    georef, notes = _georeference(model, raw_xy, crs, length_srid, origin)
+    raw_sections = split_sections(_read(path))
+    georef, notes, project = _georeference(model, raw_xy, crs, length_srid, origin)
+    notes += _labels_and_tags(model, raw_sections, project)
     assumed = sorted(n.id for n in model.network.nodes() if n.properties.elevation_source == "supuesta")
     if assumed:
         shown = ", ".join(assumed[:10]) + ("…" if len(assumed) > 10 else "")
@@ -317,7 +336,7 @@ def _precise_controls(ph, lines: list[str]) -> list[str]:
 
 
 def _georeference(model: NetworkModel, raw_xy: dict, crs: str, length_srid: int,
-                  origin: tuple[float, float]) -> tuple[str, list[str]]:
+                  origin: tuple[float, float]):
     notes: list[str] = []
     nodes = model.network.nodes()
     links = model.network.links()
@@ -334,7 +353,14 @@ def _georeference(model: NetworkModel, raw_xy: dict, crs: str, length_srid: int,
         notes.append(f"{len(missing)} nudos sin coordenadas se ubicaron en una grilla auxiliar.")
 
     all_xy = list(node_xy.values()) + [v for lk in links for v in raw_xy.get(f"\0link:{lk.id}", [])]
-    mode = _detect_crs(all_xy, length_srid) if crs == "auto" else crs
+    pairs = []
+    for lk in links:
+        p = lk.properties
+        if p.kind == "pipe" and p.from_node in node_xy and p.to_node in node_xy:
+            pts = [node_xy[p.from_node], *raw_xy.get(f"\0link:{lk.id}", []), node_xy[p.to_node]]
+            for k in range(len(pts) - 1):
+                pairs.append((pts[k], pts[k + 1], (p.length_hydraulic_m or 0) / (len(pts) - 1)))
+    mode = _detect_crs(all_xy, length_srid, pairs) if crs == "auto" else crs
 
     if mode.upper().startswith("EPSG:"):
         srid = int(mode.split(":")[1])
@@ -379,4 +405,45 @@ def _georeference(model: NetworkModel, raw_xy: dict, crs: str, length_srid: int,
         p = lk.properties
         pts = [node_xy[p.from_node], *raw_xy.get(f"\0link:{lk.id}", []), node_xy[p.to_node]]
         lk.geometry = LineStringGeometry(coordinates=[project(x, y) for x, y in pts])
-    return georef, notes
+    return georef, notes, project
+
+
+def _labels_and_tags(model: NetworkModel, sections: dict[str, list[str]], project) -> list[str]:
+    """Conserva [TAGS] (atributo reservado «__tag») y [LABELS] (aux «labels», en EPSG:4326)."""
+    import shlex
+
+    from app.hydraulic.inp_writer import TAG_KEY
+
+    notes = []
+    nodes = {n.id: n for n in model.network.nodes()}
+    links = {lk.id: lk for lk in model.network.links()}
+    count = 0
+    for line in sections.get("TAGS", []):
+        toks = line.split(";")[0].split()
+        if len(toks) >= 3:
+            pool = nodes if toks[0].upper() == "NODE" else links if toks[0].upper() == "LINK" else {}
+            f = pool.get(toks[1])
+            if f is not None:
+                f.properties.attributes = {**f.properties.attributes, TAG_KEY: " ".join(toks[2:])}
+                count += 1
+    labels = []
+    for line in sections.get("LABELS", []):
+        body = line.split(";")[0].strip()
+        try:
+            toks = shlex.split(body)
+        except ValueError:
+            continue
+        if len(toks) < 3:
+            continue
+        try:
+            lon, lat = project(float(toks[0]), float(toks[1]))
+        except ValueError:
+            continue
+        text = toks[2].replace('"', "'")
+        anchor = f" {toks[3]}" if len(toks) > 3 else ""
+        labels.append(f'{lon!r} {lat!r} "{text}"{anchor}')
+    if labels:
+        model.aux["labels"] = "\n".join(labels)
+    if count or labels:
+        notes.append(f"Se conservaron {count} etiquetas [TAGS] y {len(labels)} rótulos [LABELS].")
+    return notes

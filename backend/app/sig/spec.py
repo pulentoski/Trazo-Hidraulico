@@ -204,6 +204,12 @@ def _sheets() -> tuple[Sheet, ...]:
             Col("pump_speed", "Velocidad relativa", "float", "", "1 = nominal"),
             Col("pump_pattern", "Patrón", desc="Patrón de velocidad (opcional)"),
             Col("initial_status", "Estado inicial", "choice", "", "Abierta (en marcha) o cerrada", choices=PUMP_STATUS),
+            Col("_curve", "Curva H-Q", "str", "L/s m", "«Q H; Q H; Q H»: 1 punto de diseño o 3 puntos", query=False),
+            Col("_schedule", "Horario", "str", "h", "Horas encendida, p. ej. «0-1; 7-17; 22-23». Vacío = sin horario; "
+                "«apagada» = todo el día", query=False),
+            Col("_lc_tank", "Control: estanque", desc="ID del estanque que controla la bomba (opcional)", query=False),
+            Col("_lc_on", "Enciende bajo", "float", "m", "Nivel del estanque bajo el cual enciende", query=False),
+            Col("_lc_off", "Apaga sobre", "float", "m", "Nivel del estanque sobre el cual apaga", query=False),
             desc,
         )),
         Sheet("clientes", "Clientes", "client", None, "C", "cliente", (

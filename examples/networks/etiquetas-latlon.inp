@@ -1,0 +1,61 @@
+[TITLE]
+Red de prueba con vertices, rotulos y etiquetas (estilo EPANET-UI)
+Coordenadas geograficas WGS84 (longitud, latitud)
+
+[JUNCTIONS]
+;ID   Elev   Demand   Pattern
+ J1   230    1.5
+ J2   228    2.0
+ J3   232    1.0
+
+[RESERVOIRS]
+;ID   Head
+ R1   275
+
+[TANKS]
+;ID  Elev  InitLvl  MinLvl  MaxLvl  Diam  MinVol  VolCurve
+ T1  262   2        0.5     4       6     0       *
+
+[PIPES]
+;ID  Node1  Node2  Length  Diam  Rough  MLoss  Status
+ P1  R1  J1  300.0  150  140  0  Open
+ P2  J1  J2  330.3  110  140  0  Open
+ P3  J2  J3  316.2  110  140  0  Open
+ P4  J3  T1  316.4  90   140  0  Open
+
+[TAGS]
+ NODE J1 Sector_Norte
+ NODE T1 Estanque_principal
+ LINK P2 Matriz_2015
+
+[TIMES]
+ Duration 0
+
+[OPTIONS]
+ Units LPS
+ Headloss H-W
+
+[COORDINATES]
+;Node  X-Coord  Y-Coord
+ R1  -71.1450000  -29.9420000
+ J1  -71.1418900  -29.9420000
+ J2  -71.1387799  -29.9410956
+ J3  -71.1387799  -29.9383825
+ T1  -71.1356699  -29.9383825
+
+[VERTICES]
+;Link  X-Coord  Y-Coord
+ P2  -71.1403350  -29.9420000
+ P3  -71.1382616  -29.9397391
+ P4  -71.1372249  -29.9379303
+ P4  -71.1361883  -29.9382016
+
+[LABELS]
+;X-Coord  Y-Coord  Label & Anchor Node
+ -71.1416826  -29.9414574  "Sector Norte"  J1
+ -71.1358773  -29.9377495  "Estanque 100 m3"
+
+[BACKDROP]
+ UNITS DEGREES
+
+[END]

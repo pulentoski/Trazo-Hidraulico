@@ -19,7 +19,7 @@ NODE_FIELDS = ("description", "elevation", "elevation_source", "elevation_method
 LINK_FIELDS = ("description", "dn", "inner_diameter_mm", "material", "pipe_class", "catalog_pipe_id", "roughness",
                "minor_loss", "initial_status", "inner_diameter_source", "length_plan_m", "length_slope_m", "length_hydraulic_m",
                "length_choice", "pump_curve", "pump_power", "pump_speed", "pump_pattern", "valve_type",
-               "valve_setting", "valve_curve", "condition", "install_year", "network_type")
+               "valve_setting", "valve_curve", "condition", "install_year", "network_type", "schedule", "curve_points")
 
 
 CLIENT_FIELDS = ("name", "client_type", "status", "consumption_value", "consumption_unit", "connection_mode", "elevation",
@@ -67,6 +67,7 @@ def insert_network(session: Session, version: ProjectVersion, fc: NetworkFeature
             version_id=version.id, uid=_uid(p.uid), label=lk.id, kind=p.kind,
             from_node_id=ids[p.from_node], to_node_id=ids[p.to_node],
             geom=WKTElement(wkt, srid=4326), extra=dict(p.attributes),
+            level_control=p.level_control.model_dump() if p.level_control else None,
             **{f: getattr(p, f) for f in LINK_FIELDS},
         ))
     session.add_all(link_rows)
@@ -123,7 +124,8 @@ def load_network(session: Session, version_id: uuid.UUID) -> NetworkFeatureColle
         features.append(LinkFeature(
             id=lk.label, geometry=LineStringGeometry(coordinates=[(x, y) for x, y in line.coords]),
             properties=LinkProperties(uid=str(lk.uid), kind=lk.kind, from_node=labels[lk.from_node_id],
-                                      to_node=labels[lk.to_node_id], attributes=lk.extra or {}, **props),
+                                      to_node=labels[lk.to_node_id], attributes=lk.extra or {},
+                                      level_control=lk.level_control, **props),
         ))
     clients = select(NetworkClient).where(NetworkClient.version_id == version_id).order_by(NetworkClient.id)
     for c in session.scalars(clients):

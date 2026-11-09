@@ -22,6 +22,8 @@ class Project(Base):
     # Parámetros de diseño editables del proyecto (criterios, dotación, pérdidas, curvas). None = valores
     # por defecto del perfil, marcados «no verificado».
     design_params: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # Proyección de demanda (entradas editables); None = valores por defecto «no verificado».
+    demand_projection: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

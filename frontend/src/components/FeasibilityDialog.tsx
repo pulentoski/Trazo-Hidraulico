@@ -3,8 +3,8 @@ import { useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { FeasibilityRequest, FeasibilityResult } from "../api/types";
 import { fmt, parseNum } from "../lib/format";
-import type { EClient } from "../lib/network";
-import { interpolatedElevation, nextId, projectOnLink, splitPipe, uid } from "../lib/network";
+import type { EClient, Network } from "../lib/network";
+import { applyUpgrade, interpolatedElevation, nextId, projectOnLink, splitPipe, uid } from "../lib/network";
 import { flushPending } from "../state/live";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
@@ -64,16 +64,26 @@ function FeasibilityForm({ pos, linkUid }: { pos: [number, number]; linkUid: str
     }
   };
 
-  const addClient = () => {
+  const addClient = (withUpgrade = false) => {
     if (!res || !req) return;
     const id = nextId(Object.values(net.clients).map((c) => c.id), "client");
+    const upgrade = withUpgrade ? res.upgrades.find((u) => u.feasible) : undefined;
+    let changed: string[] = [];
     commit((n) => {
       const r = splitPipe(n, projectOnLink(n, linkUid, pos), nextId(Object.values(n.nodes).map((x) => x.id), "junction"), req.elevation);
       const c: EClient = { uid: uid(), id, pos, node: r.node, link: linkUid, connection: pr.point, props: {
         name: req.name ?? null, client_type: "residencial", status: "activo", consumption_value: req.consumption_lps,
-        consumption_unit: "L/s", connection_mode: "new_node", elevation: req.elevation } };
-      return { ...r.net, clients: { ...r.net.clients, [c.uid]: c } };
+        consumption_unit: "L/s", connection_mode: "new_node", elevation: req.elevation, attributes: {} } };
+      let next: Network = { ...r.net, clients: { ...r.net.clients, [c.uid]: c } };
+      if (upgrade) {
+        // Si el cuello de botella es la tubería que se dividió, la mejora va a ambas partes.
+        const up = applyUpgrade(next, upgrade, useEditor.getState().catalog, upgrade.link === link?.id ? r.second : null);
+        next = up.net;
+        changed = up.changed;
+      }
+      return next;
     });
+    if (upgrade) toast(`Mejora aplicada: ${[...new Set(changed)].join(", ")} a DN ${upgrade.dn_to}.`);
     const created = Object.values(useEditor.getState().net.clients).find((c) => c.id === id);
     if (created) select([created.uid]);
     toast(`Cliente ${id} agregado al proyecto (nudo nuevo en ${link?.id}).`);
@@ -132,7 +142,12 @@ function FeasibilityForm({ pos, linkUid }: { pos: [number, number]; linkUid: str
           </>)}
           <div className="modal-actions">
             <button type="button" onClick={() => void openReport()}>Informe (imprimir / PDF)</button>
-            <button type="button" className="primary" disabled={!res.feasible} onClick={addClient}
+            {res.upgrade_feasible && res.upgrades.some((u) => u.feasible) && (
+              <button type="button" className="primary" onClick={() => addClient(true)}
+                title="Agrega el cliente y cambia el tramo cuello de botella al DN sugerido (catálogo)">
+                Agregar cliente y aplicar mejora (DN {res.upgrades.find((u) => u.feasible)?.dn_to})</button>
+            )}
+            <button type="button" className={res.feasible ? "primary" : ""} disabled={!res.feasible} onClick={() => addClient(false)}
               title={res.feasible ? "Agrega el cliente con un nudo nuevo en el punto de conexión" : "Solo disponible si es factible"}>Agregar cliente al proyecto</button>
           </div>
         </>

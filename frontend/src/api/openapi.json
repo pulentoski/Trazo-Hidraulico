@@ -1,6 +1,29 @@
 {
   "components": {
     "schemas": {
+      "Addition": {
+        "additionalProperties": false,
+        "properties": {
+          "dwellings": {
+            "description": "Viviendas que se incorporan ese año (conjunto habitacional)",
+            "minimum": 0.0,
+            "title": "Dwellings",
+            "type": "number"
+          },
+          "year": {
+            "maximum": 2300.0,
+            "minimum": 1900.0,
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "dwellings"
+        ],
+        "title": "Addition",
+        "type": "object"
+      },
       "AffectedClient": {
         "properties": {
           "after": {
@@ -263,6 +286,32 @@
           "file"
         ],
         "title": "Body_import_project_api_projects_import_post",
+        "type": "object"
+      },
+      "Body_import_trazo_api_projects_import_trazo_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "Archivo .trazo",
+            "title": "File",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_trazo_api_projects_import_trazo_post",
         "type": "object"
       },
       "Body_upload_orthophoto_api_projects__project_id__orthophotos_post": {
@@ -1128,7 +1177,11 @@
               "PRESSURE_HIGH",
               "VELOCITY_LOW",
               "VELOCITY_HIGH",
-              "BOTTLENECK"
+              "BOTTLENECK",
+              "PRESSURE_PEAK",
+              "TANK_OVERFLOW",
+              "TANK_EMPTY",
+              "PUMP_OFF_CURVE"
             ],
             "title": "Code",
             "type": "string"
@@ -1219,6 +1272,331 @@
           "base"
         ],
         "title": "DemandCategory",
+        "type": "object"
+      },
+      "DemandInputs": {
+        "additionalProperties": false,
+        "properties": {
+          "additions": {
+            "items": {
+              "$ref": "#/components/schemas/Addition"
+            },
+            "maxItems": 20,
+            "title": "Additions",
+            "type": "array"
+          },
+          "base_connections": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Arranques (clientes) del año base",
+            "title": "Base Connections"
+          },
+          "base_mode": {
+            "default": "arranques",
+            "enum": [
+              "poblacion",
+              "arranques"
+            ],
+            "title": "Base Mode",
+            "type": "string"
+          },
+          "base_population": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Población del año base (hab)",
+            "title": "Base Population"
+          },
+          "base_year": {
+            "maximum": 2300.0,
+            "minimum": 1900.0,
+            "title": "Base Year",
+            "type": "integer"
+          },
+          "coef_day": {
+            "description": "Coeficiente de día de máximo consumo",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Coef Day",
+            "type": "number"
+          },
+          "coef_hour": {
+            "description": "Coeficiente de hora de máximo consumo",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Coef Hour",
+            "type": "number"
+          },
+          "current_year": {
+            "description": "Año actual (escenario «año actual»)",
+            "maximum": 2300.0,
+            "minimum": 1900.0,
+            "title": "Current Year",
+            "type": "integer"
+          },
+          "dotation_lphd": {
+            "description": "Dotación (L/hab/día)",
+            "exclusiveMinimum": 0.0,
+            "maximum": 2000.0,
+            "title": "Dotation Lphd",
+            "type": "number"
+          },
+          "extra_population": {
+            "default": 0.0,
+            "description": "Población adicional del año base (escuelas, etc.)",
+            "minimum": 0.0,
+            "title": "Extra Population",
+            "type": "number"
+          },
+          "growth": {
+            "description": "Tramos de tasa de crecimiento",
+            "items": {
+              "$ref": "#/components/schemas/GrowthStep"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Growth",
+            "type": "array"
+          },
+          "horizon_years": {
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Horizon Years",
+            "type": "integer"
+          },
+          "losses_pct": {
+            "description": "Pérdidas (%)",
+            "exclusiveMaximum": 90.0,
+            "minimum": 0.0,
+            "title": "Losses Pct",
+            "type": "number"
+          },
+          "model_year": {
+            "description": "Año que representan las demandas actuales del modelo",
+            "maximum": 2300.0,
+            "minimum": 1900.0,
+            "title": "Model Year",
+            "type": "integer"
+          },
+          "persons_per_dwelling": {
+            "description": "Habitantes por vivienda",
+            "exclusiveMinimum": 0.0,
+            "title": "Persons Per Dwelling",
+            "type": "number"
+          },
+          "pump_hours": {
+            "description": "Horas de bombeo por día",
+            "exclusiveMinimum": 0.0,
+            "maximum": 24.0,
+            "title": "Pump Hours",
+            "type": "number"
+          },
+          "regulation_pct": {
+            "description": "Volumen de regulación (% del volumen diario a QMD)",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Regulation Pct",
+            "type": "number"
+          },
+          "scenario_peak_day": {
+            "default": false,
+            "description": "Los escenarios aplican también el coef. de día máximo",
+            "title": "Scenario Peak Day",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "base_year",
+          "model_year",
+          "current_year",
+          "persons_per_dwelling",
+          "growth",
+          "horizon_years",
+          "dotation_lphd",
+          "losses_pct",
+          "coef_day",
+          "coef_hour",
+          "pump_hours",
+          "regulation_pct"
+        ],
+        "title": "DemandInputs",
+        "type": "object"
+      },
+      "DemandResult": {
+        "properties": {
+          "active_multiplier": {
+            "default": 1.0,
+            "title": "Active Multiplier",
+            "type": "number"
+          },
+          "active_scenario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Scenario"
+          },
+          "customized": {
+            "title": "Customized",
+            "type": "boolean"
+          },
+          "inputs": {
+            "$ref": "#/components/schemas/DemandInputs"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/DemandRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/DemandScenario"
+            },
+            "title": "Scenarios",
+            "type": "array"
+          },
+          "verified": {
+            "default": false,
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "project_id",
+          "inputs",
+          "customized",
+          "note",
+          "rows",
+          "scenarios"
+        ],
+        "title": "DemandResult",
+        "type": "object"
+      },
+      "DemandRow": {
+        "properties": {
+          "clients": {
+            "title": "Clients",
+            "type": "number"
+          },
+          "consumption_m3": {
+            "description": "Consumo anual (m³)",
+            "title": "Consumption M3",
+            "type": "number"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "population": {
+            "title": "Population",
+            "type": "number"
+          },
+          "production_m3": {
+            "description": "Producción anual con pérdidas (m³)",
+            "title": "Production M3",
+            "type": "number"
+          },
+          "pump_lps": {
+            "description": "Caudal de bombeo: QMD·24/horas de bombeo",
+            "title": "Pump Lps",
+            "type": "number"
+          },
+          "qmd_lps": {
+            "title": "Qmd Lps",
+            "type": "number"
+          },
+          "qmed_lps": {
+            "title": "Qmed Lps",
+            "type": "number"
+          },
+          "qmh_lps": {
+            "title": "Qmh Lps",
+            "type": "number"
+          },
+          "regulation_m3": {
+            "title": "Regulation M3",
+            "type": "number"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n",
+          "year",
+          "population",
+          "clients",
+          "consumption_m3",
+          "production_m3",
+          "qmed_lps",
+          "qmd_lps",
+          "qmh_lps",
+          "pump_lps",
+          "regulation_m3"
+        ],
+        "title": "DemandRow",
+        "type": "object"
+      },
+      "DemandScenario": {
+        "properties": {
+          "id": {
+            "enum": [
+              "base",
+              "actual",
+              "horizonte"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "multiplier": {
+            "description": "Multiplicador de demandas de nudos y clientes",
+            "title": "Multiplier",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "year",
+          "multiplier"
+        ],
+        "title": "DemandScenario",
         "type": "object"
       },
       "DesignParam": {
@@ -2037,6 +2415,31 @@
         "title": "GcpRequest",
         "type": "object"
       },
+      "GrowthStep": {
+        "additionalProperties": false,
+        "properties": {
+          "from_year": {
+            "description": "Año desde el cual rige la tasa",
+            "maximum": 2300.0,
+            "minimum": 1900.0,
+            "title": "From Year",
+            "type": "integer"
+          },
+          "rate_pct": {
+            "description": "Tasa de crecimiento anual (%)",
+            "maximum": 50.0,
+            "minimum": -20.0,
+            "title": "Rate Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "from_year",
+          "rate_pct"
+        ],
+        "title": "GrowthStep",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2299,6 +2702,39 @@
             "title": "Demand Model",
             "type": "string"
           },
+          "demand_multiplier": {
+            "default": 1.0,
+            "description": "Multiplicador global de demandas (escenario de demanda)",
+            "exclusiveMinimum": 0.0,
+            "title": "Demand Multiplier",
+            "type": "number"
+          },
+          "demand_scenario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Escenario de demanda aplicado (base, actual, horizonte)",
+            "title": "Demand Scenario"
+          },
+          "duration_h": {
+            "anyOf": [
+              {
+                "maximum": 8760.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Duración de la simulación (h). None = la de [TIMES] (estática si no hay)",
+            "title": "Duration H"
+          },
           "extra": {
             "additionalProperties": {
               "type": "string"
@@ -2317,6 +2753,14 @@
             "title": "Headloss",
             "type": "string"
           },
+          "hydraulic_step_min": {
+            "default": 60,
+            "description": "Paso hidráulico (min)",
+            "maximum": 1440.0,
+            "minimum": 1.0,
+            "title": "Hydraulic Step Min",
+            "type": "integer"
+          },
           "include_projected_clients": {
             "default": false,
             "description": "Sumar también los clientes en estado «proyectado» a la demanda de su nudo",
@@ -2329,12 +2773,28 @@
             "title": "Minimum Pressure",
             "type": "number"
           },
+          "pattern_step_min": {
+            "default": 60,
+            "description": "Paso de los patrones (min)",
+            "maximum": 1440.0,
+            "minimum": 1.0,
+            "title": "Pattern Step Min",
+            "type": "integer"
+          },
           "pressure_exponent": {
             "default": 0.5,
             "description": "PDA: exponente de la relación presión-caudal",
             "exclusiveMinimum": 0.0,
             "title": "Pressure Exponent",
             "type": "number"
+          },
+          "report_step_min": {
+            "default": 60,
+            "description": "Paso de reporte (min)",
+            "maximum": 1440.0,
+            "minimum": 1.0,
+            "title": "Report Step Min",
+            "type": "integer"
           },
           "required_pressure": {
             "default": 15.0,
@@ -2503,6 +2963,34 @@
           "link_count"
         ],
         "title": "ImportResult",
+        "type": "object"
+      },
+      "LevelControl": {
+        "additionalProperties": false,
+        "description": "Control por nivel de un estanque: enciende (abre) bajo `on_below` y apaga (cierra) sobre `off_above`.",
+        "properties": {
+          "off_above": {
+            "description": "Nivel (m sobre el fondo) sobre el cual apaga",
+            "title": "Off Above",
+            "type": "number"
+          },
+          "on_below": {
+            "description": "Nivel (m sobre el fondo) bajo el cual enciende",
+            "title": "On Below",
+            "type": "number"
+          },
+          "tank": {
+            "description": "ID del estanque",
+            "title": "Tank",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tank",
+          "on_below",
+          "off_above"
+        ],
+        "title": "LevelControl",
         "type": "object"
       },
       "LineStringGeometry": {
@@ -2718,6 +3206,33 @@
             "description": "Estado físico (gestión)",
             "title": "Condition"
           },
+          "curve_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array"
+                },
+                "maxItems": 20,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Bomba: curva caudal (L/s) – altura (m), 1 o 3+ puntos",
+            "title": "Curve Points"
+          },
           "description": {
             "anyOf": [
               {
@@ -2855,6 +3370,17 @@
             "description": "Largo con pendiente desde las cotas (m)",
             "title": "Length Slope M"
           },
+          "level_control": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LevelControl"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Bomba o válvula: control por nivel de estanque"
+          },
           "material": {
             "anyOf": [
               {
@@ -2956,6 +3482,23 @@
             ],
             "description": "C (H-W), ε mm (D-W) o n (C-M)",
             "title": "Roughness"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "maxItems": 24,
+                "minItems": 24,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Bomba o válvula: horario 0/1 por hora (0–23 h)",
+            "title": "Schedule"
           },
           "to_node": {
             "description": "ID del nudo final",
@@ -4417,6 +4960,43 @@
         "title": "SavedQueryOut",
         "type": "object"
       },
+      "ScenarioApplied": {
+        "properties": {
+          "multiplier": {
+            "title": "Multiplier",
+            "type": "number"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "multiplier"
+        ],
+        "title": "ScenarioApplied",
+        "type": "object"
+      },
+      "ScenarioApply": {
+        "additionalProperties": false,
+        "properties": {
+          "scenario": {
+            "enum": [
+              "base",
+              "actual",
+              "horizonte"
+            ],
+            "title": "Scenario",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario"
+        ],
+        "title": "ScenarioApply",
+        "type": "object"
+      },
       "ScenarioRequest": {
         "additionalProperties": false,
         "properties": {
@@ -5117,6 +5697,31 @@
         "title": "SimulationResult",
         "type": "object"
       },
+      "TrazoImportResult": {
+        "properties": {
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "project": {
+            "$ref": "#/components/schemas/ProjectOut"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project",
+          "version",
+          "notes"
+        ],
+        "title": "TrazoImportResult",
+        "type": "object"
+      },
       "UpgradeAttempt": {
         "properties": {
           "dn_from": {
@@ -5348,6 +5953,8 @@
                   "link",
                   "client",
                   "shutoff",
+                  "hydrant",
+                  "well",
                   "network"
                 ],
                 "type": "string"
@@ -6022,6 +6629,47 @@
         ]
       }
     },
+    "/api/projects/import-trazo": {
+      "post": {
+        "operationId": "import_trazo_api_projects_import_trazo_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_trazo_api_projects_import_trazo_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrazoImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Importar un archivo .trazo como proyecto nuevo",
+        "tags": [
+          "formato .trazo"
+        ]
+      }
+    },
     "/api/projects/{project_id}": {
       "delete": {
         "operationId": "delete_project_api_projects__project_id__delete",
@@ -6200,6 +6848,233 @@
         "summary": "Importar clientes desde CSV (lat, lon, nombre, consumo) y asignarlos a nudos",
         "tags": [
           "análisis"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/demand/projection": {
+      "delete": {
+        "operationId": "reset_projection_api_projects__project_id__demand_projection_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Volver a los valores por defecto",
+        "tags": [
+          "demanda"
+        ]
+      },
+      "get": {
+        "operationId": "get_projection_api_projects__project_id__demand_projection_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Proyección de demanda (tabla por año y escenarios)",
+        "tags": [
+          "demanda"
+        ]
+      },
+      "put": {
+        "operationId": "put_projection_api_projects__project_id__demand_projection_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemandInputs"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar las entradas de la proyección",
+        "tags": [
+          "demanda"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/demand/projection.xlsx": {
+      "get": {
+        "operationId": "export_projection_api_projects__project_id__demand_projection_xlsx_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar la tabla de proyección a Excel",
+        "tags": [
+          "demanda"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/demand/scenario": {
+      "post": {
+        "operationId": "apply_scenario_api_projects__project_id__demand_scenario_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioApply"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioApplied"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Aplicar un escenario de demanda (crea una versión con el multiplicador)",
+        "tags": [
+          "demanda"
         ]
       }
     },
@@ -6469,6 +7344,63 @@
         "summary": "Exportar una versión como .inp",
         "tags": [
           "proyectos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/export.trazo": {
+      "get": {
+        "operationId": "export_trazo_api_projects__project_id__export_trazo_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar el proyecto como .trazo (zip: .inp + datos propios en JSON)",
+        "tags": [
+          "formato .trazo"
         ]
       }
     },

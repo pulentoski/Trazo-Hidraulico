@@ -1,7 +1,7 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
 import type {
-  CatalogPipe, ClientImportResult, CompareResult, DesignParamsOut, DesignParamUpdate, DesignProfile, EngineInfo,
+  CatalogPipe, ClientImportResult, CompareResult, DemandInputs, DemandResult, DesignParamsOut, TrazoImportResult, DesignParamUpdate, DesignProfile, EngineInfo,
   FeasibilityRequest, FeasibilityResult, FireResult, Gcp, GcpFit, ImportApplyResult, ImportPreview, ImportResult,
   NetworkDocument, NetworkSave, NetworkSaveResult, OrthophotoOut, ProjectOut, QueryDef, QueryElement, QueryResult,
   SavedQueryOut, ScenarioResult, SearchHit, SectorsResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
@@ -134,6 +134,20 @@ export const api = {
     if (!res.ok) fail(res.status, body);
     return body as ClientImportResult;
   },
+  // ── Demanda y formato .trazo ──
+  demandProjection: (id: string) =>
+    unwrap<DemandResult>(client.GET("/api/projects/{project_id}/demand/projection", { params: { path: { project_id: id } } })),
+  saveDemandProjection: (id: string, body: DemandInputs) =>
+    unwrap<DemandResult>(client.PUT("/api/projects/{project_id}/demand/projection", { params: { path: { project_id: id } }, body })),
+  resetDemandProjection: (id: string) =>
+    unwrap<DemandResult>(client.DELETE("/api/projects/{project_id}/demand/projection", { params: { path: { project_id: id } } })),
+  applyDemandScenario: (id: string, scenario: "base" | "actual" | "horizonte") =>
+    unwrap<{ version: number; multiplier: number }>(client.POST("/api/projects/{project_id}/demand/scenario", {
+      params: { path: { project_id: id } }, body: { scenario },
+    })),
+  demandXlsxUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/demand/projection.xlsx`,
+  trazoUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/export.trazo`,
+  importTrazo: (file: File, name?: string) => form<TrazoImportResult>("/api/projects/import-trazo", file, { name }),
   // ── SIG ──
   templateUrl: "/api/sig/template.xlsx",
   excelUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/sig/export.xlsx`,

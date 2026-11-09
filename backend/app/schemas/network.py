@@ -44,6 +44,15 @@ ROUGHNESS_MEANING: dict[str, str] = {
 }
 
 
+class LevelControl(BaseModel):
+    """Control por nivel de un estanque: enciende (abre) bajo `on_below` y apaga (cierra) sobre `off_above`."""
+
+    model_config = ConfigDict(extra="forbid")
+    tank: str = Field(description="ID del estanque")
+    on_below: float = Field(description="Nivel (m sobre el fondo) bajo el cual enciende")
+    off_above: float = Field(description="Nivel (m sobre el fondo) sobre el cual apaga")
+
+
 class HydraulicOptions(BaseModel):
     """Opciones hidráulicas del modelo. La rugosidad de los tramos se interpreta según `headloss`."""
 
@@ -56,6 +65,13 @@ class HydraulicOptions(BaseModel):
     minimum_pressure: float = Field(0.0, description="PDA: presión bajo la cual no hay entrega (m)")
     required_pressure: float = Field(15.0, description="PDA: presión para entregar la demanda completa (m)")
     pressure_exponent: float = Field(0.5, gt=0, description="PDA: exponente de la relación presión-caudal")
+    duration_h: float | None = Field(
+        None, ge=0, le=8760, description="Duración de la simulación (h). None = la de [TIMES] (estática si no hay)")
+    hydraulic_step_min: int = Field(60, ge=1, le=1440, description="Paso hidráulico (min)")
+    pattern_step_min: int = Field(60, ge=1, le=1440, description="Paso de los patrones (min)")
+    report_step_min: int = Field(60, ge=1, le=1440, description="Paso de reporte (min)")
+    demand_multiplier: float = Field(1.0, gt=0, description="Multiplicador global de demandas (escenario de demanda)")
+    demand_scenario: str | None = Field(None, description="Escenario de demanda aplicado (base, actual, horizonte)")
     extra: dict[str, str] = Field(
         default_factory=dict,
         description="Otras opciones del motor en formato .inp (TRIALS, ACCURACY, PATTERN, ...)",
@@ -131,6 +147,11 @@ class LinkProperties(BaseModel):
     valve_type: ValveType | None = None
     valve_setting: float | None = None
     valve_curve: str | None = None
+    schedule: list[int] | None = Field(
+        None, min_length=24, max_length=24, description="Bomba o válvula: horario 0/1 por hora (0–23 h)")
+    level_control: LevelControl | None = Field(None, description="Bomba o válvula: control por nivel de estanque")
+    curve_points: list[tuple[float, float]] | None = Field(
+        None, min_length=1, max_length=20, description="Bomba: curva caudal (L/s) – altura (m), 1 o 3+ puntos")
     condition: PipeCondition | None = Field(None, description="Estado físico (gestión)")
     install_year: int | None = Field(None, ge=1850, le=2200, description="Año de instalación")
     network_type: NetworkType | None = Field(None, description="Tipo de red")

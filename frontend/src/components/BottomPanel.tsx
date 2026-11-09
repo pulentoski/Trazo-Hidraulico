@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { fmt, fmtTime } from "../lib/format";
 import { useEditor } from "../state/store";
+import { ChartsTab } from "./ChartsTab";
 import { ClientsTab } from "./ClientsTab";
+import { DemandTab } from "./DemandTab";
+import { SimulationTab } from "./SimulationTab";
 import { HydrantsTab } from "./HydrantsTab";
 import { LayersTab } from "./LayersTab";
 import { QueryTab } from "./QueryTab";
 import { ScenariosTab } from "./ScenariosTab";
 import { SectorsTab } from "./SectorsTab";
 
-type Tab = "alerts" | "nodes" | "links" | "clients" | "scenarios" | "sectors" | "query" | "hydrants" | "layers" | "engine";
+type Tab = "alerts" | "nodes" | "links" | "clients" | "scenarios" | "sectors" | "query" | "hydrants" | "layers" | "engine"
+  | "simulation" | "demand" | "charts";
 type SortKey = { col: string; dir: 1 | -1 };
 
 interface AlertRow { sev: "error" | "warning"; origin: string; text: string; type?: string | null; id?: string | null }
@@ -87,6 +91,9 @@ export function BottomPanel() {
         <button className={tab === "nodes" ? "on" : ""} onClick={() => setTab("nodes")}>Nudos <span className="count">{nodeRows.length}</span></button>
         <button className={tab === "links" ? "on" : ""} onClick={() => setTab("links")}>Tramos <span className="count">{linkRows.length}</span></button>
         <button className={tab === "clients" ? "on" : ""} onClick={() => setTab("clients")}>Clientes <span className="count">{Object.keys(net.clients).length}</span></button>
+        <button className={tab === "simulation" ? "on" : ""} onClick={() => setTab("simulation")}>Simulación</button>
+        <button className={tab === "demand" ? "on" : ""} onClick={() => setTab("demand")}>Demanda</button>
+        <button className={tab === "charts" ? "on" : ""} onClick={() => setTab("charts")}>Gráficos</button>
         <button className={tab === "scenarios" ? "on" : ""} onClick={() => setTab("scenarios")}>Escenarios</button>
         <button className={tab === "sectors" ? "on" : ""} onClick={() => setTab("sectors")}>Cuarteles</button>
         <button className={tab === "query" ? "on" : ""} onClick={() => setTab("query")}>Consultas</button>
@@ -150,6 +157,9 @@ export function BottomPanel() {
           {tab === "clients" && <ClientsTab />}
           {tab === "scenarios" && <ScenariosTab />}
           {tab === "sectors" && <SectorsTab />}
+          {tab === "simulation" && <SimulationTab />}
+          {tab === "demand" && <DemandTab />}
+          {tab === "charts" && <ChartsTab />}
           {tab === "query" && <QueryTab />}
           {tab === "hydrants" && <HydrantsTab />}
           {tab === "layers" && <LayersTab />}

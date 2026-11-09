@@ -3,9 +3,10 @@
 Errores bloqueantes (impiden simular):
   E_EMPTY_NETWORK, E_NO_SOURCE, E_LINK_NODE, E_DIAMETER_NOT_IN_CATALOG, E_DUPLICATE_ID,
   E_INVALID_ID, E_ISOLATED_NODE, E_DISCONNECTED_NODE, E_MISSING_PARAM, E_CLIENT_NODE, E_SHUTOFF_LINK,
-  E_HYDRANT_NODE, E_WELL_NODE
+  E_HYDRANT_NODE, E_WELL_NODE, E_PUMP_CURVE, E_OPERATION
 Advertencias:
-  W_ELEVATION_ASSUMED, W_ELEVATION_DOUBTFUL, W_SHORT_PIPE, W_NO_DEMAND, W_CRITERIA, W_SCENARIO_VALVE
+  W_ELEVATION_ASSUMED, W_ELEVATION_DOUBTFUL, W_SHORT_PIPE, W_NO_DEMAND, W_CRITERIA, W_SCENARIO_VALVE,
+  W_PATTERN_MEAN, W_OPERATION
 
 La cota nunca se supone en silencio: un nudo o estanque sin cota es un error bloqueante
 (E_MISSING_PARAM). Solo una importación puede traer una cota supuesta (p. ej. un .inp sin la
@@ -52,6 +53,36 @@ def _section_ids(text: str | None) -> set[str]:
         if s and not s.startswith(";"):
             ids.add(s.split()[0])
     return ids
+
+
+def parse_patterns(text: str | None) -> dict[str, list[float]]:
+    """[PATTERNS] en texto → {id: multiplicadores} (un patrón puede ocupar varias líneas)."""
+    out: dict[str, list[float]] = {}
+    for line in (text or "").splitlines():
+        s = line.split(";")[0].strip()
+        if not s:
+            continue
+        toks = s.split()
+        try:
+            out.setdefault(toks[0], []).extend(float(t) for t in toks[1:])
+        except ValueError:
+            continue
+    return out
+
+
+def pump_curve_problem(points) -> str | None:
+    """Curva H-Q válida: 1 punto (diseño) o 3 o más con caudal creciente y altura decreciente."""
+    pts = [(float(q), float(h)) for q, h in points]
+    if len(pts) == 2:
+        return "la curva debe tener 1 punto (de diseño) o 3 o más puntos."
+    if any(q < 0 or h <= 0 for q, h in pts):
+        return "caudales no negativos y alturas positivas."
+    if len(pts) == 1:
+        return None if pts[0][0] > 0 else "el punto de diseño necesita un caudal mayor que 0."
+    for (q1, h1), (q2, h2) in zip(pts, pts[1:]):
+        if not (q2 > q1 and h2 < h1):
+            return "los caudales deben crecer y las alturas disminuir de un punto al siguiente."
+    return None
 
 
 def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
@@ -215,8 +246,13 @@ def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
                         "link", lk.id)
             need(p.inner_diameter_mm is not None and p.inner_diameter_mm > 0, lk, "link", "el diámetro interior")
         elif p.kind == "pump":
-            need(bool(p.pump_curve) or (p.pump_power or 0) > 0, lk, "link", "la curva o potencia de la bomba")
-            if p.pump_curve and p.pump_curve not in curves:
+            need(bool(p.pump_curve) or bool(p.curve_points) or (p.pump_power or 0) > 0, lk, "link",
+                 "la curva o potencia de la bomba")
+            if p.curve_points:
+                msg = pump_curve_problem(p.curve_points)
+                if msg:
+                    err("E_PUMP_CURVE", f"Bomba {lk.id}: {msg}", "link", lk.id)
+            if p.pump_curve and not p.curve_points and p.pump_curve not in curves:
                 err("E_MISSING_PARAM", f"La curva «{p.pump_curve}» de la bomba {lk.id} no está definida.", "link", lk.id)
             need_pattern(p.pump_pattern, lk, "link")
         else:
@@ -227,11 +263,39 @@ def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
             else:
                 need(p.valve_setting is not None, lk, "link", "la consigna de la válvula")
 
+    # Operación: horario y control por nivel (bombas y válvulas)
+    for lk in links:
+        p = lk.properties
+        if (p.schedule or p.level_control) and p.kind == "pipe":
+            err("E_OPERATION", f"El tramo {lk.id} es una tubería: el horario y el control por nivel son de bombas "
+                               "o válvulas.", "link", lk.id)
+        if p.schedule and any(v not in (0, 1) for v in p.schedule):
+            err("E_OPERATION", f"El horario de {lk.id} debe tener 24 valores 0 (apagada) o 1 (encendida).", "link", lk.id)
+        if p.level_control:
+            lc = p.level_control
+            t = node_by_id.get(lc.tank)
+            if t is None or t.properties.kind != "tank":
+                err("E_OPERATION", f"El control por nivel de {lk.id} referencia «{lc.tank}», que no es un estanque.",
+                    "link", lk.id)
+            elif lc.on_below >= lc.off_above:
+                err("E_OPERATION", f"Control por nivel de {lk.id}: el nivel de encendido ({_fmt(lc.on_below)} m) debe "
+                                   f"ser menor que el de apagado ({_fmt(lc.off_above)} m).", "link", lk.id)
+            elif t.properties.max_level is not None and lc.off_above > t.properties.max_level:
+                warn("W_OPERATION", f"Control por nivel de {lk.id}: apaga sobre {_fmt(lc.off_above)} m, más alto que el "
+                                    f"nivel máximo del estanque {t.id} ({_fmt(t.properties.max_level)} m).", "link", lk.id)
+
     o = model.options
     if o.demand_model == "PDA" and o.required_pressure <= o.minimum_pressure:
         err("E_MISSING_PARAM", "Análisis PDA: la presión requerida debe ser mayor que la presión mínima.", "network")
 
     # ── Advertencias ──
+    for pid, mult in parse_patterns(model.aux.get("patterns")).items():
+        if mult:
+            mean = sum(mult) / len(mult)
+            if abs(mean - 1.0) > 0.005:
+                warn("W_PATTERN_MEAN", f"El patrón «{pid}» tiene promedio {_fmt(round(mean, 3))} (no 1): el consumo del día "
+                                       f"queda {_fmt(round(abs(1 - mean) * 100, 1))} % {'bajo' if mean < 1 else 'sobre'} el "
+                                       "caudal base. Puede normalizarlo.", "network", pid)
     for n in nodes:
         p = n.properties
         if p.kind == "reservoir" or p.elevation is None:

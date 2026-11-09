@@ -134,6 +134,12 @@ function ImportInp() {
     if (!file || tooBig) return;
     setBusy(true);
     try {
+      if (/\.trazo$/i.test(file.name)) {
+        const t = await api.importTrazo(file);
+        toast(`Proyecto .trazo importado (versión ${t.version}). ${t.notes.join(" ")}`);
+        navigate(PATHS.project(t.project.id));
+        return;
+      }
       const r = await api.importInp(file, undefined, crs);
       toast(`Importado: ${r.node_count} nudos y ${r.link_count} tramos (${r.georeference}). ${r.notes.join(" ")}`);
       navigate(PATHS.project(r.project.id));
@@ -144,10 +150,10 @@ function ImportInp() {
   };
   return (
     <section className="card">
-      <h2><Icon.upload /> Importar .inp (EPANET)</h2>
+      <h2><Icon.upload /> Importar .inp (EPANET) o .trazo</h2>
       <form onSubmit={submit}>
         <label className="field stacked"><span>Archivo</span>
-          <input type="file" accept=".inp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <input type="file" accept=".inp,.trazo" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         </label>
         {tooBig && <p className="field-error">El archivo supera {MAX_INP_MB} MB.</p>}
         <label className="field stacked"><span>Sistema de coordenadas del archivo</span>
@@ -155,7 +161,8 @@ function ImportInp() {
             {CRS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </label>
-        <p className="muted small">Las unidades se convierten a SI (L/s). Las cotas quedan con fuente «.inp»; si faltan, se advierte.</p>
+        <p className="muted small">Las unidades se convierten a SI (L/s). Las cotas quedan con fuente «.inp»; si faltan, se advierte.
+          Se conservan [VERTICES], [LABELS] y [TAGS]; las coordenadas UTM, lat/lon o locales se detectan solas. Un .trazo trae el proyecto completo.</p>
         <button className="primary" disabled={busy || !file || tooBig}>{busy ? "Importando…" : "Importar"}</button>
       </form>
     </section>

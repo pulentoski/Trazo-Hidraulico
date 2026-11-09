@@ -399,6 +399,8 @@ class Importer:
                 continue
             if sheet.kind == "pipe":
                 self.fill_catalog(merged, fields, existing)
+            if sheet.kind == "pump" and not self._pump_operation(sheet, r, vals, merged, ident):
+                continue
             nodes = self.nodes()
             bad = [merged[k] for k in ("from_node", "to_node") if merged.get(k) not in nodes]
             if bad:
@@ -426,6 +428,38 @@ class Importer:
             feat = LinkFeature(id=ident, geometry=LineStringGeometry(coordinates=coords), properties=props)
             self._put(feat, existing)
             self._mark(sheet, ident, r.number)
+
+    def _pump_operation(self, sheet: Sheet, r: RawRow, vals: dict, merged: dict, ident: str) -> bool:
+        """Columnas de operación de bombas: curva H-Q, horario y control por nivel."""
+        from .tables import parse_schedule
+
+        try:
+            if "_curve" in vals:
+                merged["curve_points"] = ([tuple(_num(x) for x in pair.replace(",", " ").split())
+                                           for pair in str(vals["_curve"]).split(";") if pair.strip()]
+                                          if vals["_curve"] is not None else None)
+                if merged["curve_points"] and any(len(p) != 2 for p in merged["curve_points"]):
+                    raise CellError("cada punto de la curva debe ser «Q H»")
+                if merged["curve_points"]:
+                    merged["pump_power"] = None
+            if "_schedule" in vals:
+                merged["schedule"] = parse_schedule(vals["_schedule"]) if vals["_schedule"] is not None else None
+        except (CellError, ValueError) as exc:
+            self.ctx.err(sheet, r.number, ident, f"Operación de la bomba: {exc}.")
+            return False
+        if any(k in vals for k in ("_lc_tank", "_lc_on", "_lc_off")):
+            cur = merged.get("level_control") or {}
+            tank = vals.get("_lc_tank", cur.get("tank"))
+            on = vals.get("_lc_on", cur.get("on_below"))
+            off = vals.get("_lc_off", cur.get("off_above"))
+            if tank is None:
+                merged["level_control"] = None
+            elif on is None or off is None:
+                self.ctx.err(sheet, r.number, ident, "Control por nivel: indique «Enciende bajo» y «Apaga sobre».")
+                return False
+            else:
+                merged["level_control"] = {"tank": str(tank), "on_below": on, "off_above": off}
+        return True
 
     def fill_catalog(self, merged: dict[str, Any], fields: dict[str, Any], existing: LinkFeature | None) -> None:
         """Diámetro interior y rugosidad desde el catálogo cuando faltan (material + DN + clase)."""

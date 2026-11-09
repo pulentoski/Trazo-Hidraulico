@@ -1,4 +1,4 @@
-# Trazo Hidráulico — Etapas 1 y 2
+# Trazo Hidráulico — Etapas 1 a 3
 
 Plataforma local para diseñar y simular redes de agua potable. Editor tipo CAD/GIS sobre Google Maps,
 motor hidráulico **OWA-EPANET 2.3.5** en el backend (único motor), resultados reproducibles y ligados
@@ -91,6 +91,15 @@ Detalle en [docs/sig.md](docs/sig.md). En resumen:
   exportación Excel/CSV; búsqueda rápida sobre el mapa.
 - **Exportaciones**: DXF por capas en UTM y GeoPackage para QGIS.
 
+## Etapa 3: .trazo, demanda, 24 h y gráficos
+
+Detalle en [docs/etapa3.md](docs/etapa3.md): formato de proyecto `.trazo` (zip con .inp + JSON, ida y vuelta
+sin pérdida; menú **Planilla y SIG** y la tarjeta de importación del inicio), importación .inp con [VERTICES],
+[LABELS], [TAGS] y detección de UTM / lat-lon / locales, proyección de demanda y escenarios (pestaña Demanda),
+simulación de 24 h con curvas de modulación, estanques, bombas con horario, control por nivel y curva de 1 o 3
+puntos (pestaña Simulación y panel de la bomba), alertas de operación, gráficos con exportación PNG/CSV y
+deslizador de hora en el mapa. Referencia SimulaEST1 en [docs/validation/simulaest1.md](docs/validation/simulaest1.md).
+
 ## Publicar en un dominio con HTTPS
 
 Caddy obtiene y renueva el certificado automáticamente (Let's Encrypt) cuando el sitio tiene un
@@ -135,6 +144,9 @@ Ejecuta todo dentro de contenedores y sin depender de Google:
 - SIG: ida y vuelta Excel sin cambios, errores por fila, actualización parcial, CSV/UTM, demostración «APR Demo»,
   cuarteles con resultado conocido, consultas con conteo esperado, grifos, DXF/GeoPackage (leídos con GDAL) y
   ortofotos (GeoTIFF, JPG + world y puntos de control en su posición, tolerancia 1 m).
+- Etapa 3: SimulaEST1 (nivel horario contra la planilla), operación de bombas, alertas de período extendido,
+  proyección contra la hoja de la planilla, escenarios de demanda, ida y vuelta .trazo, .inp con etiquetas en
+  lat/lon y demo de 24 h.
 - Frontend: `tsc --noEmit`, pruebas unitarias (vitest) y verificación de que `schema.d.ts` está al día con OpenAPI.
 
 Los resultados y las tolerancias quedan en [`docs/validation/`](docs/validation/tolerancias.md).

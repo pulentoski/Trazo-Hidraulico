@@ -25,6 +25,7 @@ export interface Toast { id: number; text: string; kind: "info" | "error" }
 
 const DEFAULT_OPTIONS: HydraulicOptions = {
   headloss: "H-W", demand_model: "DDA", include_projected_clients: false, minimum_pressure: 0, required_pressure: 15, pressure_exponent: 0.5, extra: {},
+  duration_h: null, hydraulic_step_min: 60, pattern_step_min: 60, report_step_min: 60, demand_multiplier: 1, demand_scenario: null,
 };
 
 function readPref<T>(key: string, fallback: T): T {
@@ -120,6 +121,8 @@ export interface EditorState {
   dismissToast: (id: number) => void;
   set: (partial: Partial<EditorState>) => void;
   setScenarios: (list: ValveScenario[]) => void;
+  /** Secciones .inp complementarias (patrones, curvas…): se guardan con la versión siguiente. */
+  setAux: (aux: Record<string, string>) => void;
 }
 
 const HISTORY_LIMIT = 200;
@@ -353,4 +356,5 @@ export const useEditor = create<EditorState>()((set, get) => ({
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
   set: (partial) => set(partial),
   setScenarios: (list) => set({ scenarios: list, revision: get().revision + 1 }),
+  setAux: (aux) => set({ aux, revision: get().revision + 1 }),
 }));

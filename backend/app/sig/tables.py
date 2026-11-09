@@ -29,6 +29,41 @@ def fmt_vertices(coords: list[tuple[float, float]]) -> str | None:
     return "; ".join(f"{lat!r} {lon!r}" for lon, lat in inner)
 
 
+def fmt_schedule(schedule: list[int] | None) -> str | None:
+    """[1,1,0,…] → «0-1; 7-17» (horas encendida, inclusivas)."""
+    if schedule is None:
+        return None
+    if not any(schedule):
+        return "apagada"
+    parts, h = [], 0
+    while h < 24:
+        if schedule[h]:
+            a = h
+            while h + 1 < 24 and schedule[h + 1]:
+                h += 1
+            parts.append(f"{a}-{h}" if h > a else f"{a}")
+        h += 1
+    return "; ".join(parts)
+
+
+def parse_schedule(text: str) -> list[int]:
+    s = str(text).strip().lower()
+    if s in ("apagada", "apagado", "off", "ninguna"):
+        return [0] * 24
+    out = [0] * 24
+    for part in s.replace(",", ";").split(";"):
+        part = part.strip()
+        if not part:
+            continue
+        a, _, b = part.partition("-")
+        lo, hi = int(float(a)), int(float(b)) if b else int(float(a))
+        if not (0 <= lo <= hi <= 23):
+            raise ValueError(f"tramo «{part}» fuera de 0–23")
+        for h in range(lo, hi + 1):
+            out[h] = 1
+    return out
+
+
 def public_attributes(attrs: dict[str, Any] | None) -> dict[str, Any]:
     return {k: v for k, v in (attrs or {}).items() if not k.startswith(RESERVED_PREFIX)}
 
@@ -54,6 +89,11 @@ class Exporter:
         values["_vertices"] = fmt_vertices(f.geometry.coordinates)
         if sheet.col("_length_manual"):
             values["_length_manual"] = p.length_hydraulic_m if p.length_choice == "manual" else None
+        if sheet.col("_schedule"):
+            values["_schedule"] = fmt_schedule(p.schedule)
+            values["_curve"] = "; ".join(f"{q!r} {h!r}" for q, h in p.curve_points) if p.curve_points else None
+            lc = p.level_control
+            values["_lc_tank"], values["_lc_on"], values["_lc_off"] = (lc.tank, lc.on_below, lc.off_above) if lc else (None,) * 3
         return Row(f.id, values, public_attributes(p.attributes))
 
     def shutoff_row(self, f: ShutoffFeature) -> Row:

@@ -110,6 +110,11 @@ class NetworkLink(Base):
     install_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     network_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
+    # Operación (bombas y válvulas de control): horario 0/1 por hora, control por nivel y curva H-Q por puntos.
+    schedule: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    level_control: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    curve_points: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+
     extra: Mapped[dict] = mapped_column(JSONB, default=dict)  # atributos libres
 
 

@@ -124,6 +124,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/import-trazo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Importar un archivo .trazo como proyecto nuevo */
+        post: operations["import_trazo_api_projects_import_trazo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}": {
         parameters: {
             query?: never;
@@ -154,6 +171,59 @@ export interface paths {
         put?: never;
         /** Importar clientes desde CSV (lat, lon, nombre, consumo) y asignarlos a nudos */
         post: operations["import_clients_api_projects__project_id__clients_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/demand/projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Proyección de demanda (tabla por año y escenarios) */
+        get: operations["get_projection_api_projects__project_id__demand_projection_get"];
+        /** Editar las entradas de la proyección */
+        put: operations["put_projection_api_projects__project_id__demand_projection_put"];
+        post?: never;
+        /** Volver a los valores por defecto */
+        delete: operations["reset_projection_api_projects__project_id__demand_projection_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/demand/projection.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar la tabla de proyección a Excel */
+        get: operations["export_projection_api_projects__project_id__demand_projection_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/demand/scenario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aplicar un escenario de demanda (crea una versión con el multiplicador) */
+        post: operations["apply_scenario_api_projects__project_id__demand_scenario_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -221,6 +291,23 @@ export interface paths {
         };
         /** Exportar una versión como .inp */
         get: operations["export_inp_api_projects__project_id__export_inp_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/export.trazo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar el proyecto como .trazo (zip: .inp + datos propios en JSON) */
+        get: operations["export_trazo_api_projects__project_id__export_trazo_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -730,6 +817,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Addition */
+        Addition: {
+            /**
+             * Dwellings
+             * @description Viviendas que se incorporan ese año (conjunto habitacional)
+             */
+            dwellings: number;
+            /** Year */
+            year: number;
+        };
         /** AffectedClient */
         AffectedClient: {
             /** After */
@@ -829,6 +926,16 @@ export interface components {
             /**
              * File
              * @description Archivo .inp de EPANET
+             */
+            file: string;
+            /** Name */
+            name?: string | null;
+        };
+        /** Body_import_trazo_api_projects_import_trazo_post */
+        Body_import_trazo_api_projects_import_trazo_post: {
+            /**
+             * File
+             * @description Archivo .trazo
              */
             file: string;
             /** Name */
@@ -1148,7 +1255,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "PRESSURE_LOW" | "PRESSURE_HIGH" | "VELOCITY_LOW" | "VELOCITY_HIGH" | "BOTTLENECK";
+            code: "PRESSURE_LOW" | "PRESSURE_HIGH" | "VELOCITY_LOW" | "VELOCITY_HIGH" | "BOTTLENECK" | "PRESSURE_PEAK" | "TANK_OVERFLOW" | "TANK_EMPTY" | "PUMP_OFF_CURVE";
             /** Element Id */
             element_id: string;
             /**
@@ -1184,6 +1291,170 @@ export interface components {
             name?: string | null;
             /** Pattern */
             pattern?: string | null;
+        };
+        /** DemandInputs */
+        DemandInputs: {
+            /** Additions */
+            additions?: components["schemas"]["Addition"][];
+            /**
+             * Base Connections
+             * @description Arranques (clientes) del año base
+             */
+            base_connections?: number | null;
+            /**
+             * Base Mode
+             * @default arranques
+             * @enum {string}
+             */
+            base_mode: "poblacion" | "arranques";
+            /**
+             * Base Population
+             * @description Población del año base (hab)
+             */
+            base_population?: number | null;
+            /** Base Year */
+            base_year: number;
+            /**
+             * Coef Day
+             * @description Coeficiente de día de máximo consumo
+             */
+            coef_day: number;
+            /**
+             * Coef Hour
+             * @description Coeficiente de hora de máximo consumo
+             */
+            coef_hour: number;
+            /**
+             * Current Year
+             * @description Año actual (escenario «año actual»)
+             */
+            current_year: number;
+            /**
+             * Dotation Lphd
+             * @description Dotación (L/hab/día)
+             */
+            dotation_lphd: number;
+            /**
+             * Extra Population
+             * @description Población adicional del año base (escuelas, etc.)
+             * @default 0
+             */
+            extra_population: number;
+            /**
+             * Growth
+             * @description Tramos de tasa de crecimiento
+             */
+            growth: components["schemas"]["GrowthStep"][];
+            /** Horizon Years */
+            horizon_years: number;
+            /**
+             * Losses Pct
+             * @description Pérdidas (%)
+             */
+            losses_pct: number;
+            /**
+             * Model Year
+             * @description Año que representan las demandas actuales del modelo
+             */
+            model_year: number;
+            /**
+             * Persons Per Dwelling
+             * @description Habitantes por vivienda
+             */
+            persons_per_dwelling: number;
+            /**
+             * Pump Hours
+             * @description Horas de bombeo por día
+             */
+            pump_hours: number;
+            /**
+             * Regulation Pct
+             * @description Volumen de regulación (% del volumen diario a QMD)
+             */
+            regulation_pct: number;
+            /**
+             * Scenario Peak Day
+             * @description Los escenarios aplican también el coef. de día máximo
+             * @default false
+             */
+            scenario_peak_day: boolean;
+        };
+        /** DemandResult */
+        DemandResult: {
+            /**
+             * Active Multiplier
+             * @default 1
+             */
+            active_multiplier: number;
+            /** Active Scenario */
+            active_scenario?: string | null;
+            /** Customized */
+            customized: boolean;
+            inputs: components["schemas"]["DemandInputs"];
+            /** Note */
+            note: string;
+            /** Project Id */
+            project_id: string;
+            /** Rows */
+            rows: components["schemas"]["DemandRow"][];
+            /** Scenarios */
+            scenarios: components["schemas"]["DemandScenario"][];
+            /**
+             * Verified
+             * @default false
+             */
+            verified: boolean;
+        };
+        /** DemandRow */
+        DemandRow: {
+            /** Clients */
+            clients: number;
+            /**
+             * Consumption M3
+             * @description Consumo anual (m³)
+             */
+            consumption_m3: number;
+            /** N */
+            n: number;
+            /** Population */
+            population: number;
+            /**
+             * Production M3
+             * @description Producción anual con pérdidas (m³)
+             */
+            production_m3: number;
+            /**
+             * Pump Lps
+             * @description Caudal de bombeo: QMD·24/horas de bombeo
+             */
+            pump_lps: number;
+            /** Qmd Lps */
+            qmd_lps: number;
+            /** Qmed Lps */
+            qmed_lps: number;
+            /** Qmh Lps */
+            qmh_lps: number;
+            /** Regulation M3 */
+            regulation_m3: number;
+            /** Year */
+            year: number;
+        };
+        /** DemandScenario */
+        DemandScenario: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "base" | "actual" | "horizonte";
+            /**
+             * Multiplier
+             * @description Multiplicador de demandas de nudos y clientes
+             */
+            multiplier: number;
+            /** Name */
+            name: string;
+            /** Year */
+            year: number;
         };
         /** DesignParam */
         DesignParam: {
@@ -1474,6 +1745,19 @@ export interface components {
             /** Gcps */
             gcps: components["schemas"]["Gcp"][];
         };
+        /** GrowthStep */
+        GrowthStep: {
+            /**
+             * From Year
+             * @description Año desde el cual rige la tasa
+             */
+            from_year: number;
+            /**
+             * Rate Pct
+             * @description Tasa de crecimiento anual (%)
+             */
+            rate_pct: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1586,6 +1870,22 @@ export interface components {
              */
             demand_model: "DDA" | "PDA";
             /**
+             * Demand Multiplier
+             * @description Multiplicador global de demandas (escenario de demanda)
+             * @default 1
+             */
+            demand_multiplier: number;
+            /**
+             * Demand Scenario
+             * @description Escenario de demanda aplicado (base, actual, horizonte)
+             */
+            demand_scenario?: string | null;
+            /**
+             * Duration H
+             * @description Duración de la simulación (h). None = la de [TIMES] (estática si no hay)
+             */
+            duration_h?: number | null;
+            /**
              * Extra
              * @description Otras opciones del motor en formato .inp (TRIALS, ACCURACY, PATTERN, ...)
              */
@@ -1599,6 +1899,12 @@ export interface components {
              */
             headloss: "H-W" | "D-W" | "C-M";
             /**
+             * Hydraulic Step Min
+             * @description Paso hidráulico (min)
+             * @default 60
+             */
+            hydraulic_step_min: number;
+            /**
              * Include Projected Clients
              * @description Sumar también los clientes en estado «proyectado» a la demanda de su nudo
              * @default false
@@ -1611,11 +1917,23 @@ export interface components {
              */
             minimum_pressure: number;
             /**
+             * Pattern Step Min
+             * @description Paso de los patrones (min)
+             * @default 60
+             */
+            pattern_step_min: number;
+            /**
              * Pressure Exponent
              * @description PDA: exponente de la relación presión-caudal
              * @default 0.5
              */
             pressure_exponent: number;
+            /**
+             * Report Step Min
+             * @description Paso de reporte (min)
+             * @default 60
+             */
+            report_step_min: number;
             /**
              * Required Pressure
              * @description PDA: presión para entregar la demanda completa (m)
@@ -1683,6 +2001,27 @@ export interface components {
             project: components["schemas"]["ProjectOut"];
             /** Version */
             version: number;
+        };
+        /**
+         * LevelControl
+         * @description Control por nivel de un estanque: enciende (abre) bajo `on_below` y apaga (cierra) sobre `off_above`.
+         */
+        LevelControl: {
+            /**
+             * Off Above
+             * @description Nivel (m sobre el fondo) sobre el cual apaga
+             */
+            off_above: number;
+            /**
+             * On Below
+             * @description Nivel (m sobre el fondo) bajo el cual enciende
+             */
+            on_below: number;
+            /**
+             * Tank
+             * @description ID del estanque
+             */
+            tank: string;
         };
         /** LineStringGeometry */
         LineStringGeometry: {
@@ -1761,6 +2100,14 @@ export interface components {
              * @description Estado físico (gestión)
              */
             condition?: ("bueno" | "regular" | "malo" | "fuera_servicio") | null;
+            /**
+             * Curve Points
+             * @description Bomba: curva caudal (L/s) – altura (m), 1 o 3+ puntos
+             */
+            curve_points?: [
+                number,
+                number
+            ][] | null;
             /** Description */
             description?: string | null;
             /**
@@ -1829,6 +2176,8 @@ export interface components {
              * @description Largo con pendiente desde las cotas (m)
              */
             length_slope_m?: number | null;
+            /** @description Bomba o válvula: control por nivel de estanque */
+            level_control?: components["schemas"]["LevelControl"] | null;
             /** Material */
             material?: string | null;
             /**
@@ -1859,6 +2208,11 @@ export interface components {
              * @description C (H-W), ε mm (D-W) o n (C-M)
              */
             roughness?: number | null;
+            /**
+             * Schedule
+             * @description Bomba o válvula: horario 0/1 por hora (0–23 h)
+             */
+            schedule?: number[] | null;
             /**
              * To Node
              * @description ID del nudo final
@@ -2385,6 +2739,21 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** ScenarioApplied */
+        ScenarioApplied: {
+            /** Multiplier */
+            multiplier: number;
+            /** Version */
+            version: number;
+        };
+        /** ScenarioApply */
+        ScenarioApply: {
+            /**
+             * Scenario
+             * @enum {string}
+             */
+            scenario: "base" | "actual" | "horizonte";
+        };
         /** ScenarioRequest */
         ScenarioRequest: {
             /** Model Version */
@@ -2719,6 +3088,14 @@ export interface components {
             times: number[];
             validation: components["schemas"]["ValidationReport"];
         };
+        /** TrazoImportResult */
+        TrazoImportResult: {
+            /** Notes */
+            notes: string[];
+            project: components["schemas"]["ProjectOut"];
+            /** Version */
+            version: number;
+        };
         /** UpgradeAttempt */
         UpgradeAttempt: {
             /** Dn From */
@@ -2776,7 +3153,7 @@ export interface components {
             /** Element Id */
             element_id?: string | null;
             /** Element Type */
-            element_type?: ("node" | "link" | "client" | "shutoff" | "network") | null;
+            element_type?: ("node" | "link" | "client" | "shutoff" | "hydrant" | "well" | "network") | null;
             /** Message */
             message: string;
             /**
@@ -3148,6 +3525,39 @@ export interface operations {
             };
         };
     };
+    import_trazo_api_projects_import_trazo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_trazo_api_projects_import_trazo_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrazoImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_project_api_projects__project_id__get: {
         parameters: {
             query?: never;
@@ -3265,6 +3675,169 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClientImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_projection_api_projects__project_id__demand_projection_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemandResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_projection_api_projects__project_id__demand_projection_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DemandInputs"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemandResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_projection_api_projects__project_id__demand_projection_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemandResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_projection_api_projects__project_id__demand_projection_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_scenario_api_projects__project_id__demand_scenario_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioApply"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioApplied"];
                 };
             };
             /** @description Validation Error */
@@ -3433,6 +4006,40 @@ export interface operations {
                 };
                 content: {
                     "text/plain": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_trazo_api_projects__project_id__export_trazo_get: {
+        parameters: {
+            query?: {
+                /** @description Número de versión (última si se omite) */
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
                 };
             };
             /** @description Validation Error */

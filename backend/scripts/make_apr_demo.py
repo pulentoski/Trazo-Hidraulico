@@ -1,19 +1,28 @@
 """Genera examples/apr-demo.xlsx: APR de demostración en la zona de La Serena (UTM 19S).
 
 Red: pozo con bomba que impulsa a un estanque; distribución por gravedad con 15 tramos, 4 válvulas de corte
-(4 cuarteles), 1 grifo y 30 clientes con atributos completos.
+(4 cuarteles), 1 grifo y 30 clientes con atributos completos. Simulación de 24 h: curva horaria CurvaMod
+normalizada, bomba con curva H-Q de 3 puntos y horario de encendido (estilo columna F de SimulaEST1), y demanda
+base en los nudos (población sin catastro de clientes) para que se vea la variación de nivel del estanque.
 
 Uso (dentro de la imagen de la API):  python scripts/make_apr_demo.py /ruta/apr-demo.xlsx
 """
 from __future__ import annotations
 
+import json
 import sys
 
 from pyproj import Transformer
 
 from app.sig import excel
 from app.sig.spec import with_materials
+from app.schemas.network import HydraulicOptions
 from app.sig.tables import Row
+
+CURVA_MOD = [0.3, 0.2, 0.1, 0.1, 0.3, 0.5, 0.9, 1.5, 1.6, 1.5, 1.45, 1.35, 1.4, 1.4, 1.3, 1.1, 1.0, 0.9, 1.0, 1.2, 1.25,
+             1.2, 0.9, 0.5]
+MOD = [round(c / (sum(CURVA_MOD) / 24), 4) for c in CURVA_MOD]  # normalizada: promedio 1
+DEMANDA_NUDO = 0.46  # L/s por nudo de distribución (≈ 6 L/s en total)
 
 SRID = 32719
 ORIGIN_LON, ORIGIN_LAT = -71.1450, -29.9420  # sector rural al oriente de La Serena
@@ -70,12 +79,14 @@ NAMES = ["Rojas", "Araya", "Castillo", "Cortés", "González", "Muñoz", "Pizarr
 
 def rows() -> dict[str, list[Row]]:
     out: dict[str, list[Row]] = {}
-    out["nudos"] = [Row(i, {**geo(x, y), "elevation": z, "base_demand": 0.0, "demand_pattern": None,
+    out["nudos"] = [Row(i, {**geo(x, y), "elevation": z, "base_demand": 0.0 if i == "J-IMP" else DEMANDA_NUDO,
+                            "demand_pattern": None,
                             "description": "Nudo de impulsión" if i == "J-IMP" else None})
                     for i, (x, y, z) in JUNCTIONS.items()]
     out["estanques"] = [Row("E-1", {**geo(250, 500), "elevation": 268.0, "init_level": 2.5, "min_level": 0.5,
                                     "max_level": 4.0, "tank_diameter": 8.0, "min_volume": None, "volume_curve": None,
                                     "can_overflow": False, "description": "Estanque semienterrado 200 m³"})]
+    # Bomba: curva H-Q de 3 puntos y horario: apagada de 2 a 6 h y de 17 a 21 h (14 h encendida).
     out["reservorios"] = [Row("R-POZO", {**geo(0, 0), "elevation": None, "head": None, "head_pattern": None,
                                          "description": "Nivel dinámico del pozo"})]
     out["pozos"] = [Row("PZ-1", {**geo(0, 0), "node": "R-POZO", "ground_elevation": 210.0, "depth_m": 80.0,
@@ -83,7 +94,9 @@ def rows() -> dict[str, list[Row]]:
                                  "condition": "bueno", "description": "Pozo profundo, sondaje 2014"},
                         {"Derecho DGA": "ND-0401-1234"})]
     out["bombas"] = [Row("B-1", {"from_node": "R-POZO", "to_node": "J-IMP", "_vertices": None, "pump_curve": None,
-                                 "pump_power": 11.0, "pump_speed": 1.0, "pump_pattern": None, "initial_status": "open",
+                                 "pump_power": None, "pump_speed": 1.0, "pump_pattern": None, "initial_status": "open",
+                                 "_curve": "0 130; 10 110; 16 80", "_schedule": "0-1; 7-16; 22-23",
+                                 "_lc_tank": None, "_lc_on": None, "_lc_off": None,
                                  "description": "Bomba sumergible 15 HP"})]
     tramos = []
     for i, (a, b, mat, dn, cls, year, cond, ntype, verts) in PIPES.items():
@@ -124,7 +137,12 @@ def rows() -> dict[str, list[Row]]:
 
 def main(path: str) -> None:
     with_materials(["AC", "Acero", "FFD", "HA", "HDPE", "PEAD", "PVC"])
-    data = excel.write_workbook(rows(), zone_label="UTM 19S (EPSG:32719)", model_rows=None)
+    options = HydraulicOptions(duration_h=24, hydraulic_step_min=5, pattern_step_min=60, report_step_min=60,
+                               extra={"PATTERN": "MOD"})
+    model_rows = [("Opciones", json.dumps(options.model_dump(mode="json"), ensure_ascii=False, sort_keys=True)),
+                  ("Sección patterns", " MOD\t" + "\t".join(str(v) for v in MOD[:12]) + "\n MOD\t"
+                   + "\t".join(str(v) for v in MOD[12:]))]
+    data = excel.write_workbook(rows(), zone_label="UTM 19S (EPSG:32719)", model_rows=model_rows)
     with open(path, "wb") as fh:
         fh.write(data)
     print(f"Planilla escrita en {path}")

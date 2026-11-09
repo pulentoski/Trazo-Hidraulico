@@ -11,6 +11,7 @@ import { useEditor, writePref } from "../state/store";
 import { BlankBase, GoogleBase, useGeocoder } from "./GoogleBase";
 import { QuickSearch } from "../components/QuickSearch";
 import { useOrthos } from "../components/LayersTab";
+import { hourLabel } from "../lib/patterns";
 import { NetworkLayer } from "./NetworkLayer";
 import { OrthoLayer } from "./OrthoLayer";
 
@@ -116,6 +117,7 @@ export function MapView() {
         </div>
       )}
       <ScaleBar camera={camera} />
+      <HourSlider />
     </div>
   );
 
@@ -124,5 +126,23 @@ export function MapView() {
     <APIProvider apiKey={API_KEY} language="es" region="CL" onError={() => setMapFailed(true)}>
       {content}
     </APIProvider>
+  );
+}
+
+
+/** Selector de hora sobre el mapa (período extendido): actualiza colores y etiquetas de la red. */
+function HourSlider() {
+  const result = useEditor((s) => s.result);
+  const period = useEditor((s) => s.period);
+  const set = useEditor((s) => s.set);
+  if (!result || result.times.length < 2) return null;
+  const last = result.times.length - 1;
+  return (
+    <div className="hour-slider" role="group" aria-label="Hora de la simulación">
+      <button className="small ghost" onClick={() => set({ period: Math.max(0, period - 1) })} aria-label="Hora anterior">◀</button>
+      <input type="range" min={0} max={last} value={period} onChange={(e) => set({ period: Number(e.target.value) })} aria-label="Hora" />
+      <button className="small ghost" onClick={() => set({ period: Math.min(last, period + 1) })} aria-label="Hora siguiente">▶</button>
+      <b>{hourLabel(result.times[period] ?? 0)}</b>
+    </div>
   );
 }

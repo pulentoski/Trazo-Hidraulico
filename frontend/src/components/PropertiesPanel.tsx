@@ -9,6 +9,7 @@ import { CLIENT_TYPES } from "./ClientDialog";
 import { useEditor } from "../state/store";
 import { Attributes, ClientManagement, HydrantPanel, PipeManagement, ShutoffManagement, WellPanel } from "./AssetPanels";
 import { FieldLabel, Help, NumField, Readout, TextField } from "./Fields";
+import { PumpOperation } from "./PumpOperation";
 
 const ID_RE = /^[^\s;"]{1,31}$/;
 const KIND_LABEL = { junction: "Nudo de consumo", reservoir: "Reservorio", tank: "Estanque", pipe: "Tubería", pump: "Bomba", valve: "Válvula" };
@@ -131,6 +132,13 @@ function NodePanel({ node }: { node: ENode }) {
           <NumField label="Nivel mínimo" unit="m" hint={HELP.minLevel} value={p.min_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_level: v } })} />
           <NumField label="Nivel máximo" unit="m" hint={HELP.maxLevel} value={p.max_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { max_level: v } })} />
           <NumField label="Diámetro" unit="m" hint={HELP.tankDiameter} value={p.tank_diameter} allowNull onCommit={(v) => updateNode(node.uid, { props: { tank_diameter: v } })} />
+          <NumField label="Volumen útil (al nivel máximo)" unit="m³" digits={1}
+            value={p.tank_diameter && p.max_level != null ? (Math.PI / 4) * p.tank_diameter ** 2 * (p.max_level - (p.min_level ?? 0)) : null} allowNull
+            hint="Ingrese el volumen en vez del diámetro: se calcula el diámetro del cilindro equivalente entre el nivel mínimo y el máximo (√(4·V / (π·altura)))."
+            onCommit={(v) => {
+              const h = (p.max_level ?? 0) - (p.min_level ?? 0);
+              if (v && v > 0 && h > 0) updateNode(node.uid, { props: { tank_diameter: Math.round(Math.sqrt((4 * v) / (Math.PI * h)) * 10000) / 10000 } });
+            }} />
           <NumField label="Volumen mínimo" unit="m³" hint={HELP.minVolume} value={p.min_volume} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_volume: v } })} />
           <Readout label="Cota de rebalse" hint={HELP.overflow} value={fmt(tank?.overflowElevation, 2)} unit="m" />
         </fieldset>
@@ -259,6 +267,7 @@ function LinkPanel({ link }: { link: ELink }) {
           <PipeManagement link={link} />
         </>
       ) : link.kind === "pump" ? (
+        <>
         <fieldset><legend>Bomba</legend>
           <Readout label="Curva" value={p.pump_curve ?? (p.pump_power ? `potencia ${fmt(p.pump_power, 1)} kW` : "—")} />
           <NumField label="Velocidad relativa" value={p.pump_speed ?? 1} onCommit={(v) => updateLinks([link.uid], { pump_speed: v })} />
@@ -268,11 +277,16 @@ function LinkPanel({ link }: { link: ELink }) {
             </select>
           </label>
         </fieldset>
+        <PumpOperation link={link} />
+        </>
       ) : (
+        <>
         <fieldset><legend>Válvula {p.valve_type}</legend>
           <NumField label="Diámetro" unit="mm" value={p.inner_diameter_mm} onCommit={(v) => updateLinks([link.uid], { inner_diameter_mm: v })} />
           <NumField label="Consigna" value={p.valve_setting} allowNull onCommit={(v) => updateLinks([link.uid], { valve_setting: v })} />
         </fieldset>
+        <PumpOperation link={link} />
+        </>
       )}
       {r && (
         <fieldset className="results">

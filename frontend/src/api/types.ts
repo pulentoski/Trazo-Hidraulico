@@ -59,3 +59,7 @@ export type HydrantResult = S["HydrantResult"];
 export type OrthophotoOut = S["OrthophotoOut"];
 export type Gcp = S["Gcp"];
 export type GcpFit = S["GcpFit"];
+export type DemandInputs = S["DemandInputs"];
+export type DemandResult = S["DemandResult"];
+export type DemandRow = S["DemandRow"];
+export type TrazoImportResult = S["TrazoImportResult"];
