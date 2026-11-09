@@ -8,7 +8,7 @@ HOST_UID ?= $(shell stat -c %u .)
 HOST_GID ?= $(shell stat -c %g .)
 export HOST_UID HOST_GID
 
-.PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend reset-db gen-types
+.PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend reset-db gen-types backup
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -65,6 +65,9 @@ test-backend: env
 test-frontend: env
 	$(COMPOSE) --profile test build web-test
 	$(COMPOSE) --profile test run --rm web-test
+
+backup: env ## Respaldo local: BD (pg_dump), imágenes Docker, git bundle y .env (ver infra/RESTAURAR.template.md)
+	@infra/backup.sh
 
 reset-db: env ## Borra el volumen de la base de datos y la recrea vacía
 	$(COMPOSE) down

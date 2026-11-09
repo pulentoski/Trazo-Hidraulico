@@ -67,6 +67,8 @@ Abra http://localhost:8080: la pantalla de inicio lista los proyectos recientes 
 importar `.inp`, ir a Configuración y a Acerca de. Cada proyecto se edita en `/proyecto/<id>`.
 Comandos útiles: `make logs`, `make ps`, `make down`, `make reset-db`
 (borra la base de datos) y `make gen-types` (regenera los tipos TypeScript desde OpenAPI).
+`make backup` crea un respaldo local completo (base de datos, imágenes Docker, git bundle y copia del
+`.env`) en `~/Documentos/respaldos/trazo-hidraulico/<fecha-hora>/`, con un `RESTAURAR.md` con los pasos.
 La documentación interactiva de la API está en http://localhost:8080/api/docs.
 
 ## Publicar en un dominio con HTTPS
