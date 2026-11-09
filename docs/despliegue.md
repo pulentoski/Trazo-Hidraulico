@@ -61,6 +61,14 @@ muestra «La conexión no es privada»: en Chrome/Edge, **Configuración avanzad
 Firefox, **Avanzado… → Aceptar el riesgo y continuar**. Con curl: `curl -k https://IP/healthz`. La cookie de
 sesión sigue siendo `Secure` (la conexión es HTTPS).
 
+**IP pública que cambia** (AWS sin IP elástica: cambia cada vez que la instancia se detiene y arranca, p. ej. en
+sesiones de laboratorio de 4 h): si no se indica `TRAZO_IP`, el instalador deja activo `trazo-ip.timer`, que al
+arrancar y cada 5 minutos ejecuta `deploy/actualizar-ip.sh`: consulta la IP pública (metadatos de la instancia o
+ipify) y, si cambió, reescribe `SITE_ADDRESS` y `PUBLIC_URL` en `.env` y recrea el proxy y la API (Caddy emite el
+certificado interno para la IP nueva). Manual: `make actualizar-ip`. Registro: `journalctl -u trazo-ip`.
+Tras un cambio de IP el navegador vuelve a pedir que acepte el certificado. Para una dirección estable, asocie una
+IP elástica o use un dominio.
+
 Al primer ingreso, el superadministrador debe configurar el segundo factor (TOTP) en **/perfil** si
 `MFA_REQUIRED_FOR_ADMINS=true` (por defecto). Después crea las organizaciones en **/plataforma** e invita a
 sus administradores.
@@ -137,6 +145,8 @@ Primera prueba de `deploy/instalar.sh` en una instancia AWS limpia (Ubuntu, acce
   mano, y la tabla no se llama `users` sino `app_user`).
 - **Cookie en HTTP**: verificación en `make up-public`, advertencia en el log de la API y mensaje claro en la
   pantalla de ingreso.
+- **IP dinámica**: la instancia cambia de IP pública cada 4 h; `trazo-ip.timer` + `deploy/actualizar-ip.sh`
+  mantienen `SITE_ADDRESS` y `PUBLIC_URL` al día sin intervención.
 - **Verificación**: el instalador comprueba `/healthz` al terminar e indica los comandos de cuentas.
 - **e2e contra una instancia**: `make test-e2e BASE_URL=https://IP E2E_SHOTS=/tmp/capturas` acepta el
   certificado interno y no ensucia `docs/capturas` del servidor.

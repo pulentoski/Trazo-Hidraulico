@@ -10,7 +10,7 @@ HOST_GID ?= $(shell stat -c %g .)
 export HOST_UID HOST_GID
 
 .PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend test-e2e reset-db gen-types backup \
-        create-admin unlock-user reset-password demo restore-test backup-now
+        create-admin unlock-user reset-password actualizar-ip demo restore-test backup-now
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -48,6 +48,9 @@ up-public: check-auth ## Publica en SITE_ADDRESS (HTTPS) con límites, logs rota
 	@set -a; . ./.env; set +a; mkdir -p "$${BACKUP_DIR:-/var/backups/trazo-hidraulico}" 2>/dev/null || true
 	$(PUBLIC) up -d --build --wait --wait-timeout 300
 	@$(PUBLIC) ps --format 'table {{.Service}}\t{{.Status}}'
+
+actualizar-ip: ## Sin dominio: ajusta SITE_ADDRESS y PUBLIC_URL a la IP pública actual (deploy/actualizar-ip.sh)
+	@deploy/actualizar-ip.sh
 
 down: ## Detiene la pila (conserva datos)
 	$(COMPOSE) down

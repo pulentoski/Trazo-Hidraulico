@@ -12,7 +12,8 @@
 # con las variables TRAZO_*; las que falten toman su valor por defecto:
 #   TRAZO_MODE=1|2|3            1 dominio + Let's Encrypt · 2 https://IP con certificado interno · 3 http://IP (pruebas)
 #   TRAZO_DOMAIN                dominio (modo 1)
-#   TRAZO_IP                    IP pública (modos 2 y 3; por defecto se detecta)
+#   TRAZO_IP                    IP pública fija (modos 2 y 3). Si no se indica, se detecta y se instala
+#                               trazo-ip.timer, que la actualiza cuando cambia (instancias sin IP elástica)
 #   TRAZO_MFA_ADMINS=true|false segundo factor obligatorio para administradores (por defecto true)
 #   TRAZO_GOOGLE_KEY            key de Google Maps (opcional)
 #   TRAZO_ADMIN_EMAIL           correo del superadministrador (obligatorio)
@@ -152,6 +153,31 @@ chown -R "$(stat -c %u:%g "$DIR")" "$DIR" 2>/dev/null || true
 
 say "Construyendo y levantando (varios minutos la primera vez)"
 make up-public
+
+if [ "$TRAZO_MODE" != 1 ] && [ -z "${TRAZO_IP:-}" ] && command -v systemctl >/dev/null; then
+	say "IP dinámica: trazo-ip.timer ajusta la dirección si cambia la IP pública (al arrancar y cada 5 min)"
+	cat > /etc/systemd/system/trazo-ip.service <<UNIT
+[Unit]
+Description=Trazo Hidráulico: ajustar SITE_ADDRESS a la IP pública actual
+After=docker.service network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+Environment=TRAZO_DIR=$DIR
+ExecStart=$DIR/deploy/actualizar-ip.sh
+UNIT
+	cat > /etc/systemd/system/trazo-ip.timer <<UNIT
+[Unit]
+Description=Trazo Hidráulico: revisar la IP pública
+[Timer]
+OnBootSec=20s
+OnUnitActiveSec=5min
+[Install]
+WantedBy=timers.target
+UNIT
+	systemctl daemon-reload
+	systemctl enable --now trazo-ip.timer >/dev/null
+fi
 
 say "Superadministrador"
 # Por el entorno (no como argumento de make): admite cualquier carácter y no queda en la lista de procesos.
