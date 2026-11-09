@@ -54,6 +54,7 @@ CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0
 FROM runtime AS test
 USER root
 COPY --from=deps-test /opt/venv /opt/venv
+COPY pyproject.toml ./
 COPY tests ./tests
 USER app
 CMD ["pytest"]

@@ -85,7 +85,7 @@ class NetworkLink(Base):
     # Rugosidad: C (H-W), ε en mm (D-W) o n (C-M) según la fórmula de la versión.
     roughness: Mapped[float | None] = mapped_column(Float, nullable=True)
     minor_loss: Mapped[float] = mapped_column(Float, default=0.0)
-    initial_status: Mapped[str] = mapped_column(String(10), default="open")  # open | closed | cv
+    initial_status: Mapped[str] = mapped_column(String(10), default="open")  # open | closed | cv | active
 
     # Largos (m)
     length_plan_m: Mapped[float | None] = mapped_column(Float, nullable=True)

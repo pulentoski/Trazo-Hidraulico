@@ -147,7 +147,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("version_id", "label", name="uq_link_label"),
         sa.CheckConstraint("kind IN ('pipe','pump','valve')", name="ck_link_kind"),
         sa.CheckConstraint("length_choice IN ('plan','slope','manual')", name="ck_length_choice"),
-        sa.CheckConstraint("initial_status IN ('open','closed','cv')", name="ck_initial_status"),
+        sa.CheckConstraint("initial_status IN ('open','closed','cv','active')", name="ck_initial_status"),
     )
     op.create_index("idx_network_link_geom", "network_link", ["geom"], postgresql_using="gist")
 
