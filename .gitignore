@@ -1,0 +1,11 @@
+.env
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.rpt
+*.out
+!docs/validation/*.md
+.DS_Store

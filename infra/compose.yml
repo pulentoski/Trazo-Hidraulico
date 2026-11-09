@@ -1,0 +1,159 @@
+name: trazo-hidraulico
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+
+services:
+  proxy:
+    <<: *hardening
+    image: caddy:2.11.9-alpine
+    user: "1000:1000"
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:8080"
+    environment:
+      XDG_CONFIG_HOME: /config
+      XDG_DATA_HOME: /data
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    tmpfs:
+      - /config:uid=1000,gid=1000,mode=0700
+      - /data:uid=1000,gid=1000,mode=0700
+      - /tmp:uid=1000,gid=1000
+    networks: [front]
+    depends_on:
+      web: { condition: service_healthy }
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    <<: *hardening
+    build:
+      context: ../frontend
+      target: runtime
+      args:
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+        VITE_GOOGLE_MAPS_MAP_ID: ${VITE_GOOGLE_MAPS_MAP_ID:-}
+        VITE_DEFAULT_MAP_CENTER_LAT: ${DEFAULT_MAP_CENTER_LAT:--33.4489}
+        VITE_DEFAULT_MAP_CENTER_LNG: ${DEFAULT_MAP_CENTER_LNG:--70.6693}
+    image: trazo-hidraulico/web:local
+    tmpfs:
+      - /tmp:uid=101,gid=101
+    networks: [front]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  api:
+    <<: *hardening
+    build:
+      context: ../backend
+      target: runtime
+    image: trazo-hidraulico/api:local
+    env_file: ../.env
+    environment:
+      DB_HOST: db
+      REDIS_HOST: cache
+    tmpfs:
+      - /tmp:uid=10001,gid=10001
+    networks: [front, back]
+    depends_on:
+      db: { condition: service_healthy }
+      cache: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  db:
+    <<: *hardening
+    image: postgis/postgis:16-3.4@sha256:44126d872ac91993766c341e369c539e8196614321765d36a6f1bab0419a5fa5
+    user: "999:999"
+    env_file: ../.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    tmpfs:
+      - /var/run/postgresql:uid=999,gid=999
+      - /tmp:uid=999,gid=999
+    networks: [back]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+  cache:
+    <<: *hardening
+    image: redis:7.4.12-alpine
+    user: "999:1000"
+    env_file: ../.env
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\" --save '' --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru"]
+    tmpfs:
+      - /data:uid=999,gid=1000
+    networks: [back]
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Pruebas (perfil "test"; no forman parte de la pila normal) ─────────
+  api-test:
+    profiles: [test]
+    build:
+      context: ../backend
+      target: test
+    image: trazo-hidraulico/api-test:local
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    env_file: ../.env
+    environment:
+      DB_HOST: db
+      REDIS_HOST: cache
+      POSTGRES_DB: trazo_test
+      REDIS_DB: "1"
+      REPORT_DIR: /reports
+    volumes:
+      - ../examples/networks:/app/examples/networks:ro
+      - ../docs/validation:/reports
+      - ../frontend/src/api/openapi.json:/app/openapi.committed.json:ro
+    tmpfs:
+      - /tmp
+    networks: [back]
+    depends_on:
+      db: { condition: service_healthy }
+      cache: { condition: service_healthy }
+
+  web-test:
+    profiles: [test]
+    build:
+      context: ../frontend
+      target: test
+    image: trazo-hidraulico/web-test:local
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs:
+      - /tmp
+    network_mode: none
+
+networks:
+  front: {}
+  back:
+    internal: true
+
+volumes:
+  pgdata: {}
