@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { fmt, fmtTime } from "../lib/format";
 import { useEditor } from "../state/store";
+import { ClientsTab } from "./ClientsTab";
+import { ScenariosTab } from "./ScenariosTab";
 
-type Tab = "alerts" | "nodes" | "links" | "engine";
+type Tab = "alerts" | "nodes" | "links" | "clients" | "scenarios" | "engine";
 type SortKey = { col: string; dir: 1 | -1 };
 
 interface AlertRow { sev: "error" | "warning"; origin: string; text: string; type?: string | null; id?: string | null }
@@ -30,7 +32,14 @@ export function BottomPanel() {
   }, [validation, result]);
 
   const goto = (type?: string | null, id?: string | null) => {
-    if (!id || (type !== "node" && type !== "link")) return;
+    if (!id) return;
+    if (type === "client" || type === "shutoff") {
+      const pool = type === "client" ? Object.values(net.clients) : Object.values(net.shutoffs);
+      const hit = pool.find((x) => x.id === id);
+      if (hit) focus([hit.uid]);
+      return;
+    }
+    if (type !== "node" && type !== "link") return;
     const uid = byLabel[type].get(id);
     if (uid) focus([uid]);
   };
@@ -68,6 +77,8 @@ export function BottomPanel() {
         <button className={tab === "alerts" ? "on" : ""} onClick={() => setTab("alerts")}>Alertas <span className={`count ${errors ? "bad" : alerts.length ? "warn" : ""}`}>{alerts.length}</span></button>
         <button className={tab === "nodes" ? "on" : ""} onClick={() => setTab("nodes")}>Nudos <span className="count">{nodeRows.length}</span></button>
         <button className={tab === "links" ? "on" : ""} onClick={() => setTab("links")}>Tramos <span className="count">{linkRows.length}</span></button>
+        <button className={tab === "clients" ? "on" : ""} onClick={() => setTab("clients")}>Clientes <span className="count">{Object.keys(net.clients).length}</span></button>
+        <button className={tab === "scenarios" ? "on" : ""} onClick={() => setTab("scenarios")}>Escenarios</button>
         <button className={tab === "engine" ? "on" : ""} onClick={() => setTab("engine")}>Corrida</button>
         <div className="tabs-spacer" />
         {result && result.times.length > 1 && (
@@ -123,6 +134,8 @@ export function BottomPanel() {
               </tbody>
             </table>
           )}
+          {tab === "clients" && <ClientsTab />}
+          {tab === "scenarios" && <ScenariosTab />}
           {tab === "engine" && (
             <div className="pad engine-info">
               {result ? (

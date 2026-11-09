@@ -9,7 +9,7 @@ class ValidationIssue(BaseModel):
     code: str
     severity: Literal["error", "warning"]
     message: str
-    element_type: Literal["node", "link", "network"] | None = None
+    element_type: Literal["node", "link", "client", "shutoff", "network"] | None = None
     element_id: str | None = None
 
 

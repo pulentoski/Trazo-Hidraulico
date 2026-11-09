@@ -28,6 +28,10 @@ export function ConfirmDelete() {
   const links = pendingDelete.filter((u) => net.links[u]).map((u) => net.links[u].id);
   const after = removeElements(net, pendingDelete);
   const cascade = Object.keys(net.links).length - Object.keys(after.links).length - links.length;
+  const clients = pendingDelete.filter((u) => net.clients[u]).map((u) => net.clients[u].id);
+  const shutoffs = pendingDelete.filter((u) => net.shutoffs[u]).map((u) => net.shutoffs[u].id);
+  const lostClients = Object.keys(net.clients).length - Object.keys(after.clients).length - clients.length;
+  const lostShutoffs = Object.keys(net.shutoffs).length - Object.keys(after.shutoffs).length - shutoffs.length;
   return (
     <Modal title="Confirmar eliminación" onClose={cancelDelete}>
       <p>
@@ -35,7 +39,10 @@ export function ConfirmDelete() {
         {nodes.length > 0 && links.length > 0 && " y "}
         {links.length > 0 && <>los tramos <strong>{links.slice(0, 8).join(", ")}{links.length > 8 ? "…" : ""}</strong></>}.
       </p>
+      {(clients.length > 0 || shutoffs.length > 0) && <p>Elementos: <strong>{[...clients, ...shutoffs].slice(0, 10).join(", ")}</strong>.</p>}
       {cascade > 0 && <p className="warn-text">También se eliminarán {cascade} tramos conectados a esos nudos.</p>}
+      {lostClients > 0 && <p className="warn-text">También se eliminarán {lostClients} clientes conectados.</p>}
+      {lostShutoffs > 0 && <p className="warn-text">También se eliminarán {lostShutoffs} llaves de corte de esos tramos.</p>}
       <p className="muted">Puede deshacer la acción con Ctrl+Z.</p>
       <div className="modal-actions">
         <button className="ghost" onClick={cancelDelete}>Cancelar</button>

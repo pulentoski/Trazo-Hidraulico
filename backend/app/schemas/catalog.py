@@ -10,14 +10,15 @@ class CatalogPipeOut(BaseModel):
     standard: str
     dn: int
     pipe_class: str
-    od_mm: float
-    wall_mm: float
+    od_mm: float | None
+    wall_mm: float | None
     inner_diameter_mm: float
     hw_c: float
     dw_roughness_mm: float
     manning_n: float
     verified: bool
     source: str
+    review: str | None = None
 
 
 class Criterion(BaseModel):

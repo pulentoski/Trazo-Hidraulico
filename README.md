@@ -124,6 +124,16 @@ Los resultados y las tolerancias quedan en [`docs/validation/`](docs/validation/
 | T | Tubería (clics = vértices, doble clic termina) | | Supr | Eliminar selección |
 | M | Mover (nudos y vértices) | | Esc | Cancelar dibujo |
 | X / D | Eliminar / Medir | | Rueda / arrastre | Zoom / desplazar |
+| C | Cliente (se conecta a la tubería más cercana: nudo cercano o nudo nuevo) | | | |
+| L | Llave de corte sobre una tubería | | | |
+| F | Factibilidad de un nuevo cliente (no modifica el proyecto) | | | |
+
+En el panel inferior, **Clientes** permite importar un CSV (`lat, lon, nombre, consumo` en L/s;
+opcionales `tipo, estado, unidad`) y exportar la tabla; **Escenarios** simula llaves cerradas
+(operación normal, todas cerradas o escenarios propios), lista los clientes sin suministro o bajo la
+presión mínima (exportable a CSV), compara dos escenarios y resalta en el mapa los sectores sin agua.
+Los parámetros de diseño (presión mínima, dotación, pérdidas, curva de modulación…) se editan por
+proyecto en el panel Proyecto; los valores por defecto son típicos y están marcados «no verificado».
 
 Cada cambio se guarda automáticamente (versión nueva) y se simula 400 ms después; el estado
 (sin cambios / calculando / actualizado / error) se ve en la barra superior.

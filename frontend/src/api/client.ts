@@ -1,8 +1,9 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
 import type {
-  CatalogPipe, DesignProfile, EngineInfo, ImportResult, NetworkDocument, NetworkSave, NetworkSaveResult,
-  ProjectOut, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
+  CatalogPipe, ClientImportResult, CompareResult, DesignParamsOut, DesignParamUpdate, DesignProfile, EngineInfo,
+  FeasibilityRequest, FeasibilityResult, ImportResult, NetworkDocument, NetworkSave, NetworkSaveResult, ProjectOut,
+  ScenarioResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
 } from "./types";
 
 const client = createClient<paths>({ baseUrl: "" });
@@ -86,6 +87,37 @@ export const api = {
     const body = await res.json().catch(() => null);
     if (!res.ok) fail(res.status, body);
     return body as ImportResult;
+  },
+  designParams: (id: string) =>
+    unwrap<DesignParamsOut>(client.GET("/api/projects/{project_id}/design-params", { params: { path: { project_id: id } } })),
+  saveDesignParams: (id: string, body: DesignParamUpdate[]) =>
+    unwrap<DesignParamsOut>(client.PUT("/api/projects/{project_id}/design-params", { params: { path: { project_id: id } }, body })),
+  scenario: (id: string, modelVersion: number, scenario: string) =>
+    unwrap<ScenarioResult>(client.POST("/api/projects/{project_id}/scenarios/simulate", {
+      params: { path: { project_id: id } }, body: { model_version: modelVersion, scenario },
+    })),
+  compareScenarios: (id: string, modelVersion: number, a: string, b: string) =>
+    unwrap<CompareResult>(client.POST("/api/projects/{project_id}/scenarios/compare", {
+      params: { path: { project_id: id } }, body: { model_version: modelVersion, a, b },
+    })),
+  feasibility: (id: string, body: FeasibilityRequest) =>
+    unwrap<FeasibilityResult>(client.POST("/api/projects/{project_id}/feasibility", { params: { path: { project_id: id } }, body })),
+  /** Informe HTML: se abre en una pestaña nueva para imprimir o guardar como PDF. */
+  feasibilityReport: async (id: string, body: FeasibilityRequest): Promise<string> => {
+    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/feasibility/report`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    if (!res.ok) fail(res.status, await res.json().catch(() => null));
+    return res.text();
+  },
+  importClients: async (id: string, file: File, baseVersion: number | null): Promise<ClientImportResult> => {
+    const form = new FormData();
+    form.append("file", file);
+    if (baseVersion != null) form.append("base_version", String(baseVersion));
+    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/clients/import`, { method: "POST", body: form });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) fail(res.status, body);
+    return body as ClientImportResult;
   },
   exportUrl: (id: string, version?: number) =>
     `/api/projects/${encodeURIComponent(id)}/export.inp${version ? `?version=${version}` : ""}`,

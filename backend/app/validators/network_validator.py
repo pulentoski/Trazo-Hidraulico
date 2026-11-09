@@ -2,9 +2,9 @@
 
 Errores bloqueantes (impiden simular):
   E_EMPTY_NETWORK, E_NO_SOURCE, E_LINK_NODE, E_DIAMETER_NOT_IN_CATALOG, E_DUPLICATE_ID,
-  E_INVALID_ID, E_ISOLATED_NODE, E_DISCONNECTED_NODE, E_MISSING_PARAM
+  E_INVALID_ID, E_ISOLATED_NODE, E_DISCONNECTED_NODE, E_MISSING_PARAM, E_CLIENT_NODE, E_SHUTOFF_LINK
 Advertencias:
-  W_ELEVATION_ASSUMED, W_ELEVATION_DOUBTFUL, W_SHORT_PIPE, W_NO_DEMAND, W_CRITERIA
+  W_ELEVATION_ASSUMED, W_ELEVATION_DOUBTFUL, W_SHORT_PIPE, W_NO_DEMAND, W_CRITERIA, W_SCENARIO_VALVE
 
 La cota nunca se supone en silencio: un nudo o estanque sin cota es un error bloqueante
 (E_MISSING_PARAM). Solo una importación puede traer una cota supuesta (p. ej. un .inp sin la
@@ -88,6 +88,28 @@ def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
             err("E_LINK_NODE", f"El tramo {lk.id} referencia nudos inexistentes: {', '.join(missing)}.", "link", lk.id)
         elif p.from_node == p.to_node:
             err("E_LINK_NODE", f"El tramo {lk.id} tiene el mismo nudo inicial y final ({p.from_node}).", "link", lk.id)
+
+    # Clientes y llaves: referencias a elementos existentes (estructural: sin esto no se puede guardar).
+    link_by_id = {lk.id: lk for lk in links}
+    clients, shutoffs = model.network.clients(), model.network.shutoffs()
+    for kind, items, etype in (("cliente", clients, "client"), ("llave", shutoffs, "shutoff")):
+        for ident, count in Counter(f.id for f in items).items():
+            if count > 1:
+                err("E_DUPLICATE_ID", f"El ID de {kind} «{ident}» está repetido {count} veces.", etype, ident)
+    for c in clients:
+        target = node_by_id.get(c.properties.node)
+        if target is None:
+            err("E_CLIENT_NODE", f"El cliente {c.id} está asignado a un nudo inexistente ({c.properties.node}).",
+                "client", c.id)
+        elif target.properties.kind != "junction":
+            err("E_CLIENT_NODE", f"El cliente {c.id} debe conectarse a un nudo de consumo, no a "
+                                 f"{'un reservorio' if target.properties.kind == 'reservoir' else 'un estanque'} "
+                                 f"({target.id}).", "client", c.id)
+    for sh in shutoffs:
+        lk = link_by_id.get(sh.properties.link)
+        if lk is None or lk.properties.kind != "pipe":
+            err("E_SHUTOFF_LINK", f"La llave {sh.id} debe estar sobre una tubería existente "
+                                  f"(«{sh.properties.link}» no lo es).", "shutoff", sh.id)
 
     if structural_only:
         return ValidationReport(ok=not errors, errors=errors, warnings=warnings)
@@ -212,9 +234,18 @@ def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
         if p.kind == "pipe" and p.length_hydraulic_m is not None and 0 < p.length_hydraulic_m < settings.short_pipe_m:
             warn("W_SHORT_PIPE", f"El tramo {lk.id} es muy corto ({_fmt(round(p.length_hydraulic_m, 3))} m).", "link", lk.id)
 
+    shutoff_ids = {sh.id for sh in shutoffs}
+    for sc in model.scenarios:
+        missing = [v for v in sc.closed if v not in shutoff_ids]
+        if missing:
+            warn("W_SCENARIO_VALVE", f"El escenario «{sc.name}» cierra llaves que ya no existen: "
+                                     f"{', '.join(missing)}.", "network")
+
+    client_demand = model.client_demands()
     for n in nodes:
         p = n.properties
-        if p.kind == "junction" and p.base_demand == 0 and not any(d.base for d in p.demands):
+        if p.kind == "junction" and p.base_demand == 0 and not any(d.base for d in p.demands) \
+                and not any(c.properties.consumption_value for c in client_demand.get(n.id, [])):
             warn("W_NO_DEMAND", f"El nudo {n.id} no tiene demanda asignada.", "node", n.id)
 
     dn_min = (settings.criteria.get("dn_min") or {}).get("min")

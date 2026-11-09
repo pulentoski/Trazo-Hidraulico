@@ -19,7 +19,8 @@ from app.repositories import results as results_repo
 from app.schemas.network import NetworkModel
 from app.schemas.simulation import EngineInfo, LinkSeries, NodeSeries, SimulationResult
 from app.schemas.validation import ValidationReport
-from app.services.criteria import criteria_alerts, criteria_map
+from app.services import design
+from app.services.criteria import criteria_alerts
 from app.services.errors import SimulationBlockedError
 from app.services.network import get_version_or_404, load_model, sha256_of
 from app.validators.network_validator import ValidatorSettings, validate_model  # noqa: F401
@@ -29,10 +30,9 @@ CACHE_TTL_S = 24 * 3600
 
 
 def validation_for(session: Session, project: Project, model: NetworkModel) -> ValidationReport:
-    profile = catalog_repo.get_profile(session, project.design_profile_id)
     s = get_settings()
     settings = ValidatorSettings(short_pipe_m=s.short_pipe_m, elevation_jump_m=s.elevation_jump_m,
-                                 criteria=criteria_map(profile.criteria if profile else None))
+                                 criteria=design.criteria_for(session, project))
     return validate_model(model, catalog_repo.catalog_index(session), settings)
 
 
@@ -143,7 +143,7 @@ def simulate_version(session: Session, project: Project, number: int) -> Simulat
 def _build(project, version, run_row: SimulationRun, model, report, times, nodes, links, messages, *, cached,
            session) -> SimulationResult:
     profile = catalog_repo.get_profile(session, project.design_profile_id)
-    alerts = criteria_alerts(model, times, nodes, links, criteria_map(profile.criteria if profile else None))
+    alerts = criteria_alerts(model, times, nodes, links, design.criteria_for(session, project))
     return SimulationResult(
         run_id=run_row.id, project_id=project.id, model_version=version.number, status=run_row.status,
         cached=cached, created_at=run_row.created_at, elapsed_ms=run_row.elapsed_ms,

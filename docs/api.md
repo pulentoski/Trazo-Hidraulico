@@ -31,6 +31,9 @@ generan desde ese esquema (`make gen-types` → `frontend/src/api/schema.d.ts`) 
 | `E_DISCONNECTED_NODE` | error | Nudo con tramos pero sin camino a ningún reservorio o estanque |
 | `E_MISSING_PARAM` | error | Cota (nunca se supone: un elemento nuevo queda sin cota hasta ingresarla), carga, niveles, largo, rugosidad, diámetro, curva/patrón inexistente, parámetros PDA |
 | `W_ELEVATION_ASSUMED` | advertencia | Cota supuesta traída por una importación (p. ej. `.inp` sin columna de cota, que EPANET toma como 0 m) |
+| `E_CLIENT_NODE` | error | Cliente asignado a un nudo inexistente o que no es de consumo (impide guardar) |
+| `E_SHUTOFF_LINK` | error | Llave de corte sobre un elemento que no es una tubería existente (impide guardar) |
+| `W_SCENARIO_VALVE` | advertencia | Un escenario cierra llaves que ya no existen |
 | `W_ELEVATION_DOUBTFUL` | advertencia | Cota con salto mayor a 50 m respecto de los vecinos |
 | `W_SHORT_PIPE` | advertencia | Largo hidráulico menor que 1 m |
 | `W_NO_DEMAND` | advertencia | Nudo de consumo sin demanda |
@@ -48,3 +51,30 @@ Alertas de resultados (`alerts`): `PRESSURE_LOW`, `PRESSURE_HIGH`, `VELOCITY_LOW
 | `429` | Más de `RATE_LIMIT_PER_MINUTE` (300) solicitudes a `/api` por IP en el minuto; incluye `Retry-After` |
 
 `/api/health` no se limita. La IP se toma del último valor de `X-Forwarded-For`, que agrega Caddy.
+
+## Clientes, llaves de corte, escenarios y factibilidad
+
+La red (`network.features`) admite además de nudos y tramos:
+
+- **Cliente** (`element: "client"`, punto): `name`, `client_type` (residencial, comercial, industrial, publico),
+  `status` (activo, proyectado), `consumption_value` + `consumption_unit` (`L/s` o `m3/mes`, mes de 30 días),
+  `node` (nudo de consumo asignado), `link` y `connection` (tubería y punto del arranque), `connection_mode`
+  (`nearest` o `new_node`) y `elevation` opcional (la presión del cliente se calcula en su cota).
+  La demanda del nudo es su demanda manual + la de sus clientes activos (y los proyectados si
+  `options.include_projected_clients`). En el `.inp` cada cliente es una categoría de `[DEMANDS]` llamada
+  `cliente_<ID>`, y la demanda manual se llama `manual`.
+- **Llave de corte** (`element: "shutoff"`, punto): `link` (tubería), `position` (0–1 a lo largo de la
+  tubería; la API recalcula la geometría), `state` (`open` o `closed`). Cerrada = la tubería se escribe `Closed`.
+
+`scenarios` (en `PUT /network` y `GET /network`): `[{id, name, closed: [IDs de llaves]}]`; se versionan con el modelo.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/projects/{id}/scenarios/simulate` | `{model_version, scenario}` (`normal`, `todas_cerradas`, `actual` o ID propio). Nudos y clientes con o sin suministro (topología por tramos abiertos) y presión mínima del periodo; los sectores sin suministro se simulan sin demanda para evitar presiones sin sentido |
+| POST | `/api/projects/{id}/scenarios/compare` | `{model_version, a, b}`: presión por nudo y cliente en ambos escenarios y diferencia |
+| POST | `/api/projects/{id}/feasibility` | `{model_version, link, point, consumption_lps, elevation}`: simula la red con un nudo nuevo en el punto (divide la tubería) sin modificar el proyecto. FACTIBLE si la presión del punto ≥ presión mínima del proyecto y ningún consumo existente pasa a quedar bajo el mínimo. Si no lo es, aumenta el DN del cuello de botella (mayor pérdida unitaria entre los tramos que aumentaron su caudal) al siguiente del catálogo, hasta 3 veces |
+| POST | `/api/projects/{id}/feasibility/report` | Mismo cuerpo; devuelve el informe HTML imprimible |
+| POST | `/api/projects/{id}/clients/import` | CSV (`lat, lon, nombre, consumo` en L/s; opcionales `tipo, estado, unidad`). Asigna cada cliente al nudo de consumo más cercano de la tubería más próxima y crea una versión. Todo o nada: 422 con la lista de filas con error |
+| GET / PUT | `/api/projects/{id}/design-params` | Parámetros de diseño del proyecto (criterios, dotación, densidad, pérdidas, coeficientes, curva de modulación) con fuente y estado de verificación. Por defecto vienen del perfil y de las planillas de referencia, «no verificado» |
+
+Las alertas de criterios y la factibilidad usan los parámetros del proyecto, no directamente el perfil.

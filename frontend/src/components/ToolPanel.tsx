@@ -13,6 +13,9 @@ export const TOOLS: { id: Tool; label: string; key: string; icon: () => ReactEle
   { id: "move", label: "Mover", key: "M", icon: Icon.move, hint: "Arrastre nudos o vértices; se recalcula al soltar" },
   { id: "delete", label: "Eliminar", key: "X", icon: Icon.trash, hint: "Clic en un elemento para eliminarlo (pide confirmación)" },
   { id: "measure", label: "Medir", key: "D", icon: Icon.measure, hint: "Clics para medir distancias · doble clic o Esc reinicia" },
+  { id: "client", label: "Cliente", key: "C", icon: Icon.client, hint: "Clic donde está el cliente: se conecta a la tubería más cercana (nudo cercano o nudo nuevo)" },
+  { id: "shutoff", label: "Llave de corte", key: "L", icon: Icon.shutoff, hint: "Clic sobre una tubería para ubicar una llave · clic en una llave para seleccionarla" },
+  { id: "feasibility", label: "Factibilidad", key: "F", icon: Icon.feasibility, hint: "Clic sobre una tubería: consumo y cota → simula la red con el cliente sin modificar el proyecto" },
 ];
 
 export function ToolPanel() {

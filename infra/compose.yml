@@ -138,6 +138,7 @@ services:
     volumes:
       - ../examples/networks:/app/examples/networks:ro
       - ../docs/validation:/reports
+      - ../docs/referencias:/app/docs/referencias:ro
       - ../frontend/src/api/openapi.json:/app/openapi.committed.json:ro
     tmpfs:
       - /tmp

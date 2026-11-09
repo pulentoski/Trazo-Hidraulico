@@ -6,7 +6,8 @@ import { fmt, fmtLen } from "../lib/format";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { distToSegment, haversine, panBy, project, unproject, zoomAt } from "../lib/geo";
 import type { ELink, ENode, Network } from "../lib/network";
-import { defaultNodeProps, defaultPipeProps, estimatedLength, linkCoords, nextId, roughnessFor, uid } from "../lib/network";
+import { defaultNodeProps, defaultPipeProps, estimatedLength, linkCoords, nearestPipe, nextId, pointAlong, roughnessFor,
+  uid } from "../lib/network";
 import { criteriaOf, useEditor } from "../state/store";
 
 type Pt = [number, number];
@@ -17,7 +18,8 @@ type Gesture =
   | { kind: "box"; start: Pt; now: Pt; additive: boolean }
   | { kind: "dragNode"; uid: string }
   | { kind: "dragVertex"; link: string; idx: number };
-type Target = { type: "node" | "link"; uid: string } | { type: "vertex"; link: string; idx: number } | { type: "bg" };
+type Target = { type: "node" | "link" | "client" | "shutoff"; uid: string } | { type: "vertex"; link: string; idx: number } | { type: "bg" };
+const PICK_PIPE_PX = 16;
 
 const CLICK_TOLERANCE = 4;
 const SNAP_PX = 12;
@@ -31,7 +33,7 @@ function readTarget(el: EventTarget | null): Target {
   if (!node) return { type: "bg" };
   const t = node.dataset.t;
   if (t === "vertex") return { type: "vertex", link: node.dataset.link!, idx: Number(node.dataset.idx) };
-  if (t === "node" || t === "link") return { type: t, uid: node.dataset.uid! };
+  if (t === "node" || t === "link" || t === "client" || t === "shutoff") return { type: t, uid: node.dataset.uid! };
   return { type: "bg" };
 }
 
@@ -61,7 +63,7 @@ interface Props { camera: Camera; size: Size; setCamera: (c: Camera) => void }
 export function NetworkLayer({ camera, size, setCamera }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const s = useEditor();
-  const { net, tool, selection, result, period, linkMode, labels, profiles, project } = s;
+  const { net, tool, selection, result, period, linkMode, labels, profiles, project, designParams: s_designParams, scenarioView } = s;
   const [gesture, setGesture] = useState<Gesture>({ kind: "none" });
   const [cursor, setCursor] = useState<Pt | null>(null);
   const [draft, setDraft] = useState<{ from: string; vertices: LngLat[] } | null>(null);
@@ -70,7 +72,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
   gestureRef.current = gesture;
 
   const profile = profiles.find((p) => p.id === project?.design_profile_id);
-  const criteria = criteriaOf(profile);
+  const criteria = criteriaOf(profile, s_designParams);
   const proj = useCallback((p: LngLat): Pt => project_(p, camera, size), [camera, size]);
   const selected = useMemo(() => new Set(selection), [selection]);
 
@@ -124,6 +126,15 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     return best;
   };
 
+  /** Tubería bajo el puntero (proyección), si está a menos de PICK_PIPE_PX píxeles. */
+  const pipeAt = (p: Pt) => {
+    const st = useEditor.getState();
+    const pr = nearestPipe(st.net, unproject(p, camera, size));
+    if (!pr) return null;
+    const q = proj(pr.point);
+    return Math.hypot(q[0] - p[0], q[1] - p[1]) <= PICK_PIPE_PX ? pr : null;
+  };
+
   // ── Acciones de edición ──
   const addNode = (kind: ENode["kind"], pos: LngLat): string => {
     const st = useEditor.getState();
@@ -154,15 +165,36 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     switch (tool) {
       case "select":
       case "move":
-        if (target.type === "node" || target.type === "link") st.select([target.uid], shift);
+        if (target.type === "node" || target.type === "link" || target.type === "client" || target.type === "shutoff") st.select([target.uid], shift);
         else if (target.type === "bg" && !shift) st.select([]);
         return;
       case "multiselect":
-        if (target.type === "node" || target.type === "link") st.select([target.uid], true);
+        if (target.type === "node" || target.type === "link" || target.type === "client" || target.type === "shutoff") st.select([target.uid], true);
         return;
       case "delete":
-        if (target.type === "node" || target.type === "link") st.requestDelete([target.uid]);
+        if (target.type === "node" || target.type === "link" || target.type === "client" || target.type === "shutoff") st.requestDelete([target.uid]);
         return;
+      case "client":
+        if (target.type === "client") st.select([target.uid]);
+        else if (!Object.values(st.net.links).some((l) => l.kind === "pipe")) st.toast("Dibuje primero una tubería para conectar clientes.", "error");
+        else st.set({ clientDraft: { pos } });
+        return;
+      case "shutoff": {
+        if (target.type === "shutoff") { st.select([target.uid]); return; }
+        const pr = pipeAt(p);
+        if (!pr) { st.toast("Haga clic sobre una tubería para ubicar la llave.", "error"); return; }
+        const sh = { uid: uid(), id: nextId(Object.values(st.net.shutoffs).map((x) => x.id), "shutoff"), link: pr.link,
+          position: Math.round(pr.fraction * 1000) / 1000, props: { name: null, state: "open" as const } };
+        st.commit((n) => ({ ...n, shutoffs: { ...n.shutoffs, [sh.uid]: sh } }));
+        st.select([sh.uid]);
+        return;
+      }
+      case "feasibility": {
+        const pr = pipeAt(p);
+        if (!pr) { st.toast("Haga clic sobre una tubería para evaluar la conexión.", "error"); return; }
+        st.set({ feasibilityDraft: { pos: pr.point, link: pr.link } });
+        return;
+      }
       case "junction":
       case "tank":
       case "reservoir":
@@ -376,6 +408,79 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     if (texts.length) labelEls.push(<text key={`${n.uid}-lbl`} x={x + 9} y={y - 7} className="lbl">{texts.join(" · ")}</text>);
   }
 
+  // Sectores sin agua (escenario de llaves mostrado)
+  const dryNodes = new Set(scenarioView?.unsupplied_nodes ?? []);
+  const dryLinks = new Set([...(scenarioView?.unsupplied_links ?? []), ...(scenarioView?.closed_links ?? [])]);
+  const dryEls: React.ReactNode[] = [];
+  if (scenarioView) {
+    for (const l of Object.values(net.links)) {
+      if (!dryLinks.has(l.id)) continue;
+      const pts = linkCoords(net, l).map(proj);
+      dryEls.push(<polyline key={`dry-${l.uid}`} className="dry-link" points={pts.map((q) => q.join(",")).join(" ")} />);
+    }
+    for (const n of Object.values(net.nodes)) {
+      if (!dryNodes.has(n.id)) continue;
+      const [x, y] = proj(n.pos);
+      dryEls.push(<circle key={`dry-${n.uid}`} className="dry-node" cx={x} cy={y} r={9 * zoomScale} />);
+    }
+  }
+
+  // Llaves de corte
+  const shutoffEls: React.ReactNode[] = [];
+  const closedByScenario = scenarioView ? new Set(scenarioView.closed_shutoffs) : null;
+  for (const sh of Object.values(net.shutoffs)) {
+    const l = net.links[sh.link];
+    if (!l) continue;
+    const coords = linkCoords(net, l);
+    const at = proj(pointAlong(coords, sh.position));
+    const ahead = proj(pointAlong(coords, Math.min(1, sh.position + 0.01)));
+    const behind = proj(pointAlong(coords, Math.max(0, sh.position - 0.01)));
+    const deg = (Math.atan2(ahead[1] - behind[1], ahead[0] - behind[0]) * 180) / Math.PI;
+    const closed = closedByScenario ? closedByScenario.has(sh.id) : sh.props.state === "closed";
+    const k = 6 * zoomScale;
+    shutoffEls.push(
+      <g key={sh.uid} transform={`translate(${at[0]},${at[1]}) rotate(${deg})`} className={`shutoff ${closed ? "closed" : "open"} ${selected.has(sh.uid) ? "sel" : ""}`}
+        data-t="shutoff" data-uid={sh.uid}>
+        <title>{`${sh.id}${sh.props.name ? ` · ${sh.props.name}` : ""} — ${closed ? "cerrada" : "abierta"}`}</title>
+        {selected.has(sh.uid) && <circle r={k + 6} className="node-sel" />}
+        <path d={`M ${-k} ${-k} L ${k} ${k} L ${k} ${-k} L ${-k} ${k} Z`} />
+        <circle r={k + 3} className="hit-node" />
+      </g>,
+    );
+    if (labels.linkIds) labelEls.push(<text key={`${sh.uid}-lbl`} x={at[0] + 9} y={at[1] + 14} className="lbl lbl-link">{sh.id}</text>);
+  }
+
+  // Clientes y sus arranques
+  const clientEls: React.ReactNode[] = [];
+  const dryClients = new Set(scenarioView?.clients.filter((c) => !c.supplied).map((c) => c.id) ?? []);
+  const lowClients = new Set(scenarioView?.clients.filter((c) => c.supplied && c.below_min).map((c) => c.id) ?? []);
+  for (const c of Object.values(net.clients)) {
+    const [x, y] = proj(c.pos);
+    if (x < -50 || y < -50 || x > size.width + 50 || y > size.height + 50) continue;
+    const conn = c.connection ? proj(c.connection) : null;
+    const nodePos = net.nodes[c.node] ? proj(net.nodes[c.node].pos) : null;
+    const k = 5 * zoomScale;
+    const state = dryClients.has(c.id) ? "dry" : lowClients.has(c.id) ? "low" : c.props.status;
+    clientEls.push(
+      <g key={c.uid} className={`client client-${state} ${selected.has(c.uid) ? "sel" : ""}`}>
+        {conn && <line className="service-line" x1={x} y1={y} x2={conn[0]} y2={conn[1]} />}
+        {conn && nodePos && c.props.connection_mode === "nearest" && (
+          <line className="service-assign" x1={conn[0]} y1={conn[1]} x2={nodePos[0]} y2={nodePos[1]} />)}
+        <g transform={`translate(${x},${y})`} data-t="client" data-uid={c.uid}>
+          <title>{`${c.id}${c.props.name ? ` · ${c.props.name}` : ""} → ${net.nodes[c.node]?.id ?? "?"}`}</title>
+          {selected.has(c.uid) && <circle r={k + 6} className="node-sel" />}
+          <path d={`M 0 ${-k * 1.2} L ${k} ${-k * 0.2} L ${k} ${k} L ${-k} ${k} L ${-k} ${-k * 0.2} Z`} />
+          <circle r={k + 4} className="hit-node" />
+        </g>
+      </g>,
+    );
+    if (labels.nodeIds) labelEls.push(<text key={`${c.uid}-lbl`} x={x + 8} y={y + 4} className="lbl lbl-link">{c.id}</text>);
+  }
+
+  // Punto de factibilidad pendiente
+  const fd = s.feasibilityDraft;
+  const feasEl = fd ? (() => { const [x, y] = proj(fd.pos); return <g className="feas-pt" transform={`translate(${x},${y})`}><circle r={9} /><circle r={3} /></g>; })() : null;
+
   // Borrador de tubería
   let draftEl: React.ReactNode = null;
   if (draft && net.nodes[draft.from]) {
@@ -415,9 +520,13 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     <svg ref={svgRef} className={`net-layer ${cursorClass}`} width={size.width} height={size.height}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
       onPointerLeave={() => setCursor(null)} onDoubleClick={onDoubleClick} onWheel={onWheel} onContextMenu={onContextMenu}>
+      <g>{dryEls}</g>
       <g>{linkEls}</g>
       <g>{arrowEls}</g>
+      <g>{clientEls}</g>
+      <g>{shutoffEls}</g>
       <g>{nodeEls}</g>
+      {feasEl}
       <g>{handleEls}</g>
       <g className="labels">{labelEls}</g>
       {draftEl}

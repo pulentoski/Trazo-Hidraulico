@@ -64,3 +64,14 @@ def recompute_lengths(fc: NetworkFeatureCollection, srid: int) -> None:
 def link_midpoint(lk: LinkFeature) -> tuple[float, float]:
     c = lk.geometry.coordinates
     return ((c[0][0] + c[-1][0]) / 2, (c[0][1] + c[-1][1]) / 2)
+
+
+def place_shutoffs(fc: NetworkFeatureCollection, srid: int) -> None:
+    """Ubica cada llave sobre su tubería según su posición (la geometría la define la tubería)."""
+    from app.services.connection import point_at
+
+    links = {lk.id: lk for lk in fc.links()}
+    for sh in fc.shutoffs():
+        lk = links.get(sh.properties.link)
+        if lk is not None:
+            sh.geometry.coordinates = point_at(lk, sh.properties.position, srid)

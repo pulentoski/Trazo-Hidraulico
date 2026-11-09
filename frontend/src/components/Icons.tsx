@@ -26,5 +26,9 @@ export const Icon = {
   upload: () => <svg viewBox="0 0 24 24" {...P}><path d="M12 15V3M7 8l5-5 5 5M4 20h16" /></svg>,
   plus: () => <svg viewBox="0 0 24 24" {...P}><path d="M12 5v14M5 12h14" /></svg>,
   tag: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 12V3h9l9 9-9 9z" /><circle cx="7.5" cy="7.5" r="1.3" /></svg>,
+  client: () => <svg viewBox="0 0 24 24" {...P}><path d="M4 11l8-6 8 6v9H4z" /><path d="M10 20v-5h4v5" /></svg>,
+  shutoff: () => <svg viewBox="0 0 24 24" {...P}><path d="M4 7l16 10V7L4 17z" /><path d="M12 12V4M9 4h6" /></svg>,
+  feasibility: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 12h7M14 12h7" /><circle cx="12" cy="12" r="3" /><path d="M12 3v3M12 18v3" /></svg>,
+  csv: () => <svg viewBox="0 0 24 24" {...P}><path d="M6 3h9l4 4v14H6z" /><path d="M9 12h7M9 15h7M9 18h4" /></svg>,
   moon: () => <svg viewBox="0 0 24 24" {...P}><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></svg>,
 };

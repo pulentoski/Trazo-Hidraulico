@@ -1,0 +1,734 @@
+[
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 40,
+  "inner_diameter_mm": 40.0,
+  "cell": "D5",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 40,
+  "inner_diameter_mm": 35.2,
+  "cell": "G5",
+  "formula": "=40-4.8",
+  "od_mm": 40.0,
+  "wall_mm": 2.4,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN16",
+  "dn": 40,
+  "inner_diameter_mm": 73.6,
+  "cell": "M5",
+  "formula": "=90-8.2-8.2",
+  "od_mm": 40.0,
+  "wall_mm": -16.8,
+  "review": [
+   "calculado sobre 90 mm, no sobre el DN 40",
+   "interior ≥ DN en un plástico (DN = diámetro exterior): 73.6 mm"
+  ]
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 50,
+  "inner_diameter_mm": 50.0,
+  "cell": "D6",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 50,
+  "inner_diameter_mm": 44.0,
+  "cell": "G6",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-6",
+  "od_mm": 50.0,
+  "wall_mm": 3.0,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 50,
+  "inner_diameter_mm": 45.2,
+  "cell": "H6",
+  "formula": null,
+  "od_mm": 50.0,
+  "wall_mm": 2.4,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 63,
+  "inner_diameter_mm": 55.4,
+  "cell": "G7",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-7.6",
+  "od_mm": 63.0,
+  "wall_mm": 3.8,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 63,
+  "inner_diameter_mm": 57.0,
+  "cell": "H7",
+  "formula": null,
+  "od_mm": 63.0,
+  "wall_mm": 3.0,
+  "review": []
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 65,
+  "inner_diameter_mm": 65.0,
+  "cell": "D8",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN16",
+  "dn": 65,
+  "inner_diameter_mm": 73.6,
+  "cell": "M8",
+  "formula": "=90-8.2-8.2",
+  "od_mm": 65.0,
+  "wall_mm": -4.3,
+  "review": [
+   "calculado sobre 90 mm, no sobre el DN 65",
+   "interior ≥ DN en un plástico (DN = diámetro exterior): 73.6 mm"
+  ]
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 75,
+  "inner_diameter_mm": 75.0,
+  "cell": "C9",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "FFD",
+  "pipe_class": "PN10",
+  "dn": 75,
+  "inner_diameter_mm": 65.2,
+  "cell": "E9",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 75,
+  "inner_diameter_mm": 66.0,
+  "cell": "G9",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-9",
+  "od_mm": 75.0,
+  "wall_mm": 4.5,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 75,
+  "inner_diameter_mm": 67.8,
+  "cell": "H9",
+  "formula": null,
+  "od_mm": 75.0,
+  "wall_mm": 3.6,
+  "review": []
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 80,
+  "inner_diameter_mm": 80.0,
+  "cell": "D10",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 90,
+  "inner_diameter_mm": 90.0,
+  "cell": "C11",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 90,
+  "inner_diameter_mm": 79.2,
+  "cell": "G11",
+  "formula": "=90-5.4-5.4",
+  "od_mm": 90.0,
+  "wall_mm": 5.4,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 90,
+  "inner_diameter_mm": 75.0,
+  "cell": "H11",
+  "formula": null,
+  "od_mm": 90.0,
+  "wall_mm": 7.5,
+  "review": [
+   "difiere más de 6 % del típico SDR 26 (83.1 mm)"
+  ]
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN16",
+  "dn": 90,
+  "inner_diameter_mm": 73.6,
+  "cell": "M11",
+  "formula": "=90-8.2-8.2",
+  "od_mm": 90.0,
+  "wall_mm": 8.2,
+  "review": []
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 100,
+  "inner_diameter_mm": 100.0,
+  "cell": "C12",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 100,
+  "inner_diameter_mm": 100.0,
+  "cell": "D12",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "FFD",
+  "pipe_class": "PN10",
+  "dn": 100,
+  "inner_diameter_mm": 89.9,
+  "cell": "E12",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 100,
+  "inner_diameter_mm": 81.4,
+  "cell": "H12",
+  "formula": null,
+  "od_mm": 100.0,
+  "wall_mm": 9.3,
+  "review": [
+   "difiere más de 6 % del típico SDR 26 (92.3 mm)"
+  ]
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 110,
+  "inner_diameter_mm": 110.0,
+  "cell": "C13",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "FFD",
+  "pipe_class": "PN10",
+  "dn": 110,
+  "inner_diameter_mm": 99.9,
+  "cell": "E13",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 110,
+  "inner_diameter_mm": 96.8,
+  "cell": "G13",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-6.6-6.6",
+  "od_mm": 110.0,
+  "wall_mm": 6.6,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 110,
+  "inner_diameter_mm": 99.4,
+  "cell": "H13",
+  "formula": null,
+  "od_mm": 110.0,
+  "wall_mm": 5.3,
+  "review": []
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 125,
+  "inner_diameter_mm": 125.0,
+  "cell": "C14",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 125,
+  "inner_diameter_mm": 125.0,
+  "cell": "D14",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "FFD",
+  "pipe_class": "PN10",
+  "dn": 125,
+  "inner_diameter_mm": 114.75,
+  "cell": "E14",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 125,
+  "inner_diameter_mm": 110.2,
+  "cell": "G14",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-7.4-7.4",
+  "od_mm": 125.0,
+  "wall_mm": 7.4,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 125,
+  "inner_diameter_mm": 113.0,
+  "cell": "H14",
+  "formula": null,
+  "od_mm": 125.0,
+  "wall_mm": 6.0,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 140,
+  "inner_diameter_mm": 126.6,
+  "cell": "H15",
+  "formula": null,
+  "od_mm": 140.0,
+  "wall_mm": 6.7,
+  "review": []
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 150,
+  "inner_diameter_mm": 150.0,
+  "cell": "C16",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 150,
+  "inner_diameter_mm": 150.0,
+  "cell": "D16",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 160,
+  "inner_diameter_mm": 141.0,
+  "cell": "G17",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-9.5-9.5",
+  "od_mm": 160.0,
+  "wall_mm": 9.5,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 160,
+  "inner_diameter_mm": 144.6,
+  "cell": "H17",
+  "formula": null,
+  "od_mm": 160.0,
+  "wall_mm": 7.7,
+  "review": []
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 200,
+  "inner_diameter_mm": 200.0,
+  "cell": "C18",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 200,
+  "inner_diameter_mm": 200.0,
+  "cell": "D18",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "FFD",
+  "pipe_class": "PN10",
+  "dn": 200,
+  "inner_diameter_mm": 189.3,
+  "cell": "E18",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 200,
+  "inner_diameter_mm": 176.2,
+  "cell": "G18",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-11.9-11.9",
+  "od_mm": 200.0,
+  "wall_mm": 11.9,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 200,
+  "inner_diameter_mm": 180.8,
+  "cell": "H18",
+  "formula": null,
+  "od_mm": 200.0,
+  "wall_mm": 9.6,
+  "review": []
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 250,
+  "inner_diameter_mm": 250.0,
+  "cell": "C19",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 250,
+  "inner_diameter_mm": 220.4,
+  "cell": "G19",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-14.8-14.8",
+  "od_mm": 250.0,
+  "wall_mm": 14.8,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 250,
+  "inner_diameter_mm": 226.0,
+  "cell": "H19",
+  "formula": null,
+  "od_mm": 250.0,
+  "wall_mm": 12.0,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 280,
+  "inner_diameter_mm": 246.8,
+  "cell": "G21",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-16.6-16.6",
+  "od_mm": 280.0,
+  "wall_mm": 16.6,
+  "review": []
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 300,
+  "inner_diameter_mm": 300.0,
+  "cell": "C22",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 300,
+  "inner_diameter_mm": 300.0,
+  "cell": "D22",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "FFD",
+  "pipe_class": "PN10",
+  "dn": 300,
+  "inner_diameter_mm": 288.7,
+  "cell": "E22",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 315,
+  "inner_diameter_mm": 277.6,
+  "cell": "G23",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-18.7-18.7",
+  "od_mm": 315.0,
+  "wall_mm": 18.7,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 315,
+  "inner_diameter_mm": 285.0,
+  "cell": "H23",
+  "formula": null,
+  "od_mm": 315.0,
+  "wall_mm": 15.0,
+  "review": []
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 350,
+  "inner_diameter_mm": 350.0,
+  "cell": "C24",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "FFD",
+  "pipe_class": "PN10",
+  "dn": 350,
+  "inner_diameter_mm": 338.0,
+  "cell": "E24",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 355,
+  "inner_diameter_mm": 312.8,
+  "cell": "G25",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-21.1-21.1",
+  "od_mm": 355.0,
+  "wall_mm": 21.1,
+  "review": []
+ },
+ {
+  "material": "PVC",
+  "pipe_class": "PN10",
+  "dn": 355,
+  "inner_diameter_mm": 321.0,
+  "cell": "H25",
+  "formula": null,
+  "od_mm": 355.0,
+  "wall_mm": 17.0,
+  "review": []
+ },
+ {
+  "material": "AC",
+  "pipe_class": "PN10",
+  "dn": 400,
+  "inner_diameter_mm": 400.0,
+  "cell": "C26",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": [
+   "interior igual al DN: confirmar que es el diámetro interior real"
+  ]
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 400,
+  "inner_diameter_mm": 374.6,
+  "cell": "D26",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 400,
+  "inner_diameter_mm": 352.6,
+  "cell": "G26",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-23.7-23.7",
+  "od_mm": 400.0,
+  "wall_mm": 23.7,
+  "review": []
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 450,
+  "inner_diameter_mm": 424.6,
+  "cell": "D27",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "HA",
+  "pipe_class": "PN10",
+  "dn": 450,
+  "inner_diameter_mm": 390.0,
+  "cell": "F27",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ },
+ {
+  "material": "PEAD",
+  "pipe_class": "PN10",
+  "dn": 450,
+  "inner_diameter_mm": 396.6,
+  "cell": "G27",
+  "formula": "=Tabla3[[#This Row],[(mm)]]-26.7-26.7",
+  "od_mm": 450.0,
+  "wall_mm": 26.7,
+  "review": []
+ },
+ {
+  "material": "Acero",
+  "pipe_class": "PN10",
+  "dn": 600,
+  "inner_diameter_mm": 571.46,
+  "cell": "D28",
+  "formula": null,
+  "od_mm": null,
+  "wall_mm": null,
+  "review": []
+ }
+]

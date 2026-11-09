@@ -18,14 +18,15 @@ class CatalogPipe(Base):
     standard: Mapped[str] = mapped_column(String(60))
     dn: Mapped[int] = mapped_column(Integer)
     pipe_class: Mapped[str] = mapped_column(String(20))
-    od_mm: Mapped[float] = mapped_column(Float)
-    wall_mm: Mapped[float] = mapped_column(Float)
+    od_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    wall_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
     inner_diameter_mm: Mapped[float] = mapped_column(Float)
     hw_c: Mapped[float] = mapped_column(Float)
     dw_roughness_mm: Mapped[float] = mapped_column(Float)
     manning_n: Mapped[float] = mapped_column(Float)
     verified: Mapped[bool] = mapped_column(Boolean, default=False)
     source: Mapped[str] = mapped_column(Text)
+    review: Mapped[str | None] = mapped_column(Text, nullable=True)  # observaciones para revisión
 
 
 class DesignProfile(Base):

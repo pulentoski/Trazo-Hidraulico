@@ -51,8 +51,14 @@ def _times_lines(aux: dict[str, str]) -> list[str]:
     return lines
 
 
-def write_inp(model: NetworkModel, *, projector: Projector | None = None, title: str | None = None) -> str:
-    """Genera el texto .inp. Con `projector` (lon, lat) → (x, y) se incluyen coordenadas y vértices."""
+def write_inp(model: NetworkModel, *, projector: Projector | None = None, title: str | None = None,
+              closed_shutoffs: set[str] | None = None) -> str:
+    """Genera el texto .inp. Con `projector` (lon, lat) → (x, y) se incluyen coordenadas y vértices.
+
+    La demanda de cada nudo es su demanda base manual + categorías + una categoría por cliente (con el
+    ID del cliente como nombre, para trazabilidad). Las tuberías con una llave cerrada se escriben cerradas;
+    `closed_shutoffs` reemplaza el estado de las llaves (escenarios).
+    """
     nodes = model.network.nodes()
     links = model.network.links()
     opts = model.options
@@ -91,13 +97,14 @@ def write_inp(model: NetworkModel, *, projector: Projector | None = None, title:
         out.append(_pad(*cols))
 
     pipes = [lk for lk in links if lk.properties.kind == "pipe"]
+    shut = model.closed_links(closed_shutoffs)
     pumps = [lk for lk in links if lk.properties.kind == "pump"]
     valves = [lk for lk in links if lk.properties.kind == "valve"]
 
     section("PIPES")
     for lk in pipes:
         p = lk.properties
-        status = {"closed": "Closed", "cv": "CV"}.get(p.initial_status, "Open")
+        status = "Closed" if lk.id in shut else {"closed": "Closed", "cv": "CV"}.get(p.initial_status, "Open")
         out.append(_pad(lk.id, p.from_node, p.to_node, num(p.length_hydraulic_m), num(p.inner_diameter_mm),
                         num(p.roughness), num(p.minor_loss), status))
 
@@ -125,18 +132,21 @@ def write_inp(model: NetworkModel, *, projector: Projector | None = None, title:
             cols.append(p.valve_curve)
         out.append(_pad(*cols))
 
-    multi = [n for n in junctions if n.properties.demands]
+    by_node = model.client_demands()
+    multi = [n for n in junctions if n.properties.demands or n.id in by_node]
     section("DEMANDS")
     for n in multi:
         p = n.properties
         # [DEMANDS] reemplaza la demanda de [JUNCTIONS]: se escriben todas las categorías.
-        out.append(_pad(n.id, num(p.base_demand), p.demand_pattern or ""))
+        out.append(_pad(n.id, num(p.base_demand), p.demand_pattern or "") + "\t;manual")
         for d in p.demands:
             cols = [n.id, num(d.base), d.pattern or ""]
             line = _pad(*cols)
             if d.name:
                 line += f"\t;{d.name}"
             out.append(line)
+        for c in by_node.get(n.id, []):
+            out.append(_pad(n.id, num(c.properties.consumption_lps), p.demand_pattern or "") + f"\t;cliente_{c.id}")
 
     section("EMITTERS")
     for n in junctions:

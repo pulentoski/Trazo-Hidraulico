@@ -9,10 +9,10 @@ from sqlalchemy.orm import Session
 from app.models import Project, ProjectVersion
 from app.repositories import network as network_repo
 from app.repositories import projects as projects_repo
-from app.schemas.network import HydraulicOptions, NetworkFeatureCollection, NetworkModel
+from app.schemas.network import HydraulicOptions, NetworkFeatureCollection, NetworkModel, ValveScenario
 from app.schemas.project import LinkLengths, NetworkDocument, NetworkSave, NetworkSaveResult
 from app.services.errors import Conflict, InvalidNetwork, NotFound
-from app.services.geometry import recompute_lengths
+from app.services.geometry import place_shutoffs, recompute_lengths
 from app.validators.network_validator import validate_model
 
 
@@ -41,7 +41,8 @@ def get_version_or_404(session: Session, project: Project, number: int | None) -
 
 def load_model(session: Session, version: ProjectVersion) -> NetworkModel:
     return NetworkModel(options=HydraulicOptions(**version.options), aux=dict(version.aux or {}),
-                        network=network_repo.load_network(session, version.id))
+                        network=network_repo.load_network(session, version.id),
+                        scenarios=[ValveScenario(**x) for x in (version.scenarios or [])])
 
 
 def get_document(session: Session, project: Project, number: int | None) -> NetworkDocument:
@@ -49,7 +50,7 @@ def get_document(session: Session, project: Project, number: int | None) -> Netw
     model = load_model(session, version)
     return NetworkDocument(project_id=project.id, version=version.number, kind=version.kind, label=version.label,
                            created_at=version.created_at, length_srid=project.length_srid, options=model.options,
-                           aux=model.aux, network=model.network)
+                           aux=model.aux, network=model.network, scenarios=model.scenarios)
 
 
 def create_version(session: Session, project: Project, model: NetworkModel, *, kind: str, label: str | None,
@@ -58,6 +59,7 @@ def create_version(session: Session, project: Project, model: NetworkModel, *, k
     version = ProjectVersion(project_id=project.id, number=number, kind=kind, label=label,
                              parent_number=parent.number if parent else None,
                              options=model.options.model_dump(mode="json"), aux=model.aux,
+                             scenarios=[x.model_dump(mode="json") for x in model.scenarios],
                              content_sha256=content_hash(model))
     session.add(version)
     session.flush()
@@ -69,12 +71,13 @@ def create_version(session: Session, project: Project, model: NetworkModel, *, k
 def prepare_network(fc: NetworkFeatureCollection, srid: int) -> None:
     structural = validate_model(NetworkModel(network=fc), structural_only=True)
     if not structural.ok:
-        raise InvalidNetwork(structural, "La red tiene errores de estructura (IDs duplicados o tramos sin nudos "
-                                         "válidos) y no se puede guardar.")
+        raise InvalidNetwork(structural, "La red tiene errores de estructura (IDs duplicados, tramos sin nudos "
+                                         "válidos, clientes o llaves sin elemento asociado) y no se puede guardar.")
     for f in fc.features:
         if not f.properties.uid:
             f.properties.uid = str(uuid.uuid4())
     recompute_lengths(fc, srid)
+    place_shutoffs(fc, srid)
 
 
 def save_network(session: Session, project: Project, body: NetworkSave) -> NetworkSaveResult:
@@ -84,9 +87,11 @@ def save_network(session: Session, project: Project, body: NetworkSave) -> Netwo
 
     options = body.options or (HydraulicOptions(**latest.options) if latest else HydraulicOptions())
     aux = body.aux if body.aux is not None else (dict(latest.aux) if latest else {})
+    scenarios = body.scenarios if body.scenarios is not None else (
+        [ValveScenario(**x) for x in (latest.scenarios or [])] if latest else [])
     fc = body.network
     prepare_network(fc, project.length_srid)
-    model = NetworkModel(options=options, aux=aux, network=fc)
+    model = NetworkModel(options=options, aux=aux, network=fc, scenarios=scenarios)
     digest = content_hash(model)
     lengths = {lk.id: LinkLengths(length_plan_m=lk.properties.length_plan_m,
                                   length_slope_m=lk.properties.length_slope_m,

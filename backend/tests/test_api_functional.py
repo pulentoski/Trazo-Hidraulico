@@ -149,7 +149,8 @@ def test_engine_and_catalog_endpoints(client):
     profiles = client.get("/api/design-profiles").json()
     assert profiles and profiles[0]["status"] == "no verificado" and profiles[0]["verified"] is False
     pipes = client.get("/api/catalog/pipes").json()
-    assert {p["material"] for p in pipes} == {"PVC", "HDPE"}
+    assert {p["material"] for p in pipes} == {"PVC", "HDPE", "AC", "Acero", "FFD", "HA", "PEAD"}
+    assert all(p["verified"] is False for p in pipes)
 
 
 def test_unknown_project_404(client):

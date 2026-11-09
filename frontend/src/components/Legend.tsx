@@ -7,11 +7,11 @@ function initialOpen(): boolean {
 }
 
 export function Legend() {
-  const { linkMode, result, net, period, profiles, project, set } = useEditor();
+  const { linkMode, result, net, period, profiles, project, set, designParams: s_designParams } = useEditor();
   const [open, setOpenState] = useState(initialOpen);
   const setOpen = (v: boolean) => { setOpenState(v); writePref("legendOpen", v); };
   const profile = profiles.find((p) => p.id === project?.design_profile_id);
-  const crit = criteriaOf(profile);
+  const crit = criteriaOf(profile, s_designParams);
   const values = useMemo(() => Object.values(net.links)
     .map((l) => linkValue(linkMode, l, result?.links[l.id], period))
     .filter((v): v is number => v !== null), [net.links, linkMode, result, period]);

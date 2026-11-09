@@ -92,7 +92,7 @@ async function cycle(): Promise<void> {
       st().set({ simStatus: "running", simError: null });
       const res = await api.saveNetwork(s.project.id, {
         base_version: s.serverVersion, kind: manual ? "manual" : "auto", label: manual?.label ?? null,
-        options: s.options, aux: s.aux, network: toFeatureCollection(s.net),
+        options: s.options, aux: s.aux, network: toFeatureCollection(s.net), scenarios: s.scenarios,
       });
       // Largos recalculados por el servidor (sin crear entrada de historial).
       const cur = st();

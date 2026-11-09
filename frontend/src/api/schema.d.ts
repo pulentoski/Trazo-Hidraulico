@@ -126,6 +126,41 @@ export interface paths {
         patch: operations["update_project_api_projects__project_id__patch"];
         trace?: never;
     };
+    "/api/projects/{project_id}/clients/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Importar clientes desde CSV (lat, lon, nombre, consumo) y asignarlos a nudos */
+        post: operations["import_clients_api_projects__project_id__clients_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/design-params": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parámetros de diseño del proyecto */
+        get: operations["get_design_params_api_projects__project_id__design_params_get"];
+        /** Editar parámetros de diseño del proyecto */
+        put: operations["put_design_params_api_projects__project_id__design_params_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/export.inp": {
         parameters: {
             query?: never;
@@ -137,6 +172,40 @@ export interface paths {
         get: operations["export_inp_api_projects__project_id__export_inp_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/feasibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Factibilidad de un nuevo cliente (no modifica el proyecto) */
+        post: operations["assess_feasibility_api_projects__project_id__feasibility_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/feasibility/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Informe de factibilidad en HTML imprimible */
+        post: operations["feasibility_report_api_projects__project_id__feasibility_report_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -172,6 +241,40 @@ export interface paths {
         get: operations["get_run_api_projects__project_id__runs__run_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/scenarios/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Comparar dos escenarios de llaves (presión antes, después y diferencia) */
+        post: operations["compare_scenarios_api_projects__project_id__scenarios_compare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/scenarios/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simular un escenario de llaves: suministro y presión por nudo y cliente */
+        post: operations["simulate_scenario_api_projects__project_id__scenarios_simulate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -267,6 +370,31 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AffectedClient */
+        AffectedClient: {
+            /** After */
+            after: number | null;
+            /** Before */
+            before: number | null;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /** Newly Below */
+            newly_below: boolean;
+            /** Node */
+            node: string;
+        };
+        /** Body_import_clients_api_projects__project_id__clients_import_post */
+        Body_import_clients_api_projects__project_id__clients_import_post: {
+            /** Base Version */
+            base_version?: number | null;
+            /**
+             * File
+             * @description CSV con columnas lat, lon, nombre, consumo (L/s)
+             */
+            file: string;
+        };
         /** Body_import_project_api_projects_import_post */
         Body_import_project_api_projects_import_post: {
             /**
@@ -300,9 +428,11 @@ export interface components {
             /** Material */
             material: string;
             /** Od Mm */
-            od_mm: number;
+            od_mm: number | null;
             /** Pipe Class */
             pipe_class: string;
+            /** Review */
+            review?: string | null;
             /** Source */
             source: string;
             /** Standard */
@@ -310,7 +440,181 @@ export interface components {
             /** Verified */
             verified: boolean;
             /** Wall Mm */
-            wall_mm: number;
+            wall_mm: number | null;
+        };
+        /** ClientFeature */
+        ClientFeature: {
+            geometry: components["schemas"]["PointGeometry"];
+            /**
+             * Id
+             * @description ID del cliente
+             */
+            id: string;
+            properties: components["schemas"]["ClientProperties"];
+            /**
+             * Type
+             * @default Feature
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** ClientImportResult */
+        ClientImportResult: {
+            /** Created */
+            created: number;
+            /** Rows */
+            rows: components["schemas"]["ClientImportRow"][];
+            /** Version */
+            version: number;
+        };
+        /** ClientImportRow */
+        ClientImportRow: {
+            /** Consumption Lps */
+            consumption_lps: number;
+            /** Distance M */
+            distance_m: number;
+            /** Id */
+            id: string;
+            /** Line */
+            line: number;
+            /** Link */
+            link: string;
+            /** Name */
+            name: string | null;
+            /** Node */
+            node: string;
+            /** Warning */
+            warning?: string | null;
+        };
+        /** ClientProperties */
+        ClientProperties: {
+            /**
+             * Client Type
+             * @default residencial
+             * @enum {string}
+             */
+            client_type: "residencial" | "comercial" | "industrial" | "publico";
+            /**
+             * Connection
+             * @description Punto de conexión [lon, lat]
+             */
+            connection?: [
+                number,
+                number
+            ] | null;
+            /**
+             * Connection Mode
+             * @default nearest
+             * @enum {string}
+             */
+            connection_mode: "nearest" | "new_node";
+            /**
+             * Consumption Unit
+             * @default L/s
+             * @enum {string}
+             */
+            consumption_unit: "L/s" | "m3/mes";
+            /**
+             * Consumption Value
+             * @description Consumo en la unidad indicada
+             */
+            consumption_value: number;
+            /**
+             * Element
+             * @default client
+             * @constant
+             */
+            element: "client";
+            /**
+             * Elevation
+             * @description Cota del terreno en el cliente (m)
+             */
+            elevation?: number | null;
+            /**
+             * Link
+             * @description Tubería sobre la que se proyectó el arranque
+             */
+            link?: string | null;
+            /**
+             * Name
+             * @description Nombre o dirección
+             */
+            name?: string | null;
+            /**
+             * Node
+             * @description ID del nudo de consumo al que se conecta
+             */
+            node: string;
+            /**
+             * Status
+             * @default activo
+             * @enum {string}
+             */
+            status: "activo" | "proyectado";
+            /** Uid */
+            uid?: string | null;
+        };
+        /** ClientState */
+        ClientState: {
+            /**
+             * Affected
+             * @description Sin suministro o bajo la presión mínima
+             */
+            affected: boolean;
+            /** Below Min */
+            below_min: boolean;
+            /** Consumption Lps */
+            consumption_lps: number;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /** Node */
+            node: string;
+            /** Pressure */
+            pressure: number | null;
+            /** Status */
+            status: string;
+            /** Supplied */
+            supplied: boolean;
+        };
+        /** CompareRequest */
+        CompareRequest: {
+            /**
+             * A
+             * @default normal
+             */
+            a: string;
+            /** B */
+            b: string;
+            /** Model Version */
+            model_version: number;
+        };
+        /** CompareResult */
+        CompareResult: {
+            a: components["schemas"]["ScenarioResult"];
+            b: components["schemas"]["ScenarioResult"];
+            /** Rows */
+            rows: components["schemas"]["CompareRow"][];
+        };
+        /** CompareRow */
+        CompareRow: {
+            /** A */
+            a: number | null;
+            /** B */
+            b: number | null;
+            /** Diff */
+            diff: number | null;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name?: string | null;
+            /** Supplied A */
+            supplied_a: boolean;
+            /** Supplied B */
+            supplied_b: boolean;
         };
         /** CriteriaAlert */
         CriteriaAlert: {
@@ -343,19 +647,6 @@ export interface components {
             /** Value */
             value: number;
         };
-        /** Criterion */
-        Criterion: {
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /** Max */
-            max?: number | null;
-            /** Min */
-            min?: number | null;
-            /** Unit */
-            unit: string;
-        };
         /** DemandCategory */
         DemandCategory: {
             /**
@@ -368,10 +659,69 @@ export interface components {
             /** Pattern */
             pattern?: string | null;
         };
+        /** DesignParam */
+        DesignParam: {
+            /**
+             * Bound
+             * @description Criterios: el valor es un mínimo o un máximo
+             */
+            bound?: ("min" | "max") | null;
+            /**
+             * Group
+             * @enum {string}
+             */
+            group: "criterio" | "demanda" | "curva";
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Source */
+            source: string;
+            /** Unit */
+            unit: string;
+            /** Value */
+            value: number | number[];
+            /**
+             * Verified
+             * @default false
+             */
+            verified: boolean;
+        };
+        /** DesignParamUpdate */
+        DesignParamUpdate: {
+            /** Key */
+            key: string;
+            /**
+             * Source
+             * @description Fuente del valor; por defecto «Ingresado en el proyecto»
+             */
+            source?: string | null;
+            /** Value */
+            value: number | number[];
+            /**
+             * Verified
+             * @default false
+             */
+            verified: boolean;
+        };
+        /** DesignParamsOut */
+        DesignParamsOut: {
+            /**
+             * Customized
+             * @description True si el proyecto modificó algún valor por defecto
+             */
+            customized: boolean;
+            /** Params */
+            params: components["schemas"]["DesignParam"][];
+            /** Profile Name */
+            profile_name: string | null;
+            /** Project Id */
+            project_id: string;
+        };
         /** DesignProfileOut */
         DesignProfileOut: {
             /** Criteria */
-            criteria: components["schemas"]["Criterion"][];
+            criteria: components["schemas"]["app__schemas__catalog__Criterion"][];
             /** Id */
             id: number;
             /** Name */
@@ -431,6 +781,105 @@ export interface components {
             /** Time */
             time?: string | null;
         };
+        /** FeasibilityRequest */
+        FeasibilityRequest: {
+            /** Consumption Lps */
+            consumption_lps: number;
+            /**
+             * Elevation
+             * @description Cota del terreno en el punto (m)
+             */
+            elevation: number;
+            /**
+             * Link
+             * @description Tubería donde se conecta el nuevo cliente
+             */
+            link: string;
+            /** Model Version */
+            model_version: number;
+            /** Name */
+            name?: string | null;
+            /**
+             * Point
+             * @description Punto [lon, lat]; se proyecta sobre la tubería
+             */
+            point: [
+                number,
+                number
+            ];
+        };
+        /** FeasibilityResult */
+        FeasibilityResult: {
+            /** Affected Clients */
+            affected_clients: components["schemas"]["AffectedClient"][];
+            /**
+             * Analysis
+             * @description DDA o PDA
+             */
+            analysis: string;
+            /** Bottleneck */
+            bottleneck: string | null;
+            /** Consumption Lps */
+            consumption_lps: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Criteria */
+            criteria: components["schemas"]["app__schemas__analysis__Criterion"][];
+            /** Distance M */
+            distance_m: number;
+            /** Elevation */
+            elevation: number;
+            engine: components["schemas"]["EngineInfo"];
+            /** Feasible */
+            feasible: boolean;
+            /** Inp Sha256 */
+            inp_sha256: string;
+            /** Link */
+            link: string;
+            /** Link Issues */
+            link_issues: components["schemas"]["LinkIssue"][];
+            /**
+             * Location
+             * @description Punto de conexión sobre la tubería [lon, lat]
+             */
+            location: [
+                number,
+                number
+            ];
+            /** Margin */
+            margin: number | null;
+            /** Messages */
+            messages: components["schemas"]["EngineMessage"][];
+            /** Model Version */
+            model_version: number;
+            /** New Node */
+            new_node: string;
+            /** Pressure New */
+            pressure_new: number | null;
+            /** Project Id */
+            project_id: string;
+            /** Project Name */
+            project_name: string;
+            /** Reasons */
+            reasons: string[];
+            /** Split Links */
+            split_links: [
+                string,
+                string
+            ];
+            /**
+             * Upgrade Feasible
+             * @description Si aumentar el DN del cuello de botella lo hace factible
+             */
+            upgrade_feasible?: boolean | null;
+            /** Upgrades */
+            upgrades: components["schemas"]["UpgradeAttempt"][];
+            /** Verdict */
+            verdict: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -460,6 +909,12 @@ export interface components {
              * @enum {string}
              */
             headloss: "H-W" | "D-W" | "C-M";
+            /**
+             * Include Projected Clients
+             * @description Sumar también los clientes en estado «proyectado» a la demanda de su nudo
+             * @default false
+             */
+            include_projected_clients: boolean;
             /**
              * Minimum Pressure
              * @description PDA: presión bajo la cual no hay entrega (m)
@@ -526,6 +981,25 @@ export interface components {
              */
             type: "Feature";
         };
+        /** LinkIssue */
+        LinkIssue: {
+            /** Dn */
+            dn: number | null;
+            /** Headloss After */
+            headloss_after: number;
+            /** Headloss Before */
+            headloss_before: number;
+            /** Id */
+            id: string;
+            /** Over Headloss */
+            over_headloss: boolean;
+            /** Over Velocity */
+            over_velocity: boolean;
+            /** Velocity After */
+            velocity_after: number;
+            /** Velocity Before */
+            velocity_before: number;
+        };
         /** LinkLengths */
         LinkLengths: {
             /** Length Hydraulic M */
@@ -568,6 +1042,13 @@ export interface components {
              * @description Diámetro interior de cálculo (mm)
              */
             inner_diameter_mm?: number | null;
+            /**
+             * Inner Diameter Source
+             * @description Origen del diámetro interior: catálogo o ingreso manual
+             * @default catalogo
+             * @enum {string}
+             */
+            inner_diameter_source: "catalogo" | "manual";
             /**
              * Kind
              * @default pipe
@@ -684,13 +1165,15 @@ export interface components {
              * Format: uuid
              */
             project_id: string;
+            /** Scenarios */
+            scenarios?: components["schemas"]["ValveScenario"][];
             /** Version */
             version: number;
         };
         /** NetworkFeatureCollection */
         NetworkFeatureCollection: {
             /** Features */
-            features?: (components["schemas"]["NodeFeature"] | components["schemas"]["LinkFeature"])[];
+            features?: (components["schemas"]["NodeFeature"] | components["schemas"]["LinkFeature"] | components["schemas"]["ClientFeature"] | components["schemas"]["ShutoffFeature"])[];
             /**
              * Type
              * @default FeatureCollection
@@ -720,6 +1203,11 @@ export interface components {
             network: components["schemas"]["NetworkFeatureCollection"];
             /** @description Si se omite, se conservan las de la versión base */
             options?: components["schemas"]["HydraulicOptions"] | null;
+            /**
+             * Scenarios
+             * @description Si se omite, se conservan los de la versión base
+             */
+            scenarios?: components["schemas"]["ValveScenario"][] | null;
         };
         /** NetworkSaveResult */
         NetworkSaveResult: {
@@ -855,6 +1343,24 @@ export interface components {
              */
             pressure: number[];
         };
+        /** NodeState */
+        NodeState: {
+            /**
+             * Demand
+             * @description Demanda de diseño del nudo (L/s)
+             * @default 0
+             */
+            demand: number;
+            /** Id */
+            id: string;
+            /**
+             * Pressure
+             * @description Presión mínima del periodo (m); None si no hay suministro
+             */
+            pressure?: number | null;
+            /** Supplied */
+            supplied: boolean;
+        };
         /** PointGeometry */
         PointGeometry: {
             /**
@@ -933,6 +1439,99 @@ export interface components {
             length_srid?: number | null;
             /** Name */
             name?: string | null;
+        };
+        /** ScenarioRequest */
+        ScenarioRequest: {
+            /** Model Version */
+            model_version: number;
+            /**
+             * Scenario
+             * @description normal, todas_cerradas, actual o el ID de un escenario personalizado
+             * @default normal
+             */
+            scenario: string;
+        };
+        /** ScenarioResult */
+        ScenarioResult: {
+            /** Clients */
+            clients: components["schemas"]["ClientState"][];
+            /** Closed Links */
+            closed_links: string[];
+            /** Closed Shutoffs */
+            closed_shutoffs: string[];
+            /** Inp Sha256 */
+            inp_sha256: string;
+            /** Messages */
+            messages: components["schemas"]["EngineMessage"][];
+            /** Model Version */
+            model_version: number;
+            /** Nodes */
+            nodes: components["schemas"]["NodeState"][];
+            /** Pressure Min */
+            pressure_min: number;
+            /** Project Id */
+            project_id: string;
+            /** Scenario */
+            scenario: string;
+            /** Scenario Name */
+            scenario_name: string;
+            /** Summary */
+            summary: {
+                [key: string]: number;
+            };
+            /**
+             * Unsupplied Links
+             * @description Tramos sin suministro (ambos extremos desconectados)
+             */
+            unsupplied_links: string[];
+            /** Unsupplied Nodes */
+            unsupplied_nodes: string[];
+        };
+        /** ShutoffFeature */
+        ShutoffFeature: {
+            geometry: components["schemas"]["PointGeometry"];
+            /**
+             * Id
+             * @description ID de la llave
+             */
+            id: string;
+            properties: components["schemas"]["ShutoffProperties"];
+            /**
+             * Type
+             * @default Feature
+             * @constant
+             */
+            type: "Feature";
+        };
+        /** ShutoffProperties */
+        ShutoffProperties: {
+            /**
+             * Element
+             * @default shutoff
+             * @constant
+             */
+            element: "shutoff";
+            /**
+             * Link
+             * @description ID de la tubería donde está la llave
+             */
+            link: string;
+            /** Name */
+            name?: string | null;
+            /**
+             * Position
+             * @description Posición a lo largo de la tubería (0 = inicio, 1 = fin)
+             * @default 0.5
+             */
+            position: number;
+            /**
+             * State
+             * @default open
+             * @enum {string}
+             */
+            state: "open" | "closed";
+            /** Uid */
+            uid?: string | null;
         };
         /** SimulateRequest */
         SimulateRequest: {
@@ -1014,6 +1613,29 @@ export interface components {
             times: number[];
             validation: components["schemas"]["ValidationReport"];
         };
+        /** UpgradeAttempt */
+        UpgradeAttempt: {
+            /** Dn From */
+            dn_from: number | null;
+            /** Dn To */
+            dn_to: number | null;
+            /** Feasible */
+            feasible: boolean;
+            /** Inner From */
+            inner_from: number | null;
+            /** Inner To */
+            inner_to: number | null;
+            /** Link */
+            link: string;
+            /** Material */
+            material: string | null;
+            /** Note */
+            note?: string | null;
+            /** Pipe Class */
+            pipe_class: string | null;
+            /** Pressure New */
+            pressure_new: number | null;
+        };
         /**
          * ValidateRequest
          * @description Valida una versión guardada (`model_version`) o una red en edición (`network`).
@@ -1048,7 +1670,7 @@ export interface components {
             /** Element Id */
             element_id?: string | null;
             /** Element Type */
-            element_type?: ("node" | "link" | "network") | null;
+            element_type?: ("node" | "link" | "client" | "shutoff" | "network") | null;
             /** Message */
             message: string;
             /**
@@ -1065,6 +1687,21 @@ export interface components {
             ok: boolean;
             /** Warnings */
             warnings: components["schemas"]["ValidationIssue"][];
+        };
+        /**
+         * ValveScenario
+         * @description Escenario de operación de llaves: las llaves listadas quedan cerradas; el resto, abiertas.
+         */
+        ValveScenario: {
+            /**
+             * Closed
+             * @description IDs de llaves cerradas
+             */
+            closed?: string[];
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** VersionOut */
         VersionOut: {
@@ -1095,6 +1732,34 @@ export interface components {
             number: number;
             /** Parent Number */
             parent_number: number | null;
+        };
+        /** Criterion */
+        app__schemas__analysis__Criterion: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Source */
+            source: string;
+            /** Unit */
+            unit: string;
+            /** Value */
+            value: number;
+            /** Verified */
+            verified: boolean;
+        };
+        /** Criterion */
+        app__schemas__catalog__Criterion: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Max */
+            max?: number | null;
+            /** Min */
+            min?: number | null;
+            /** Unit */
+            unit: string;
         };
     };
     responses: never;
@@ -1368,6 +2033,107 @@ export interface operations {
             };
         };
     };
+    import_clients_api_projects__project_id__clients_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_clients_api_projects__project_id__clients_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_design_params_api_projects__project_id__design_params_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignParamsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_design_params_api_projects__project_id__design_params_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignParamUpdate"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignParamsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_inp_api_projects__project_id__export_inp_get: {
         parameters: {
             query?: {
@@ -1398,6 +2164,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assess_feasibility_api_projects__project_id__feasibility_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeasibilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeasibilityResult"];
+                };
+            };
+            /** @description Errores bloqueantes en la red: no se ejecutó */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationBlocked"];
+                };
+            };
+        };
+    };
+    feasibility_report_api_projects__project_id__feasibility_report_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeasibilityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": unknown;
+                };
+            };
+            /** @description Errores bloqueantes en la red: no se ejecutó */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationBlocked"];
                 };
             };
         };
@@ -1504,6 +2340,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_scenarios_api_projects__project_id__scenarios_compare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareResult"];
+                };
+            };
+            /** @description Errores bloqueantes en la red: no se ejecutó */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationBlocked"];
+                };
+            };
+        };
+    };
+    simulate_scenario_api_projects__project_id__scenarios_simulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioResult"];
+                };
+            };
+            /** @description Errores bloqueantes en la red: no se ejecutó */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationBlocked"];
                 };
             };
         };

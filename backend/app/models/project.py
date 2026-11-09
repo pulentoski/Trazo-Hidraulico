@@ -19,6 +19,9 @@ class Project(Base):
     design_profile_id: Mapped[int | None] = mapped_column(
         ForeignKey("design_profile.id", ondelete="SET NULL"), nullable=True
     )
+    # Parámetros de diseño editables del proyecto (criterios, dotación, pérdidas, curvas). None = valores
+    # por defecto del perfil, marcados «no verificado».
+    design_params: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -47,6 +50,8 @@ class ProjectVersion(Base):
     options: Mapped[dict] = mapped_column(JSONB, default=dict)
     # Secciones complementarias del modelo: patrones, curvas, controles, reglas, tiempos, energía, calidad.
     aux: Mapped[dict] = mapped_column(JSONB, default=dict)
+    # Escenarios de llaves: [{id, name, closed: [IDs de llaves cerradas]}].
+    scenarios: Mapped[list] = mapped_column(JSONB, default=list)
     content_sha256: Mapped[str] = mapped_column(String(64))
 
     project: Mapped[Project] = relationship(back_populates="versions")

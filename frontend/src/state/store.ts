@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type {
-  CatalogPipe, DesignProfile, EngineInfo, HydraulicOptions, NetworkDocument, ProjectOut, SimulationResult,
-  ValidationReport,
+  CatalogPipe, DesignParam, DesignProfile, EngineInfo, HydraulicOptions, NetworkDocument, ProjectOut, ScenarioResult,
+  SimulationResult, ValidationReport, ValveScenario,
 } from "../api/types";
 import type { Criteria, LinkColorMode } from "../lib/colors";
 import { DEFAULT_CRITERIA } from "../lib/colors";
@@ -9,7 +9,8 @@ import type { LngLat } from "../lib/geo";
 import type { ELink, ENode, Network } from "../lib/network";
 import { EMPTY, fromDocument } from "../lib/network";
 
-export type Tool = "select" | "multiselect" | "junction" | "pipe" | "tank" | "reservoir" | "move" | "delete" | "measure";
+export type Tool = "select" | "multiselect" | "junction" | "pipe" | "tank" | "reservoir" | "move" | "delete" | "measure"
+  | "client" | "shutoff" | "feasibility";
 export type SimStatus = "idle" | "pending" | "running" | "ok" | "error";
 export type MapType = "roadmap" | "terrain" | "satellite" | "hybrid";
 export type Theme = "light" | "dark";
@@ -23,7 +24,7 @@ interface Snapshot { net: Network; options: HydraulicOptions }
 export interface Toast { id: number; text: string; kind: "info" | "error" }
 
 const DEFAULT_OPTIONS: HydraulicOptions = {
-  headloss: "H-W", demand_model: "DDA", minimum_pressure: 0, required_pressure: 15, pressure_exponent: 0.5, extra: {},
+  headloss: "H-W", demand_model: "DDA", include_projected_clients: false, minimum_pressure: 0, required_pressure: 15, pressure_exponent: 0.5, extra: {},
 };
 
 function readPref<T>(key: string, fallback: T): T {
@@ -78,6 +79,16 @@ export interface EditorState {
   cameraRequest: { points: LngLat[]; nonce: number } | null;
   toasts: Toast[];
   versionsOpen: boolean;
+  /** Escenarios de llaves personalizados (se guardan con la versión). */
+  scenarios: ValveScenario[];
+  /** Parámetros de diseño efectivos del proyecto. */
+  designParams: DesignParam[] | null;
+  /** Resultado de escenario mostrado en el mapa (sectores sin agua). */
+  scenarioView: ScenarioResult | null;
+  /** Punto pendiente de la herramienta Cliente o Factibilidad (abre su diálogo). */
+  clientDraft: { pos: LngLat } | null;
+  feasibilityDraft: { pos: LngLat; link: string } | null;
+  bottomTab: string | null;
 
   loadDocument: (project: ProjectOut, doc: NetworkDocument) => void;
   closeProject: () => void;
@@ -98,12 +109,13 @@ export interface EditorState {
   toast: (text: string, kind?: Toast["kind"]) => void;
   dismissToast: (id: number) => void;
   set: (partial: Partial<EditorState>) => void;
+  setScenarios: (list: ValveScenario[]) => void;
 }
 
 const HISTORY_LIMIT = 200;
 
 export function systemTheme(): Theme {
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function resolveTheme(pref: ThemePref): Theme {
@@ -111,7 +123,19 @@ export function resolveTheme(pref: ThemePref): Theme {
 }
 let toastSeq = 0;
 
-export function criteriaOf(profile: DesignProfile | undefined): Criteria {
+/** Criterios para escalas y leyenda: parámetros del proyecto si están cargados; si no, el perfil. */
+export function criteriaOf(profile: DesignProfile | undefined, params?: DesignParam[] | null): Criteria {
+  if (params?.length) {
+    const v = (key: string, fb: number) => {
+      const p = params.find((x) => x.key === key);
+      return typeof p?.value === "number" ? p.value : fb;
+    };
+    return {
+      pressureMin: v("pressure_min", DEFAULT_CRITERIA.pressureMin), pressureMax: v("pressure_max", DEFAULT_CRITERIA.pressureMax),
+      velocityMin: v("velocity_min", DEFAULT_CRITERIA.velocityMin), velocityMax: v("velocity_max", DEFAULT_CRITERIA.velocityMax),
+      headlossMax: v("unit_headloss_max", DEFAULT_CRITERIA.headlossMax),
+    };
+  }
   if (!profile) return DEFAULT_CRITERIA;
   const get = (key: string, field: "min" | "max", fb: number) => {
     const c = profile.criteria.find((x) => x.key === key);
@@ -133,7 +157,7 @@ function allPoints(net: Network): LngLat[] {
   return pts;
 }
 
-/** Elimina nudos y, en cascada, los tramos conectados a ellos. */
+/** Elimina elementos y, en cascada, los tramos de los nudos eliminados, sus clientes y las llaves de esos tramos. */
 export function removeElements(net: Network, uids: string[]): Network {
   const kill = new Set(uids);
   const nodes: Record<string, ENode> = {};
@@ -143,7 +167,11 @@ export function removeElements(net: Network, uids: string[]): Network {
     if (kill.has(k) || kill.has(l.from) || kill.has(l.to)) continue;
     links[k] = l;
   }
-  return { nodes, links };
+  const clients: Network["clients"] = {};
+  for (const [k, c] of Object.entries(net.clients)) if (!kill.has(k) && nodes[c.node]) clients[k] = c;
+  const shutoffs: Network["shutoffs"] = {};
+  for (const [k, sh] of Object.entries(net.shutoffs)) if (!kill.has(k) && links[sh.link]) shutoffs[k] = sh;
+  return { nodes, links, clients, shutoffs };
 }
 
 export const useEditor = create<EditorState>()((set, get) => ({
@@ -181,6 +209,12 @@ export const useEditor = create<EditorState>()((set, get) => ({
   cameraRequest: null,
   toasts: [],
   versionsOpen: false,
+  scenarios: [],
+  designParams: null,
+  scenarioView: null,
+  clientDraft: null,
+  feasibilityDraft: null,
+  bottomTab: null,
 
   loadDocument: (project, doc) => {
     const net = fromDocument(doc);
@@ -188,7 +222,8 @@ export const useEditor = create<EditorState>()((set, get) => ({
       project, serverVersion: doc.version, lastSavedAt: doc.created_at, lastSaveKind: doc.kind,
       aux: doc.aux, options: doc.options, net, revision: 0, savedRevision: 0, past: [], future: [],
       dragging: false, dragOrigin: null, selection: [], result: null, resultRevision: null, validation: null,
-      simStatus: "idle", simError: null, period: 0, pendingDelete: null,
+      simStatus: "idle", simError: null, period: 0, pendingDelete: null, scenarios: doc.scenarios ?? [],
+      scenarioView: null, clientDraft: null, feasibilityDraft: null,
       cameraRequest: { points: allPoints(net), nonce: Date.now() },
     });
     writePref("lastProject", project.id);
@@ -196,6 +231,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   closeProject: () => set({
     project: null, net: EMPTY, result: null, validation: null, serverVersion: null, revision: 0, savedRevision: 0,
     past: [], future: [], selection: [], simStatus: "idle", simError: null, versionsOpen: false, pendingDelete: null,
+    scenarios: [], designParams: null, scenarioView: null, clientDraft: null, feasibilityDraft: null,
   }),
 
   commit: (fn, options) => {
@@ -285,4 +321,5 @@ export const useEditor = create<EditorState>()((set, get) => ({
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
   set: (partial) => set(partial),
+  setScenarios: (list) => set({ scenarios: list, revision: get().revision + 1 }),
 }));

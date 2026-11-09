@@ -15,6 +15,19 @@ ElevationSource = Literal["manual", "inp", "supuesta"]
 LengthChoice = Literal["plan", "slope", "manual"]
 LinkStatus = Literal["open", "closed", "cv", "active"]
 ValveType = Literal["PRV", "PSV", "PBV", "FCV", "TCV", "GPV", "PCV"]
+InnerDiameterSource = Literal["catalogo", "manual"]
+ClientType = Literal["residencial", "comercial", "industrial", "publico"]
+ClientStatus = Literal["activo", "proyectado"]
+ConsumptionUnit = Literal["L/s", "m3/mes"]
+ConnectionMode = Literal["nearest", "new_node"]
+ShutoffState = Literal["open", "closed"]
+
+# Conversión de m³/mes a L/s con mes de 30 días (facturación habitual).
+SECONDS_PER_MONTH = 30 * 86400
+
+
+def to_lps(value: float, unit: str) -> float:
+    return value if unit == "L/s" else value * 1000.0 / SECONDS_PER_MONTH
 
 ROUGHNESS_MEANING: dict[str, str] = {
     "H-W": "Coeficiente C de Hazen-Williams (adimensional)",
@@ -30,6 +43,8 @@ class HydraulicOptions(BaseModel):
 
     headloss: HeadlossFormula = "H-W"
     demand_model: DemandModel = "DDA"
+    include_projected_clients: bool = Field(
+        False, description="Sumar también los clientes en estado «proyectado» a la demanda de su nudo")
     minimum_pressure: float = Field(0.0, description="PDA: presión bajo la cual no hay entrega (m)")
     required_pressure: float = Field(15.0, description="PDA: presión para entregar la demanda completa (m)")
     pressure_exponent: float = Field(0.5, gt=0, description="PDA: exponente de la relación presión-caudal")
@@ -88,6 +103,8 @@ class LinkProperties(BaseModel):
     description: str | None = None
     dn: int | None = Field(None, description="Diámetro nominal (mm)")
     inner_diameter_mm: float | None = Field(None, description="Diámetro interior de cálculo (mm)")
+    inner_diameter_source: InnerDiameterSource = Field(
+        "catalogo", description="Origen del diámetro interior: catálogo o ingreso manual")
     material: str | None = None
     pipe_class: str | None = None
     catalog_pipe_id: int | None = None
@@ -107,6 +124,42 @@ class LinkProperties(BaseModel):
     valve_curve: str | None = None
 
 
+class ClientProperties(BaseModel):
+    element: Literal["client"] = "client"
+    uid: str | None = None
+    name: str | None = Field(None, description="Nombre o dirección")
+    client_type: ClientType = "residencial"
+    status: ClientStatus = "activo"
+    consumption_value: float = Field(ge=0, description="Consumo en la unidad indicada")
+    consumption_unit: ConsumptionUnit = "L/s"
+    node: str = Field(description="ID del nudo de consumo al que se conecta")
+    link: str | None = Field(None, description="Tubería sobre la que se proyectó el arranque")
+    connection: tuple[float, float] | None = Field(None, description="Punto de conexión [lon, lat]")
+    connection_mode: ConnectionMode = "nearest"
+    elevation: float | None = Field(None, description="Cota del terreno en el cliente (m)")
+
+    @property
+    def consumption_lps(self) -> float:
+        return to_lps(self.consumption_value, self.consumption_unit)
+
+
+class ShutoffProperties(BaseModel):
+    element: Literal["shutoff"] = "shutoff"
+    uid: str | None = None
+    name: str | None = None
+    link: str = Field(description="ID de la tubería donde está la llave")
+    position: float = Field(0.5, ge=0, le=1, description="Posición a lo largo de la tubería (0 = inicio, 1 = fin)")
+    state: ShutoffState = "open"
+
+
+class ValveScenario(BaseModel):
+    """Escenario de operación de llaves: las llaves listadas quedan cerradas; el resto, abiertas."""
+
+    id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,40}$")
+    name: str = Field(min_length=1, max_length=120)
+    closed: list[str] = Field(default_factory=list, description="IDs de llaves cerradas")
+
+
 class NodeFeature(BaseModel):
     type: Literal["Feature"] = "Feature"
     id: str = Field(description="ID EPANET del nudo")
@@ -121,19 +174,34 @@ class LinkFeature(BaseModel):
     properties: LinkProperties
 
 
+class ClientFeature(BaseModel):
+    type: Literal["Feature"] = "Feature"
+    id: str = Field(description="ID del cliente")
+    geometry: PointGeometry
+    properties: ClientProperties
+
+
+class ShutoffFeature(BaseModel):
+    type: Literal["Feature"] = "Feature"
+    id: str = Field(description="ID de la llave")
+    geometry: PointGeometry
+    properties: ShutoffProperties
+
+
 def _feature_tag(v: Any) -> str:
     if isinstance(v, dict):
         props = v.get("properties") or {}
         geom = v.get("geometry") or {}
         element = props.get("element")
-        if element in ("node", "link"):
+        if element in ("node", "link", "client", "shutoff"):
             return element
         return "node" if geom.get("type") == "Point" else "link"
-    return "node" if isinstance(v, NodeFeature) else "link"
+    return {NodeFeature: "node", LinkFeature: "link", ClientFeature: "client", ShutoffFeature: "shutoff"}[type(v)]
 
 
 Feature = Annotated[
-    Annotated[NodeFeature, Tag("node")] | Annotated[LinkFeature, Tag("link")],
+    Annotated[NodeFeature, Tag("node")] | Annotated[LinkFeature, Tag("link")]
+    | Annotated[ClientFeature, Tag("client")] | Annotated[ShutoffFeature, Tag("shutoff")],
     Discriminator(_feature_tag),
 ]
 
@@ -148,6 +216,12 @@ class NetworkFeatureCollection(BaseModel):
     def links(self) -> list[LinkFeature]:
         return [f for f in self.features if isinstance(f, LinkFeature)]
 
+    def clients(self) -> list[ClientFeature]:
+        return [f for f in self.features if isinstance(f, ClientFeature)]
+
+    def shutoffs(self) -> list[ShutoffFeature]:
+        return [f for f in self.features if isinstance(f, ShutoffFeature)]
+
 
 class NetworkModel(BaseModel):
     """Modelo hidráulico completo: red + opciones + secciones complementarias (.inp)."""
@@ -159,3 +233,21 @@ class NetworkModel(BaseModel):
         description="Secciones .inp complementarias en texto (times, patterns, curves, controls, rules, ...)",
     )
     network: NetworkFeatureCollection = Field(default_factory=NetworkFeatureCollection)
+    scenarios: list[ValveScenario] = Field(default_factory=list, description="Escenarios de llaves personalizados")
+
+    def client_demands(self) -> dict[str, list[ClientFeature]]:
+        """Clientes que aportan demanda, por nudo (activos; también proyectados si la opción lo indica)."""
+        out: dict[str, list[ClientFeature]] = {}
+        for c in self.network.clients():
+            if c.properties.status == "activo" or self.options.include_projected_clients:
+                out.setdefault(c.properties.node, []).append(c)
+        return out
+
+    def closed_links(self, closed_shutoffs: set[str] | None = None) -> set[str]:
+        """Tuberías cerradas por llaves (estado propio de cada llave, o el conjunto dado por un escenario)."""
+        out = set()
+        for sh in self.network.shutoffs():
+            closed = sh.id in closed_shutoffs if closed_shutoffs is not None else sh.properties.state == "closed"
+            if closed:
+                out.add(sh.properties.link)
+        return out

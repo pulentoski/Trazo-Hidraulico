@@ -16,3 +16,21 @@ La rugosidad cambia de significado según la fórmula de la versión: C (H-W), �
 fórmula, el editor recalcula la rugosidad de los tramos ligados al catálogo y advierte sobre los tramos personalizados.
 
 Migraciones en `backend/migrations/versions/` (Alembic): `0001` esquema y triggers de inmutabilidad; `0002` catálogo y perfil.
+
+## Etapa clientes y operación
+
+| Tabla / columna | Contenido |
+|---|---|
+| `network_client` | Clientes por versión (inmutable): punto, conexión sobre la tubería, nudo asignado (`node_id`), tipo, estado, consumo en su unidad y en L/s, cota opcional |
+| `network_shutoff` | Llaves de corte por versión (inmutable): tubería (`link_id`), posición 0–1, estado abierta/cerrada, punto |
+| `project_version.scenarios` | Escenarios de llaves `[{id, name, closed}]` de la versión |
+| `project.design_params` | Parámetros de diseño editados en el proyecto (solo los que difieren de los valores por defecto) |
+| `network_link.inner_diameter_source` | `catalogo` o `manual` |
+| `catalog_pipe.review` | Observaciones de revisión (catálogo ModeloPozo); `od_mm`/`wall_mm` pasan a ser opcionales |
+
+El catálogo incluye las 62 combinaciones material × clase × DN de `docs/referencias/ModeloPozo.xlsx`
+(hoja «D=Interiores»: AC, Acero, FFD, HA, PEAD y PVC; PN10 y PN16), con fuente «Planilla ModeloPozo
+(ingeniero hidráulico), no verificado» y rugosidades típicas por material también no verificadas. La
+planilla se lee con `app/data/modelopozo.py` (evalúa las fórmulas y respeta las celdas vacías), se congela
+en `app/data/catalogo_modelopozo.json` y la carga la migración 0003. Las filas dudosas se listan en
+[validation/catalogo-modelopozo-revision.md](validation/catalogo-modelopozo-revision.md).

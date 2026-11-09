@@ -82,6 +82,7 @@ class NetworkLink(Base):
     catalog_pipe_id: Mapped[int | None] = mapped_column(
         ForeignKey("catalog_pipe.id", ondelete="SET NULL"), nullable=True
     )
+    inner_diameter_source: Mapped[str] = mapped_column(String(10), default="catalogo")  # catalogo | manual
     # Rugosidad: C (H-W), ε en mm (D-W) o n (C-M) según la fórmula de la versión.
     roughness: Mapped[float | None] = mapped_column(Float, nullable=True)
     minor_loss: Mapped[float] = mapped_column(Float, default=0.0)
@@ -105,3 +106,44 @@ class NetworkLink(Base):
     valve_curve: Mapped[str | None] = mapped_column(String(31), nullable=True)
 
     extra: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+
+class NetworkClient(Base):
+    """Cliente (arranque): consumo asignado a un nudo de consumo. Su demanda se suma a la del nudo."""
+
+    __tablename__ = "network_client"
+    __table_args__ = (UniqueConstraint("version_id", "label", name="uq_client_label"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("project_version.id", ondelete="CASCADE"), index=True)
+    uid: Mapped[uuid.UUID] = mapped_column(Uuid)
+    label: Mapped[str] = mapped_column(String(31))
+    name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    client_type: Mapped[str] = mapped_column(String(12))
+    status: Mapped[str] = mapped_column(String(12))
+    consumption_value: Mapped[float] = mapped_column(Float)
+    consumption_unit: Mapped[str] = mapped_column(String(8))
+    consumption_lps: Mapped[float] = mapped_column(Float)
+    node_id: Mapped[int] = mapped_column(ForeignKey("network_node.id", ondelete="CASCADE"), index=True)
+    link_label: Mapped[str | None] = mapped_column(String(31), nullable=True)
+    connection_mode: Mapped[str] = mapped_column(String(10), default="nearest")
+    elevation: Mapped[float | None] = mapped_column(Float, nullable=True)
+    geom = mapped_column(Geometry("POINT", srid=4326, spatial_index=False), nullable=False)
+    connection_geom = mapped_column(Geometry("POINT", srid=4326, spatial_index=False), nullable=True)
+
+
+class NetworkShutoff(Base):
+    """Llave (válvula de corte) sobre una tubería: abierta o cerrada. Cerrada = tramo cerrado en EPANET."""
+
+    __tablename__ = "network_shutoff"
+    __table_args__ = (UniqueConstraint("version_id", "label", name="uq_shutoff_label"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("project_version.id", ondelete="CASCADE"), index=True)
+    uid: Mapped[uuid.UUID] = mapped_column(Uuid)
+    label: Mapped[str] = mapped_column(String(31))
+    name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    link_id: Mapped[int] = mapped_column(ForeignKey("network_link.id", ondelete="CASCADE"), index=True)
+    position: Mapped[float] = mapped_column(Float)
+    state: Mapped[str] = mapped_column(String(8))
+    geom = mapped_column(Geometry("POINT", srid=4326, spatial_index=False), nullable=False)

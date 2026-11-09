@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.network import HydraulicOptions, NetworkFeatureCollection
+from app.schemas.network import HydraulicOptions, NetworkFeatureCollection, ValveScenario
 
 VersionKind = Literal["auto", "manual", "import"]
 
@@ -62,6 +62,7 @@ class NetworkDocument(BaseModel):
     options: HydraulicOptions
     aux: dict[str, str]
     network: NetworkFeatureCollection
+    scenarios: list[ValveScenario] = Field(default_factory=list)
 
 
 class NetworkSave(BaseModel):
@@ -72,6 +73,7 @@ class NetworkSave(BaseModel):
     options: HydraulicOptions | None = Field(None, description="Si se omite, se conservan las de la versión base")
     aux: dict[str, str] | None = None
     network: NetworkFeatureCollection
+    scenarios: list[ValveScenario] | None = Field(None, description="Si se omite, se conservan los de la versión base")
 
 
 class LinkLengths(BaseModel):

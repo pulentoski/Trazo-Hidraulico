@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { BottomPanel } from "../components/BottomPanel";
+import { ClientDialog } from "../components/ClientDialog";
 import { ConfirmDelete, VersionsDialog } from "../components/Dialogs";
+import { FeasibilityDialog } from "../components/FeasibilityDialog";
 import { PropertiesPanel } from "../components/PropertiesPanel";
 import { TOOLS, ToolPanel } from "../components/ToolPanel";
 import { TopBar } from "../components/TopBar";
@@ -74,6 +76,8 @@ export function EditorPage() {
       <BottomPanel />
       <VersionsDialog />
       <ConfirmDelete />
+      <ClientDialog />
+      <FeasibilityDialog />
     </div>
   );
 }

@@ -100,8 +100,8 @@ def run_inp_file(inp_path: str, workdir: str) -> tuple[bool, list[EngineMessage]
     return ok, messages, results, report
 
 
-def run_model(model: NetworkModel) -> EngineRun:
-    inp_text = write_inp(model)
+def run_model(model: NetworkModel, *, closed_shutoffs: set[str] | None = None) -> EngineRun:
+    inp_text = write_inp(model, closed_shutoffs=closed_shutoffs)
     digest = sha256_text(inp_text)
     t0 = time.perf_counter()
     with engine_workdir() as tmp:
