@@ -152,6 +152,9 @@ Primera prueba de `deploy/instalar.sh` en una instancia AWS limpia (Ubuntu, acce
   la IP pública como dirección local: el handshake fallaba con «tlsv1 alert internal error» aunque el
   certificado interno se había emitido. El Caddyfile ahora fija `default_sni` con el host de `SITE_ADDRESS`
   (lo calcula `infra/caddy/entrypoint.sh`).
+- **Actualizar no aplicaba cambios del Caddyfile**: está montado como archivo y `docker compose up` no recrea
+  el proxy si solo cambia su contenido. El Makefile calcula un hash del Caddyfile y de `entrypoint.sh` y lo pone
+  como etiqueta del proxy (`trazo.caddy-config`), así `git pull && make up-public` lo recrea cuando cambia.
 - **IP dinámica**: la instancia cambia de IP pública cada 4 h; `trazo-ip.timer` + `deploy/actualizar-ip.sh`
   mantienen `SITE_ADDRESS` y `PUBLIC_URL` al día sin intervención.
 - **Verificación**: el instalador comprueba `/healthz` al terminar e indica los comandos de cuentas.

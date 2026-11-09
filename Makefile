@@ -8,6 +8,9 @@ PUBLIC   := $(COMPOSE) -f infra/compose.public.yml -f infra/compose.prod.yml
 HOST_UID ?= $(shell stat -c %u .)
 HOST_GID ?= $(shell stat -c %g .)
 export HOST_UID HOST_GID
+# Cambios del Caddyfile (montado como archivo) recrean el proxy en make up / up-public.
+CADDY_CONFIG_HASH := $(shell cat infra/caddy/Caddyfile infra/caddy/entrypoint.sh 2>/dev/null | sha256sum | cut -c1-16)
+export CADDY_CONFIG_HASH
 
 .PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend test-e2e reset-db gen-types backup \
         create-admin unlock-user reset-password actualizar-ip demo restore-test backup-now

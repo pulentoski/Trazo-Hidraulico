@@ -20,5 +20,7 @@ ip=$(curl -fsS --max-time 2 ${tok:+-H "X-aws-ec2-metadata-token: $tok"} \
 
 sed -i -E "s|^SITE_ADDRESS=.*|SITE_ADDRESS=$scheme://$ip|; s|^PUBLIC_URL=.*|PUBLIC_URL=$scheme://$ip|" .env
 echo "trazo-ip: la IP pública cambió de $host a $ip; actualizando el proxy y la API"
+CADDY_CONFIG_HASH=$(cat infra/caddy/Caddyfile infra/caddy/entrypoint.sh | sha256sum | cut -c1-16)
+export CADDY_CONFIG_HASH
 docker compose --env-file .env -f infra/compose.yml -f infra/compose.public.yml -f infra/compose.prod.yml \
 	up -d --no-build --wait --wait-timeout 300
