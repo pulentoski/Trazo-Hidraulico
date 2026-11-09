@@ -21,6 +21,9 @@
 #                               muestra UNA vez al final
 #   TRAZO_SMTP_HOST/PORT/USER/PASSWORD/FROM   correo saliente (opcional)
 set -euo pipefail
+# Los archivos del repositorio se copian a las imágenes (nginx corre sin privilegios): deben quedar legibles aunque
+# root tenga un umask restrictivo (077). .env se protege aparte con chmod 600.
+umask 022
 
 NONINTERACTIVE="${TRAZO_NONINTERACTIVE:-0}"
 for arg in "$@"; do

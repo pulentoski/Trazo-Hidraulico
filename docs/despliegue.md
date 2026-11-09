@@ -145,6 +145,9 @@ Primera prueba de `deploy/instalar.sh` en una instancia AWS limpia (Ubuntu, acce
   mano, y la tabla no se llama `users` sino `app_user`).
 - **Cookie en HTTP**: verificación en `make up-public`, advertencia en el log de la API y mensaje claro en la
   pantalla de ingreso.
+- **umask de root**: con `umask 077` el clon quedaba ilegible para el usuario sin privilegios de nginx dentro
+  de la imagen `web` («open() default.conf failed (13: Permission denied)», contenedor *unhealthy*). El script
+  fija `umask 022`; `.env` sigue con permisos 600.
 - **IP dinámica**: la instancia cambia de IP pública cada 4 h; `trazo-ip.timer` + `deploy/actualizar-ip.sh`
   mantienen `SITE_ADDRESS` y `PUBLIC_URL` al día sin intervención.
 - **Verificación**: el instalador comprueba `/healthz` al terminar e indica los comandos de cuentas.
