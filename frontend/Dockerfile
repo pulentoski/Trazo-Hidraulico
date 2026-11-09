@@ -1,7 +1,11 @@
 # syntax=docker/dockerfile:1
 FROM node:22.23.4-trixie-slim AS deps
+# package-lock.json se genera con Node 22.23.4 + npm 11.6.2 (la imagen trae npm 10.9.9, cuyo
+# resolvedor falla con las dependencias de vitest). Mismo npm para generar e instalar el lock.
+ARG NPM_VERSION=11.6.2
 WORKDIR /app
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false NPM_CONFIG_FUND=false NPM_CONFIG_AUDIT=false
+RUN npm install -g npm@${NPM_VERSION} && npm --version | grep -qx "${NPM_VERSION}"
 COPY package.json package-lock.json ./
 RUN npm ci
 
