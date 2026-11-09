@@ -97,7 +97,7 @@ def read_inp(path: str, *, crs: str = "auto", length_srid: int = 32719,
             en.setoption(ph, en.PRESS_UNITS, en.METERS)
             en.saveinpfile(ph, si_path)
             si_sections = split_sections(_read(si_path))
-            model, raw_xy = _extract(ph, si_sections)
+            model, raw_xy = _extract(ph, si_sections, _nodes_without_elevation(_read(path)))
         finally:
             try:
                 en.close(ph)
@@ -106,6 +106,11 @@ def read_inp(path: str, *, crs: str = "auto", length_srid: int = 32719,
             en.deleteproject(ph)
 
     georef, notes = _georeference(model, raw_xy, crs, length_srid, origin)
+    assumed = sorted(n.id for n in model.network.nodes() if n.properties.elevation_source == "supuesta")
+    if assumed:
+        shown = ", ".join(assumed[:10]) + ("…" if len(assumed) > 10 else "")
+        notes.append(f"{len(assumed)} nudos sin cota en el archivo ({shown}): EPANET asume 0 m. "
+                     "Quedan marcados como cota supuesta; ingrese la cota real.")
     return ImportResult(model=model, georeference=georef, warnings=notes)
 
 
@@ -117,7 +122,30 @@ def _read(path: str) -> str:
         return ""
 
 
-def _extract(ph, si: dict[str, list[str]]):
+def _input_min_volume(vmin: float, tank: dict) -> float:
+    """Volumen mínimo tal como se escribe en el .inp.
+
+    Si el archivo trae 0 (sin volumen muerto), EPANET calcula internamente área·nivel mínimo y el
+    toolkit devuelve ese valor. Se vuelve a 0, que es equivalente para el motor y conserva el dato.
+    """
+    if tank.get("volume_curve") or not tank.get("tank_diameter"):
+        return vmin
+    computed = math.pi / 4 * tank["tank_diameter"] ** 2 * tank["min_level"]
+    return 0.0 if abs(vmin - computed) <= 1e-6 * max(1.0, computed) else vmin
+
+
+def _nodes_without_elevation(text: str) -> set[str]:
+    """Nudos de [JUNCTIONS] escritos sin la columna de cota (EPANET los acepta y asume 0 m)."""
+    out = set()
+    for line in split_sections(text).get("JUNCTIONS", []):
+        data = line.split(";", 1)[0].split()
+        if len(data) == 1:
+            out.add(data[0])
+    return out
+
+
+def _extract(ph, si: dict[str, list[str]], no_elevation: set[str] | None = None):
+    no_elevation = no_elevation or set()
     title_lines = [ln.strip() for ln in si.get("TITLE", []) if ln.strip()]
     hl = HEADLOSS.get(int(en.getoption(ph, en.HEADLOSSFORM)), "H-W")
     dm_type, pmin, preq, pexp = en.getdemandmodel(ph)
@@ -160,6 +188,9 @@ def _extract(ph, si: dict[str, list[str]]):
         elev = float(en.getnodevalue(ph, i, en.ELEVATION))
         props: dict = {"uid": str(uuid.uuid4()), "elevation": elev, "elevation_source": "inp",
                        "elevation_method": "Importada desde archivo .inp"}
+        if nid in no_elevation:
+            props["elevation_source"] = "supuesta"
+            props["elevation_method"] = "El archivo .inp no trae la cota y EPANET asume 0 m"
         if ntype == en.JUNCTION:
             props["kind"] = "junction"
             cats = []
@@ -184,8 +215,8 @@ def _extract(ph, si: dict[str, list[str]]):
             props["min_level"] = float(en.getnodevalue(ph, i, en.MINLEVEL))
             props["max_level"] = float(en.getnodevalue(ph, i, en.MAXLEVEL))
             props["tank_diameter"] = float(en.getnodevalue(ph, i, en.TANKDIAM))
-            props["min_volume"] = float(en.getnodevalue(ph, i, en.MINVOLUME))
             props["volume_curve"] = _id_or_none(en.getcurveid, ph, en.getnodevalue(ph, i, en.VOLCURVE))
+            props["min_volume"] = _input_min_volume(float(en.getnodevalue(ph, i, en.MINVOLUME)), props)
             props["can_overflow"] = bool(en.getnodevalue(ph, i, en.CANOVERFLOW))
         nodes.append(NodeFeature(id=nid, geometry=PointGeometry(coordinates=(0.0, 0.0)),
                                  properties=NodeProperties(**props)))

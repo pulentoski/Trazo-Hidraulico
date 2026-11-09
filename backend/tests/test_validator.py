@@ -111,7 +111,7 @@ def test_error_isolated_node(client, pid):
 def test_warning_doubtful_elevation_assumed(client, pid):
     j = node("J2", lon=-70.649, elevation=41.0, base_demand=1.0, elevation_source="supuesta")
     rep = validate(client, pid, R, J1, j, P1, P2)
-    assert rep["ok"] and "W_ELEVATION_DOUBTFUL" in codes(rep, "warnings")
+    assert rep["ok"] and "W_ELEVATION_ASSUMED" in codes(rep, "warnings")
 
 
 def test_warning_doubtful_elevation_jump(client, pid):

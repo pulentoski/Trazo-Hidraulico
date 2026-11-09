@@ -42,3 +42,7 @@ Se regeneran en cada `make test`:
 
 - [resultados-referencia.md](resultados-referencia.md): runepanet vs API.
 - [resultados-ida-y-vuelta.md](resultados-ida-y-vuelta.md): `.inp` exportado (runepanet y API) vs original.
+- [resultados-qa.md](resultados-qa.md): batería QA hidráulica (`backend/tests/qa/`): red base estanque →
+  PVC DN 90 → nudo, cuello de botella, DN 160, DDA/PDA con presión negativa, Darcy-Weisbach, largo manual
+  e ida y vuelta `.inp`. Cada caso corre `runepanet` sobre el mismo `.inp` que simuló la API (mismo
+  SHA-256) y aplica estas mismas tolerancias.

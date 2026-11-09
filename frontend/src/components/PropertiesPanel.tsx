@@ -3,13 +3,13 @@ import { api } from "../api/client";
 import type { CatalogPipe, HydraulicOptions } from "../api/types";
 import { fmt, fmtLen } from "../lib/format";
 import type { ELink, ENode, LinkProps, Network, NodeProps } from "../lib/network";
-import { ROUGHNESS_LABEL, estimatedLength, roughnessFor } from "../lib/network";
+import { ROUGHNESS_LABEL, estimatedLength, roughnessFor, tankStorage } from "../lib/network";
 import { useEditor } from "../state/store";
 import { NumField, Readout, TextField } from "./Fields";
 
 const ID_RE = /^[^\s;"]{1,31}$/;
 const KIND_LABEL = { junction: "Nudo de consumo", reservoir: "Reservorio", tank: "Estanque", pipe: "Tubería", pump: "Bomba", valve: "Válvula" };
-const SOURCE_LABEL = { manual: "Manual", inp: "Importada (.inp)", supuesta: "Supuesta (por verificar)" };
+const SOURCE_LABEL = { manual: "Manual", inp: "Importada (.inp)", supuesta: "Supuesta en la importación (por verificar)" };
 const STATUS_TXT: Record<number, string> = { 0: "cerrada (sin altura)", 1: "cerrado temporalmente", 2: "cerrado", 3: "abierto", 4: "activa", 5: "sobre caudal máx.", 6: "sin caudal de consigna", 7: "sin presión de consigna" };
 
 function updateNode(uid: string, patch: { id?: string; props?: Partial<NodeProps> }) {
@@ -54,13 +54,12 @@ function Issues({ id, type }: { id: string; type: "node" | "link" }) {
 }
 
 function NodePanel({ node }: { node: ENode }) {
-  const { net, result, period, set } = useEditor();
+  const { net, result, period } = useEditor();
   const p = node.props;
   const r = result?.nodes[node.id];
-  const setElev = (v: number | null) => {
-    updateNode(node.uid, { props: { elevation: v, elevation_source: "manual", elevation_method: "Ingreso manual" } });
-    if (v !== null) set({ lastElevation: v });
-  };
+  const setElev = (v: number | null) =>
+    updateNode(node.uid, { props: { elevation: v, elevation_source: "manual", elevation_method: v === null ? null : "Ingreso manual" } });
+  const tank = node.kind === "tank" ? tankStorage(p, r?.pressure[period]) : null;
   return (
     <>
       <h3>{KIND_LABEL[node.kind]} <code>{node.id}</code></h3>
@@ -72,10 +71,13 @@ function NodePanel({ node }: { node: ENode }) {
       <div className="coords">{fmt(node.pos[1], 6)}°, {fmt(node.pos[0], 6)}° (WGS84)</div>
       <fieldset>
         <legend>Cota</legend>
-        <NumField label={node.kind === "tank" ? "Cota de fondo" : "Cota de terreno"} unit="m" value={p.elevation} allowNull onCommit={setElev} invalid={p.elevation == null} />
+        <NumField label={node.kind === "tank" ? "Cota de fondo" : "Cota de terreno"} unit="m" value={p.elevation} allowNull onCommit={setElev} invalid={p.elevation == null}
+          hint={p.elevation == null ? "Sin cota: ingrésela para poder simular" : undefined} />
+        {p.elevation == null && <ul className="issues"><li className="error">Falta la cota: es obligatoria para simular.</li></ul>}
+        {p.elevation_source === "supuesta" && <ul className="issues"><li className="warning">Cota supuesta en la importación{p.elevation_method ? ` (${p.elevation_method})` : ""}: ingrese la cota real.</li></ul>}
         <label className="field"><span>Fuente</span>
           <select value={p.elevation_source} onChange={(e) => updateNode(node.uid, { props: { elevation_source: e.target.value as NodeProps["elevation_source"] } })}>
-            {Object.entries(SOURCE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {Object.entries(SOURCE_LABEL).filter(([k]) => k !== "supuesta" || p.elevation_source === "supuesta").map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </label>
         <TextField label="Método" value={p.elevation_method} placeholder="Ej.: levantamiento GNSS, plano…" onCommit={(v) => updateNode(node.uid, { props: { elevation_method: v || null } })} />
@@ -102,12 +104,16 @@ function NodePanel({ node }: { node: ENode }) {
           <NumField label="Nivel máximo" unit="m" value={p.max_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { max_level: v } })} />
           <NumField label="Diámetro" unit="m" value={p.tank_diameter} allowNull onCommit={(v) => updateNode(node.uid, { props: { tank_diameter: v } })} />
           <NumField label="Volumen mínimo" unit="m³" value={p.min_volume} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_volume: v } })} />
+          <Readout label="Cota de rebalse (fondo + nivel máx.)" value={fmt(tank?.overflowElevation, 2)} unit="m" />
         </fieldset>
       )}
       {r && (
         <fieldset className="results">
           <legend>Resultados {result!.times.length > 1 ? `(t = ${Math.round(result!.times[period] / 360) / 10} h)` : ""}</legend>
-          <Readout label="Presión" value={fmt(r.pressure[period], 2)} unit="m" tone={r.pressure[period] < 0 ? "bad" : ""} />
+          {node.kind === "tank" ? (<>
+            <Readout label="Nivel de agua" value={fmt(r.pressure[period], 2)} unit="m" />
+            <Readout label="Volumen almacenado" value={fmt(tank?.volume, 1)} unit="m³" />
+          </>) : <Readout label="Presión" value={fmt(r.pressure[period], 2)} unit="m" tone={r.pressure[period] < 0 ? "bad" : ""} />}
           <Readout label="Cota piezométrica" value={fmt(r.head[period], 2)} unit="m" />
           <Readout label={node.kind === "junction" ? "Demanda" : "Aporte (−) / consumo (+)"} value={fmt(r.demand[period], 3)} unit="L/s" />
         </fieldset>
@@ -199,13 +205,19 @@ function LinkPanel({ link }: { link: ELink }) {
             <Readout label="En planta" value={fmtLen(p.length_plan_m ?? est)} />
             <Readout label="Con pendiente" value={fmtLen(p.length_slope_m)} />
             <label className="field"><span>Largo hidráulico usado</span>
-              <select value={p.length_choice} onChange={(e) => updateLinks([link.uid], { length_choice: e.target.value as LinkProps["length_choice"], length_hydraulic_m: p.length_hydraulic_m ?? est })}>
+              <select value={p.length_choice} onChange={(e) => {
+                const choice = e.target.value as LinkProps["length_choice"];
+                const geo = choice === "plan" ? p.length_plan_m ?? est : choice === "slope" ? p.length_slope_m ?? est : p.length_hydraulic_m ?? est;
+                updateLinks([link.uid], { length_choice: choice, length_hydraulic_m: geo });
+              }}>
                 <option value="slope">Con pendiente (desde cotas)</option>
                 <option value="plan">En planta</option>
                 <option value="manual">Manual</option>
               </select>
             </label>
-            <NumField label="Largo hidráulico" unit="m" value={p.length_hydraulic_m} disabled={p.length_choice !== "manual"} onCommit={(v) => updateLinks([link.uid], { length_hydraulic_m: v })} />
+            <NumField label="Largo hidráulico (enviado al motor)" unit="m" value={p.length_hydraulic_m} allowNull invalid={!p.length_hydraulic_m}
+              hint="Escriba un largo para fijarlo a mano: prevalece sobre el geométrico"
+              onCommit={(v) => updateLinks([link.uid], { length_hydraulic_m: v, length_choice: "manual" })} />
           </fieldset>
         </>
       ) : link.kind === "pump" ? (

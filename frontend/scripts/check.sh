@@ -3,7 +3,9 @@
 set -eu
 echo "› tsc --noEmit"
 ./node_modules/.bin/tsc --noEmit
+echo "› Pruebas unitarias (vitest)"
+XDG_DATA_HOME=/tmp HOME=/tmp ./node_modules/.bin/vitest run --configLoader runner --reporter=dot
 echo "› Tipos OpenAPI generados al día"
 ./node_modules/.bin/openapi-typescript src/api/openapi.json -o /tmp/schema.d.ts >/dev/null
 diff -u src/api/schema.d.ts /tmp/schema.d.ts
-echo "Frontend OK: tipos correctos y schema.d.ts al día."
+echo "Frontend OK: tipos correctos, pruebas unitarias y schema.d.ts al día."

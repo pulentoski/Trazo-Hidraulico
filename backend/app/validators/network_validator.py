@@ -2,9 +2,13 @@
 
 Errores bloqueantes (impiden simular):
   E_EMPTY_NETWORK, E_NO_SOURCE, E_LINK_NODE, E_DIAMETER_NOT_IN_CATALOG, E_DUPLICATE_ID,
-  E_INVALID_ID, E_ISOLATED_NODE, E_MISSING_PARAM
+  E_INVALID_ID, E_ISOLATED_NODE, E_DISCONNECTED_NODE, E_MISSING_PARAM
 Advertencias:
-  W_ELEVATION_DOUBTFUL, W_SHORT_PIPE, W_NO_DEMAND, W_CRITERIA
+  W_ELEVATION_ASSUMED, W_ELEVATION_DOUBTFUL, W_SHORT_PIPE, W_NO_DEMAND, W_CRITERIA
+
+La cota nunca se supone en silencio: un nudo o estanque sin cota es un error bloqueante
+(E_MISSING_PARAM). Solo una importación puede traer una cota supuesta (p. ej. un .inp sin la
+columna de cota, que EPANET toma como 0 m), y en ese caso se advierte explícitamente.
 """
 from __future__ import annotations
 
@@ -134,6 +138,21 @@ def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
         if not connected.get(n.id):
             err("E_ISOLATED_NODE", f"El nudo {n.id} no tiene tramos conectados.", "node", n.id)
 
+    # Nudos con tramos pero sin camino a ninguna fuente (islas): el motor no puede resolverlos.
+    sources = [n.id for n in nodes if n.properties.kind in ("reservoir", "tank")]
+    if sources:
+        reached = set(sources)
+        stack = list(sources)
+        while stack:
+            for m in connected.get(stack.pop(), []):
+                if m not in reached and m in node_by_id:
+                    reached.add(m)
+                    stack.append(m)
+        for n in nodes:
+            if n.id not in reached and connected.get(n.id):
+                err("E_DISCONNECTED_NODE", f"El nudo {n.id} no está conectado a ninguna fuente (reservorio o estanque).",
+                    "node", n.id)
+
     for lk in links:
         p = lk.properties
         if p.kind == "pipe":
@@ -174,8 +193,9 @@ def validate_model(model: NetworkModel, catalog: CatalogIndex | None = None,
         if p.kind == "reservoir" or p.elevation is None:
             continue
         if p.elevation_source == "supuesta":
-            warn("W_ELEVATION_DOUBTFUL", f"La cota del nudo {n.id} es supuesta ({_fmt(p.elevation)} m): verifíquela.",
-                 "node", n.id)
+            why = f" {p.elevation_method.rstrip('.')}." if p.elevation_method else ""
+            warn("W_ELEVATION_ASSUMED", f"La cota del nudo {n.id} es supuesta ({_fmt(p.elevation)} m), no un dato "
+                                        f"ingresado.{why} Ingrese la cota real.", "node", n.id)
             continue
         neigh = [node_by_id[m].properties.elevation for m in connected.get(n.id, [])
                  if m in node_by_id and node_by_id[m].properties.elevation is not None

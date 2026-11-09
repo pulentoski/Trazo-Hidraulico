@@ -1,7 +1,7 @@
 // Capa SVG de la red: dibujo, selección y edición con todas las herramientas.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CatalogPipe } from "../api/types";
-import { classify, linkScale, pressureScale } from "../lib/colors";
+import { classify, linkScale, linkValue as valueOf, pressureScale } from "../lib/colors";
 import { fmt, fmtLen } from "../lib/format";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { distToSegment, haversine, panBy, project, unproject, zoomAt } from "../lib/geo";
@@ -77,14 +77,8 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
   // Resultados del periodo actual, por ID EPANET.
   const nodeRes = result?.nodes;
   const linkRes = result?.links;
-  const linkValue = useCallback((l: ELink): number | null => {
-    if (linkMode === "diameter") return l.props.inner_diameter_mm ?? null;
-    const r = linkRes?.[l.id];
-    if (!r) return null;
-    if (linkMode === "headloss") return l.kind === "pipe" ? Math.abs(r.headloss[period] ?? 0) : null;
-    if (linkMode === "velocity") return Math.abs(r.velocity[period] ?? 0);
-    return Math.abs(r.flow[period] ?? 0);
-  }, [linkMode, linkRes, period]);
+  const linkValue = useCallback((l: ELink): number | null => valueOf(linkMode, l, linkRes?.[l.id], period),
+    [linkMode, linkRes, period]);
 
   const lscale = useMemo(() => {
     const vals = Object.values(net.links).map(linkValue).filter((v): v is number => v !== null);
@@ -134,9 +128,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
   const addNode = (kind: ENode["kind"], pos: LngLat): string => {
     const st = useEditor.getState();
     const id = nextId(Object.values(st.net.nodes).map((n) => n.id), kind);
-    const elev = st.lastElevation;
-    const node: ENode = { uid: uid(), id, kind, pos, props: defaultNodeProps(kind, elev, "supuesta") };
-    if (elev === null) node.props.elevation_source = "manual";
+    const node: ENode = { uid: uid(), id, kind, pos, props: defaultNodeProps(kind) };
     st.commit((n) => ({ ...n, nodes: { ...n.nodes, [node.uid]: node } }));
     return node.uid;
   };

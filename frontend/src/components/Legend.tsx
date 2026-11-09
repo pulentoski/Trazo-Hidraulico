@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { LINK_MODES, classify, linkScale, pressureScale } from "../lib/colors";
+import { LINK_MODES, legendClasses, linkScale, linkValue, pressureScale } from "../lib/colors";
 import type { Labels } from "../state/store";
 import { criteriaOf, useEditor, writePref } from "../state/store";
 
@@ -19,16 +19,12 @@ export function Legend() {
   const setOpen = (v: boolean) => { setOpenState(v); writePref("legendOpen", v); };
   const profile = profiles.find((p) => p.id === project?.design_profile_id);
   const crit = criteriaOf(profile);
-  const values = useMemo(() => Object.values(net.links).map((l) => {
-    if (linkMode === "diameter") return l.props.inner_diameter_mm ?? 0;
-    const r = result?.links[l.id];
-    if (!r) return 0;
-    return Math.abs(linkMode === "flow" ? r.flow[period] : linkMode === "velocity" ? r.velocity[period] : r.headloss[period]);
-  }), [net.links, linkMode, result, period]);
+  const values = useMemo(() => Object.values(net.links)
+    .map((l) => linkValue(linkMode, l, result?.links[l.id], period))
+    .filter((v): v is number => v !== null), [net.links, linkMode, result, period]);
   const ls = linkScale(linkMode, crit, values);
+  const classes = legendClasses(ls, values);
   const ps = pressureScale(crit);
-  const counts = new Array(ls.colors.length).fill(0);
-  if (result || linkMode === "diameter") for (const v of values) counts[classify(v, ls.breaks)]++;
 
   return (
     <div className={`legend ${open ? "" : "collapsed"}`}>
@@ -41,11 +37,13 @@ export function Legend() {
               {LINK_MODES.map((m) => <option key={m.id} value={m.id}>{m.label} ({m.unit})</option>)}
             </select>
           </label>
-          <ul className="swatches">
-            {ls.labels.map((l, i) => (
-              <li key={l}><i style={{ background: ls.colors[i] }} />{l}{linkMode === "headloss" && i >= 4 ? " · sobre criterio" : ""}<b>{counts[i] || ""}</b></li>
-            ))}
-          </ul>
+          {classes.length ? (
+            <ul className="swatches">
+              {classes.map((c) => (
+                <li key={c.label}><i style={{ background: c.color }} />{c.label}{linkMode === "headloss" && c.lower !== null && c.lower >= crit.headlossMax - 1e-9 ? " · sobre criterio" : ""}<b>{c.count}</b></li>
+              ))}
+            </ul>
+          ) : <div className="legend-note">{linkMode === "diameter" ? "Sin tramos con diámetro." : "Sin resultados: simule para ver la escala."}</div>}
           <div className="legend-sub">Nudos por presión</div>
           <ul className="swatches dots">
             {ps.labels.map((l, i) => <li key={l}><i style={{ background: ps.colors[i] }} />{l}</li>)}

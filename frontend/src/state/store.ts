@@ -70,7 +70,6 @@ export interface EditorState {
   labels: Labels;
   mapType: MapType;
   theme: Theme;
-  lastElevation: number | null;
   pendingDelete: string[] | null;
   cameraRequest: { points: LngLat[]; nonce: number } | null;
   toasts: Toast[];
@@ -165,7 +164,6 @@ export const useEditor = create<EditorState>()((set, get) => ({
   labels: readPref<Labels>("labels", { nodeIds: true, linkIds: false, pressure: false, flow: false, velocity: false, headloss: false, dn: false }),
   mapType: readPref<MapType>("mapType", "roadmap"),
   theme: readPref<Theme>("theme", window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
-  lastElevation: null,
   pendingDelete: null,
   cameraRequest: null,
   toasts: [],
@@ -174,13 +172,11 @@ export const useEditor = create<EditorState>()((set, get) => ({
 
   loadDocument: (project, doc) => {
     const net = fromDocument(doc);
-    const elevations = Object.values(net.nodes).map((n) => n.props.elevation).filter((e): e is number => typeof e === "number");
     set({
       project, serverVersion: doc.version, lastSavedAt: doc.created_at, lastSaveKind: doc.kind,
       aux: doc.aux, options: doc.options, net, revision: 0, savedRevision: 0, past: [], future: [],
       dragging: false, dragOrigin: null, selection: [], result: null, resultRevision: null, validation: null,
       simStatus: "idle", simError: null, period: 0, pendingDelete: null,
-      lastElevation: elevations.length ? elevations[elevations.length - 1] : null,
       cameraRequest: { points: allPoints(net), nonce: Date.now() },
     });
     writePref("lastProject", project.id);

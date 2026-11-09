@@ -86,15 +86,33 @@ export function nextId(existing: Iterable<string>, kind: NodeKind | LinkKind): s
   return `${prefix}${n}`;
 }
 
-export function defaultNodeProps(kind: NodeKind, elevation: number | null, source: "manual" | "supuesta"): NodeProps {
+/**
+ * Propiedades de un nudo nuevo. La cota queda vacía (nunca se supone): la validación la marca como
+ * error bloqueante hasta que se ingrese. Lo mismo la carga de un reservorio.
+ */
+export function defaultNodeProps(kind: NodeKind): NodeProps {
   const base: NodeProps = {
-    elevation, elevation_source: source,
-    elevation_method: source === "supuesta" ? "Copiada del último nudo; verificar" : null,
+    elevation: null, elevation_source: "manual", elevation_method: null,
     base_demand: 0, can_overflow: false, demands: [],
   };
-  if (kind === "reservoir") return { ...base, head: elevation !== null ? elevation + 30 : null };
+  if (kind === "reservoir") return { ...base, head: null };
   if (kind === "tank") return { ...base, init_level: 2, min_level: 0.5, max_level: 4, tank_diameter: 10, min_volume: 0 };
   return base;
+}
+
+/** Datos derivados de un estanque cilíndrico (o con curva de volumen, sin volumen calculable). */
+export function tankStorage(p: Pick<NodeProps, "elevation" | "max_level" | "min_level" | "tank_diameter" | "min_volume" | "volume_curve">,
+  level: number | null | undefined): { overflowElevation: number | null; volume: number | null } {
+  const overflowElevation = p.elevation != null && p.max_level != null ? p.elevation + p.max_level : null;
+  let volume: number | null = null;
+  if (!p.volume_curve && p.tank_diameter && p.tank_diameter > 0 && level != null && Number.isFinite(level)) {
+    const area = (Math.PI / 4) * p.tank_diameter ** 2;
+    const hmin = p.min_level ?? 0;
+    // Igual que EPANET: V = Vmín + A·(h − hmín), con Vmín = A·hmín si no se indicó volumen mínimo.
+    const vmin = p.min_volume && p.min_volume > 0 ? p.min_volume : area * hmin;
+    volume = vmin + area * (level - hmin);
+  }
+  return { overflowElevation, volume };
 }
 
 export function defaultPipeProps(p: Partial<LinkProps>): LinkProps {

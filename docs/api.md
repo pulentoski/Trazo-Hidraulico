@@ -28,8 +28,10 @@ generan desde ese esquema (`make gen-types` → `frontend/src/api/schema.d.ts`) 
 | `E_DIAMETER_NOT_IN_CATALOG` | error | DN, clase o ítem inexistente en el catálogo del material |
 | `E_DUPLICATE_ID` / `E_INVALID_ID` | error | IDs repetidos o con formato no aceptado por EPANET |
 | `E_ISOLATED_NODE` | error | Nudo sin tramos |
-| `E_MISSING_PARAM` | error | Cota, carga, niveles, largo, rugosidad, diámetro, curva/patrón inexistente, parámetros PDA |
-| `W_ELEVATION_DOUBTFUL` | advertencia | Cota supuesta o con salto mayor a 50 m respecto de los vecinos |
+| `E_DISCONNECTED_NODE` | error | Nudo con tramos pero sin camino a ningún reservorio o estanque |
+| `E_MISSING_PARAM` | error | Cota (nunca se supone: un elemento nuevo queda sin cota hasta ingresarla), carga, niveles, largo, rugosidad, diámetro, curva/patrón inexistente, parámetros PDA |
+| `W_ELEVATION_ASSUMED` | advertencia | Cota supuesta traída por una importación (p. ej. `.inp` sin columna de cota, que EPANET toma como 0 m) |
+| `W_ELEVATION_DOUBTFUL` | advertencia | Cota con salto mayor a 50 m respecto de los vecinos |
 | `W_SHORT_PIPE` | advertencia | Largo hidráulico menor que 1 m |
 | `W_NO_DEMAND` | advertencia | Nudo de consumo sin demanda |
 | `W_CRITERIA` | advertencia | DN bajo el mínimo del perfil o rugosidad fuera del rango típico de la fórmula |
