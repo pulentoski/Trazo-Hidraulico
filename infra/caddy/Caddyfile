@@ -10,8 +10,8 @@
 	https_port {$CADDY_HTTPS_PORT:8443}
 }
 
-# Basic auth para todo el sitio (protección temporal hasta tener usuarios, etapa 5).
-# /healthz queda libre para monitores externos.
+# Basic auth opcional (barrera adicional, desactivada por defecto): el acceso lo controla la autenticación
+# propia de la aplicación (sesión con cookie). /healthz queda libre para monitores externos.
 (auth_true) {
 	@protegido not path /healthz
 	basic_auth @protegido {
@@ -21,6 +21,20 @@
 (auth_false) {
 }
 
+# HSTS solo cuando el sitio se sirve por HTTPS con un dominio (make up-public).
+(hsts_true) {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+}
+(hsts_false) {
+}
+
+# Certificado: automático (Let's Encrypt con dominio) o interno de Caddy (pruebas sin dominio, por IP).
+(tls_auto) {
+}
+(tls_internal) {
+	tls internal
+}
+
 # Chequeo de salud del contenedor: puerto interno, sin autenticación ni TLS.
 http://:8099 {
 	bind 127.0.0.1
@@ -28,7 +42,9 @@ http://:8099 {
 }
 
 {$SITE_ADDRESS::8080} {
-	import auth_{$BASIC_AUTH_ENABLED:true}
+	import auth_{$BASIC_AUTH_ENABLED:false}
+	import hsts_{$HSTS_ENABLED:false}
+	import tls_{$TLS_MODE:auto}
 
 	encode zstd gzip
 
@@ -55,6 +71,7 @@ http://:8099 {
 		-Server
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
+		Cross-Origin-Resource-Policy "same-origin"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Cross-Origin-Opener-Policy "same-origin"
 		Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=(), usb=()"
@@ -62,13 +79,19 @@ http://:8099 {
 		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.ggpht.com https://*.googleusercontent.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com https://*.ggpht.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' data: blob: https://*.googleapis.com https://*.google.com https://*.gstatic.com; frame-src https://*.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 	}
 
+	# Página de estado para monitores externos: API, base de datos y caché (503 si algo falla).
 	handle /healthz {
-		respond "ok" 200
+		rewrite * /api/health
+		reverse_proxy api:8000
 	}
 
 	# Teselas de ortofotos: el proxy fija el archivo (el cliente solo elige id y tesela).
 	@tiles path_regexp tile ^/tiles/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([0-9]{1,2})/([0-9]{1,8})/([0-9]{1,8})\.png$
 	handle @tiles {
+		# La sesión debe ver el proyecto de la ortofoto (la API responde 204 o 401/404).
+		forward_auth api:8000 {
+			uri /api/auth/tile/{re.tile.1}
+		}
 		rewrite * /cog/tiles/WebMercatorQuad/{re.tile.2}/{re.tile.3}/{re.tile.4}.png?url=/data/ortho/{re.tile.1}/cog.tif
 		reverse_proxy tiler:8000 {
 			# Ortofoto inexistente o tesela ilegible: 404 sin detalles internos.
@@ -84,6 +107,7 @@ http://:8099 {
 	}
 
 	handle /api/* {
+		header Cache-Control "no-store"
 		reverse_proxy api:8000 {
 			header_up X-Forwarded-Proto http
 		}

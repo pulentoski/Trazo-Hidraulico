@@ -138,12 +138,15 @@ def upload(session: Session, project: Project, file: UploadFile, world: UploadFi
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if ext not in IMAGE_EXT:
         raise OrthoError("Formato no admitido: use GeoTIFF (.tif), o JPG/PNG (con archivo world o puntos de control).")
+    from app.services.auth import check_limit
+
     oid = uuid.uuid4()
     folder = ortho_dir(oid)
     os.makedirs(folder, exist_ok=True)
     try:
         path = os.path.join(folder, f"original.{ext}")
         size = _save(file, path, s.max_ortho_mb * 1024 * 1024)
+        check_limit(session, project.org_id, "ortho", extra=size)
         with open(path, "rb") as fh:
             head = fh.read(8)
         key = "jpg" if ext == "jpeg" else ("tif" if ext == "tiff" else ext)

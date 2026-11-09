@@ -2,7 +2,8 @@ import createClient from "openapi-fetch";
 import type { paths } from "./schema";
 import type {
   CatalogPipe, ClientImportResult, CompareResult, DemandInputs, DemandResult, DesignParamsOut, TrazoImportResult,
-  DiagnosisResult, MeasureCompare, MeasurementIn, MeasurementOut, MonitoringSettings, PumpCalc, DesignParamUpdate, DesignProfile, EngineInfo,
+  DiagnosisResult, MeasureCompare, AuditOut, AuthStatus, InvitationInfo, Me, MemberOut, MfaSetup, OrgAdminOut, ReviewOut,
+  Role, SessionOut, Usage, UserAdminOut, MeasurementIn, MeasurementOut, MonitoringSettings, PumpCalc, DesignParamUpdate, DesignProfile, EngineInfo,
   FeasibilityRequest, FeasibilityResult, FireResult, Gcp, GcpFit, ImportApplyResult, ImportPreview, ImportResult,
   NetworkDocument, NetworkSave, NetworkSaveResult, OrthophotoOut, ProjectOut, QueryDef, QueryElement, QueryResult,
   SavedQueryOut, ScenarioResult, SearchHit, SectorsResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
@@ -21,12 +22,25 @@ export class ApiError extends Error {
 }
 
 const STATUS_TEXT: Record<number, string> = {
-  401: "Acceso no autorizado: vuelva a ingresar usuario y contraseña.",
+  401: "Su sesión expiró: vuelva a ingresar.",
+  403: "Su rol no permite esta acción.",
   413: "El archivo o la solicitud supera el tamaño máximo permitido.",
   429: "Demasiadas solicitudes: espere un momento y reintente.",
 };
 
+/** Sin sesión (o con el segundo factor pendiente) se vuelve al ingreso; sin TOTP obligatorio, al perfil. */
+function redirectAuth(status: number, body: unknown): void {
+  const code = body && typeof body === "object" && "code" in body ? (body as { code: unknown }).code : null;
+  const here = window.location.pathname;
+  if (status === 401 && (code === "login_required" || code === "mfa_pending") && !/^\/(login|recuperar|invitacion)/.test(here)) {
+    window.location.assign(`/login?volver=${encodeURIComponent(here + window.location.search)}`);
+  } else if (status === 403 && code === "mfa_setup_required" && here !== "/perfil") {
+    window.location.assign("/perfil?mfa=1");
+  }
+}
+
 function fail(status: number, body: unknown): never {
+  redirectAuth(status, body);
   let msg = STATUS_TEXT[status] ?? `Error ${status}`;
   if (body && typeof body === "object" && "detail" in body) {
     const d = (body as { detail: unknown }).detail;
@@ -135,6 +149,57 @@ export const api = {
     if (!res.ok) fail(res.status, body);
     return body as ClientImportResult;
   },
+  // ── Sesión, perfil, organizaciones y plataforma ──
+  authStatus: () => unwrap<AuthStatus>(client.GET("/api/auth/status")),
+  me: () => unwrap<Me>(client.GET("/api/auth/me")),
+  login: (email: string, password: string) =>
+    unwrap<{ mfa_required: boolean }>(client.POST("/api/auth/login", { body: { email, password } })),
+  mfa: (code: string) => unwrap<unknown>(client.POST("/api/auth/mfa", { body: { code } })),
+  logout: () => unwrap<unknown>(client.POST("/api/auth/logout")),
+  logoutAll: () => unwrap<unknown>(client.POST("/api/auth/logout-all")),
+  switchOrg: (org_id: string) => unwrap<unknown>(client.POST("/api/auth/org", { body: { org_id } })),
+  changePassword: (current_password: string, new_password: string) =>
+    unwrap<unknown>(client.POST("/api/auth/password", { body: { current_password, new_password } })),
+  mfaSetup: () => unwrap<MfaSetup>(client.POST("/api/auth/mfa/setup")),
+  mfaEnable: (code: string) => unwrap<unknown>(client.POST("/api/auth/mfa/enable", { body: { code } })),
+  mfaDisable: (password: string) => unwrap<unknown>(client.POST("/api/auth/mfa/disable", { body: { password } })),
+  sessions: () => unwrap<SessionOut[]>(client.GET("/api/auth/sessions")),
+  closeSession: (sid: string) => unwrap<unknown>(client.DELETE("/api/auth/sessions/{sid}", { params: { path: { sid } } })),
+  recover: (email: string) => unwrap<{ email_enabled: boolean }>(client.POST("/api/auth/recover", { body: { email } })),
+  resetPassword: (token: string, password: string) => unwrap<unknown>(client.POST("/api/auth/reset", { body: { token, password } })),
+  invitation: (token: string) =>
+    unwrap<InvitationInfo>(client.GET("/api/auth/invitation/{token}", { params: { path: { token } } })),
+  acceptInvitation: (token: string, name: string, password: string) =>
+    unwrap<unknown>(client.POST("/api/auth/invitation/{token}", { params: { path: { token } }, body: { name, password } })),
+  members: (org: string) => unwrap<MemberOut[]>(client.GET("/api/orgs/{org_id}/members", { params: { path: { org_id: org } } })),
+  invite: (org: string, email: string, role: Role, send_email: boolean) =>
+    unwrap<{ link: string; emailed: boolean }>(client.POST("/api/orgs/{org_id}/invitations", {
+      params: { path: { org_id: org } }, body: { email, role, send_email },
+    })),
+  updateMember: (org: string, user: string, body: { role?: Role; active?: boolean }) =>
+    unwrap<MemberOut>(client.PATCH("/api/orgs/{org_id}/members/{user_id}", { params: { path: { org_id: org, user_id: user } }, body })),
+  memberResetLink: (org: string, user: string) =>
+    unwrap<{ link: string }>(client.POST("/api/orgs/{org_id}/members/{user_id}/reset-link", { params: { path: { org_id: org, user_id: user } } })),
+  audit: (org: string, action?: string) =>
+    unwrap<AuditOut[]>(client.GET("/api/orgs/{org_id}/audit", { params: { path: { org_id: org }, query: action ? { action } : {} } })),
+  orgUsage: (org: string) => unwrap<Usage>(client.GET("/api/orgs/{org_id}/usage", { params: { path: { org_id: org } } })),
+  mapLoad: () => unwrap<{ allowed: boolean; count: number; limit?: number | null }>(client.POST("/api/usage/map-load")),
+  adminOrgs: () => unwrap<OrgAdminOut[]>(client.GET("/api/admin/orgs")),
+  adminCreateOrg: (body: { name: string; kind?: "apr" | "consultora" | "sanitaria" | "otra"; plan?: "basico" | "profesional" | "ilimitado"; admin_email?: string | null }) =>
+    unwrap<{ admin_invitation?: string | null }>(client.POST("/api/admin/orgs", { body: { kind: "apr", plan: "basico", ...body } })),
+  adminUpdateOrg: (org: string, body: { plan?: "basico" | "profesional" | "ilimitado"; limits?: Record<string, number | null>; suspended?: boolean }) =>
+    unwrap<unknown>(client.PATCH("/api/admin/orgs/{org_id}", { params: { path: { org_id: org } }, body })),
+  adminUsers: () => unwrap<UserAdminOut[]>(client.GET("/api/admin/users")),
+  adminUpdateUser: (user: string, active: boolean) =>
+    unwrap<UserAdminOut>(client.PATCH("/api/admin/users/{user_id}", { params: { path: { user_id: user } }, body: { active } })),
+  adminResetLink: (user: string) =>
+    unwrap<{ link: string }>(client.POST("/api/admin/users/{user_id}/reset-link", { params: { path: { user_id: user } } })),
+  reviews: (id: string, n: number) =>
+    unwrap<ReviewOut[]>(client.GET("/api/projects/{project_id}/versions/{number}/reviews", { params: { path: { project_id: id, number: n } } })),
+  addReview: (id: string, n: number, status: "comentario" | "aprobada" | "observada", comment: string) =>
+    unwrap<ReviewOut>(client.POST("/api/projects/{project_id}/versions/{number}/reviews", {
+      params: { path: { project_id: id, number: n } }, body: { status, comment },
+    })),
   // ── Pozo, mediciones y diagnóstico ──
   pumpCalc: (id: string, well: string, conventions: "trazo" | "planilla" = "trazo") =>
     unwrap<PumpCalc>(client.GET("/api/projects/{project_id}/wells/{well_id}/pump", {

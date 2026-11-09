@@ -1,7 +1,6 @@
 // Marco común a todas las rutas: tema, datos de referencia (catálogo, perfiles, motor) y avisos.
 import { useEffect } from "react";
 import { Outlet } from "react-router";
-import { api } from "../api/client";
 import { Toasts } from "../components/Dialogs";
 import { resolveTheme, useEditor } from "../state/store";
 
@@ -22,12 +21,6 @@ export function Shell() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
-
-  useEffect(() => {
-    Promise.all([api.catalog(), api.profiles(), api.engine()])
-      .then(([catalog, profiles, engine]) => set({ catalog, profiles, engine }))
-      .catch(() => useEditor.getState().toast("No fue posible conectar con la API.", "error"));
-  }, [set]);
 
   return (
     <>

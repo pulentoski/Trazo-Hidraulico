@@ -2,6 +2,7 @@
 import { NavLink } from "react-router";
 import { PATHS } from "../paths";
 import { Icon } from "./Icons";
+import { UserMenu } from "./UserMenu";
 
 export function Brand() {
   return (
@@ -22,6 +23,7 @@ export function PageHeader() {
         <NavLink to={PATHS.settings} className={cls}><Icon.gear /><span>Configuración</span></NavLink>
         <NavLink to={PATHS.about} className={cls}><Icon.info /><span>Acerca de</span></NavLink>
       </nav>
+      <UserMenu />
     </header>
   );
 }

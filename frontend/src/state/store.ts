@@ -100,6 +100,8 @@ export interface EditorState {
   /** Selección de un punto en el mapa para otro componente (p. ej. puntos de control). */
   mapPick: ((pos: LngLat) => void) | null;
   importOpen: boolean;
+  /** El rol del usuario en la organización del proyecto no permite editar (lector o revisor). */
+  readOnly: boolean;
 
   loadDocument: (project: ProjectOut, doc: NetworkDocument) => void;
   closeProject: () => void;
@@ -242,6 +244,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   highlight: [],
   mapPick: null,
   importOpen: false,
+  readOnly: false,
 
   loadDocument: (project, doc) => {
     const net = fromDocument(doc);
@@ -264,6 +267,10 @@ export const useEditor = create<EditorState>()((set, get) => ({
 
   commit: (fn, options) => {
     const s = get();
+    if (s.readOnly) {
+      if (!s.toasts.some((t) => t.text.startsWith("Solo lectura"))) s.toast("Solo lectura: su rol no permite modificar este proyecto.", "error");
+      return;
+    }
     const next = fn(s.net);
     if (next === s.net && !options) return;
     set({

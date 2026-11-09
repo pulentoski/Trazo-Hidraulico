@@ -1,55 +1,59 @@
-# Plan de autenticación (etapa 5)
+# Autenticación, organizaciones y permisos (etapa 5)
 
-## Situación actual (temporal)
+## Usuarios y sesión
 
-- Todo el sitio está detrás de **basic auth en Caddy** (un usuario compartido definido en `.env`).
-  Sin credenciales el proxy no arranca; en desarrollo local puede desactivarse con `BASIC_AUTH_ENABLED=false`.
-- La API limita solicitudes por IP (`RATE_LIMIT_PER_MINUTE`) y el tamaño del `.inp` (`MAX_INP_MB`).
-- No hay usuarios en la base de datos: todos los proyectos son visibles para quien pasa el basic auth.
-- La key de Google Maps es única para la plataforma (servidor) y está restringida por dominio.
+- Cuentas con correo y contraseña **Argon2id** (64 MiB, 3 pasadas, 4 hilos; se rehace el hash si cambian los
+  parámetros). Política: al menos 10 caracteres (`PASSWORD_MIN_LENGTH`), letras y números, no común ni
+  repetitiva, sin el correo.
+- **Bloqueo temporal**: tras `LOGIN_MAX_ATTEMPTS` (5) intentos fallidos la cuenta se bloquea
+  `LOGIN_LOCKOUT_MINUTES` (15). Además, máximo `LOGIN_RATE_PER_MINUTE` (10) intentos de ingreso por IP y
+  minuto (Redis). El mensaje no revela si el correo existe.
+- **Sesión**: cookie `trazo_session` `HttpOnly`, `Secure`, `SameSite=Strict`, expira en `SESSION_HOURS` (12 h).
+  El token es opaco; en la base (`user_session`) solo se guarda su SHA-256. Se puede cerrar la sesión, una sesión
+  concreta o todas (perfil). Cambiar o restablecer la contraseña cierra las demás sesiones. `SameSite=Strict`
+  impide el envío de la cookie desde otros sitios (CSRF).
+- **Segundo factor TOTP** (RFC 6238, compatible con Google/Microsoft Authenticator): opcional por usuario y
+  obligatorio para administradores de organización y superadministradores (`MFA_REQUIRED_FOR_ADMINS`). Sin
+  configurarlo, la API solo permite `/api/auth/*` y la interfaz lleva a **/perfil**.
+- **Recuperación**: con SMTP configurado, `/recuperar` envía un enlace de un solo uso (24 h). Sin SMTP, el
+  administrador de la organización (o el superadministrador) genera el enlace y lo entrega por otro medio.
+- **Primer superadministrador**: `make create-admin` (pide correo y contraseña; o `EMAIL=… PASSWORD=…`).
 
-## Objetivo de la etapa 5
+## Organizaciones y roles
 
-Usuarios propios con sesión, proyectos con dueño y permisos, sin depender del basic auth.
+Cada proyecto pertenece a una organización (APR, consultora o sanitaria). Un usuario puede pertenecer a varias
+y elige la activa en el menú de usuario. Roles por organización:
 
-### Backend
+| Rol | Ver y exportar | Simular | Editar e importar | Revisar versiones | Miembros, auditoría, uso |
+|---|:-:|:-:|:-:|:-:|:-:|
+| lector | ✔ | ✔ | | | |
+| revisor | ✔ | ✔ | | ✔ | |
+| proyectista | ✔ | ✔ | ✔ | | |
+| administrador | ✔ | ✔ | ✔ | ✔ | ✔ |
 
-1. **Modelo**: tablas `app_user` (id, email único, nombre, hash de contraseña Argon2id, rol
-   `admin | usuario`, activo, creado, último ingreso) y `project_member` (proyecto, usuario,
-   rol `dueño | editor | lector`). `project.owner_id` para los proyectos nuevos; migración que
-   asigna los proyectos existentes a un administrador inicial.
-2. **Sesión**: cookie `HttpOnly`, `Secure`, `SameSite=Lax` con identificador de sesión opaco
-   guardado en Redis (expiración deslizante, p. ej. 12 h; revocable). Se prefiere a JWT porque
-   permite cerrar sesión y revocar de inmediato. Protección CSRF con encabezado propio
-   (`X-Trazo-CSRF`) validado contra la sesión en métodos que modifican datos.
-3. **Rutas**: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`,
-   `POST /api/auth/password` (cambio). Alta de usuarios solo por administradores
-   (`/api/admin/users`); sin registro abierto.
-4. **Autorización**: dependencia FastAPI `current_user` en todos los routers; filtros por
-   pertenencia en proyectos, versiones, corridas y exportación. 404 (no 403) para proyectos ajenos.
-5. **Abuso**: límite de intentos de ingreso por IP y por cuenta (Redis), retardo progresivo y
-   registro de eventos de seguridad. Se mantiene el límite general de `/api`.
+- **Aislamiento estricto**: una dependencia global resuelve la sesión y `get_project_or_404` verifica la
+  membresía en la organización del proyecto en cada ruta. Un proyecto ajeno responde **404** (igual que uno
+  inexistente: no se pueden adivinar IDs) y un rol sin permiso, **403**. Las ortofotos, sus archivos, las
+  teselas (vía `forward_auth` de Caddy) y todas las exportaciones pasan por el mismo filtro. Las pruebas de
+  `backend/tests/test_etapa5.py` recorren lectura, edición, exportación y adivinanza de IDs entre dos
+  organizaciones.
+- **Invitaciones** por correo o enlace de un solo uso (7 días); cambiar rol y desactivar miembros; la
+  organización conserva al menos un administrador.
+- **Superadministrador de plataforma** (**/plataforma**): crea organizaciones (con invitación para su
+  administrador), ve su uso, cambia plan y límites, suspende organizaciones y cuentas. No ve proyectos de una
+  organización si no es miembro de ella.
 
-### Frontend
+## Auditoría y uso
 
-- La estructura ya está preparada (`frontend/src/routes.tsx`): las rutas de trabajo cuelgan de
-  `<RequireAuth>`, que hoy deja pasar todo. En la etapa 5:
-  - se agrega la ruta pública `/login` (`PATHS.login`);
-  - `RequireAuth` consulta `GET /api/auth/me` (estado en el store) y redirige a
-    `/login?volver=<ruta>` si no hay sesión;
-  - la pantalla de inicio muestra «Mis proyectos» y «Compartidos conmigo»;
-  - Configuración → Administración pasa de informativa a gestión de usuarios (solo `admin`).
-- El cliente API trata 401 redirigiendo a `/login` y conserva el trabajo no guardado.
+- `audit_log`: ingresos (correctos, fallidos, bloqueos, segundo factor), cierres de sesión, cada versión nueva
+  de la red (quién, versión, tipo, etiqueta), importaciones y exportaciones (ruta), invitaciones, cambios de rol
+  y estado, enlaces de recuperación y revisiones. Visible para el administrador de la organización.
+- Uso por organización y mes: simulaciones ejecutadas (no las reutilizadas de caché), cargas del mapa de
+  Google (contadas por el frontend) y almacenamiento de ortofotos. Límites por plan (básico, profesional,
+  ilimitado) con valores personalizables; al superarlos la API responde 403 y el mapa usa el lienzo neutro.
 
-### Transición
+## API
 
-1. Desplegar usuarios con basic auth aún activo (doble barrera) y crear las cuentas.
-2. Verificar permisos con pruebas de API (usuario sin acceso a proyecto ajeno, lector sin escritura).
-3. Desactivar el basic auth (`BASIC_AUTH_ENABLED=false` solo cuando el login esté en producción) y
-   mantener HTTPS obligatorio.
-
-### Pendientes de decisión
-
-- Recuperación de contraseña (requiere correo saliente) o solo restablecimiento por administrador.
-- Segundo factor (TOTP) para administradores.
-- Ingreso con Google Workspace (OIDC) si la organización lo usa.
+`/api/auth/{login,mfa,logout,logout-all,me,org,password,mfa/setup,mfa/enable,mfa/disable,sessions,recover,reset,
+invitation/{token}}`, `/api/orgs/{id}/{members,invitations,audit,usage}`, `/api/admin/{orgs,users}`,
+`/api/usage/map-load` y `/api/projects/{id}/versions/{n}/reviews`. Documentación interactiva en `/api/docs`.

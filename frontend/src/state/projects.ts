@@ -5,6 +5,8 @@ import { useEditor } from "./store";
 export async function openProject(id: string, version?: number): Promise<void> {
   const st = useEditor.getState();
   const [project, doc] = await Promise.all([api.getProject(id), api.getNetwork(id, version)]);
+  const { useAuth, canEdit } = await import("./auth");
+  st.set({ readOnly: !canEdit(useAuth.getState().roleIn(project.org_id)) });
   st.loadDocument(project, doc);
   api.designParams(id).then((d) => useEditor.getState().set({ designParams: d.params })).catch(() => undefined);
   const { simulateVersion } = await import("./live");

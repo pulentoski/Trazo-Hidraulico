@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { VersionOut } from "../api/types";
+import type { ReviewOut, VersionOut } from "../api/types";
+import { canReview, useAuth } from "../state/auth";
 import { fmtDate } from "../lib/format";
 import { errorText, openProject } from "../state/projects";
 import { removeElements, useEditor } from "../state/store";
@@ -53,6 +54,8 @@ export function ConfirmDelete() {
 }
 
 export function VersionsDialog() {
+  const [reviewing, setReviewing] = useState<number | null>(null);
+  const readOnly = useEditor((x) => x.readOnly);
   const { versionsOpen, project, serverVersion, set, toast } = useEditor();
   const [list, setList] = useState<VersionOut[] | null>(null);
   const [showAuto, setShowAuto] = useState(false);
@@ -98,13 +101,47 @@ export function VersionsDialog() {
               <td>{v.has_results ? "sí" : "—"}</td>
               <td className="right">
                 <a className="btn ghost small" href={api.exportUrl(project.id, v.number)}>.inp</a>
-                {v.number !== serverVersion && <button className="ghost small" onClick={() => void restore(v)}>Restaurar</button>}
+                <button className="ghost small" onClick={() => setReviewing(reviewing === v.number ? null : v.number)}>Revisión</button>
+                {v.number !== serverVersion && !readOnly && <button className="ghost small" onClick={() => void restore(v)}>Restaurar</button>}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {reviewing !== null && <Reviews projectId={project.id} version={reviewing} />}
     </Modal>
+  );
+}
+
+/** Comentarios y aprobaciones de una versión (revisor o administrador). */
+function Reviews({ projectId, version }: { projectId: string; version: number }) {
+  const { project, toast } = useEditor();
+  const role = useAuth((s) => s.roleIn(project?.org_id));
+  const [list, setList] = useState<ReviewOut[]>([]);
+  const [comment, setComment] = useState("");
+  useEffect(() => { api.reviews(projectId, version).then(setList).catch(() => setList([])); }, [projectId, version]);
+  const add = async (status: "comentario" | "aprobada" | "observada") => {
+    try { await api.addReview(projectId, version, status, comment); setComment(""); setList(await api.reviews(projectId, version)); }
+    catch (e) { toast(errorText(e), "error"); }
+  };
+  return (
+    <section className="reviews">
+      <h3>Revisión de la versión {version}</h3>
+      {list.length === 0 ? <p className="muted small">Sin comentarios.</p> : (
+        <ul className="diag-list">{list.map((r) => (
+          <li key={r.id} className={r.status === "aprobada" ? "ok" : r.status === "observada" ? "problem" : ""}>
+            <b>{{ aprobada: "✔ Aprobada", observada: "▲ Observada", comentario: "💬" }[r.status] ?? r.status}</b> {r.comment}
+            <span className="muted small"> — {r.user_email} · {fmtDate(r.created_at)}</span></li>))}</ul>
+      )}
+      {canReview(role) && (
+        <div className="toolbar wrap">
+          <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comentario" aria-label="Comentario" style={{ flex: 1 }} />
+          <button className="small" onClick={() => void add("comentario")}>Comentar</button>
+          <button className="small primary" onClick={() => void add("aprobada")}>Aprobar</button>
+          <button className="small" onClick={() => void add("observada")}>Observar</button>
+        </div>
+      )}
+    </section>
   );
 }
 

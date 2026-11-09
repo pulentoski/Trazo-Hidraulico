@@ -13,6 +13,7 @@ class Project(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(200))
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organization.id", ondelete="CASCADE"), index=True)
     description: Mapped[str] = mapped_column(Text, default="")
     # SRID métrico usado para calcular largos en planta (UTM 19S por defecto).
     length_srid: Mapped[int] = mapped_column(Integer, default=32719)

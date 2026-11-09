@@ -7,6 +7,8 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.services.auth import new_project_org
+
 from app.core.config import get_settings
 from app.hydraulic.inp_reader import InpImportError, read_inp
 from app.hydraulic.inp_writer import write_inp
@@ -41,7 +43,7 @@ def create_project(session: Session, body: ProjectCreate) -> Project:
     if profile_id is None:
         default = catalog_repo.default_profile(session)
         profile_id = default.id if default else None
-    project = Project(id=uuid.uuid4(), name=body.name, description=body.description,
+    project = Project(id=uuid.uuid4(), org_id=new_project_org(session), name=body.name, description=body.description,
                       length_srid=srid, design_profile_id=profile_id)
     session.add(project)
     session.flush()
@@ -79,7 +81,7 @@ def import_inp(session: Session, filename: str, content: bytes, *, name: str | N
     recompute_lengths(model.network, srid)
     default = catalog_repo.default_profile(session)
     stem = Path(filename or "red.inp").stem
-    project = Project(id=uuid.uuid4(), name=name or stem, description=model.title or "",
+    project = Project(id=uuid.uuid4(), org_id=new_project_org(session), name=name or stem, description=model.title or "",
                       length_srid=srid, design_profile_id=default.id if default else None)
     session.add(project)
     session.flush()

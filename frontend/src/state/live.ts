@@ -77,7 +77,7 @@ async function cycle(): Promise<void> {
   try {
     for (;;) {
       const s = st();
-      if (!s.project || s.dragging) break;
+      if (!s.project || s.dragging || s.readOnly) break;
       const manual = pendingManual;
       pendingManual = null;
       const dirty = s.revision !== s.savedRevision;

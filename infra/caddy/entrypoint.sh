@@ -1,5 +1,6 @@
 #!/bin/sh
-# Valida la configuración de acceso antes de arrancar Caddy: sin credenciales el sitio no se publica.
+# Valida la configuración del proxy antes de arrancar Caddy. Desde la etapa 5 el acceso lo controla la
+# autenticación propia de la aplicación; el basic auth queda como barrera adicional opcional (desactivada).
 set -eu
 
 fail() {
@@ -10,7 +11,7 @@ fail() {
 	exit 64
 }
 
-enabled="${BASIC_AUTH_ENABLED:-true}"
+enabled="${BASIC_AUTH_ENABLED:-false}"
 case "$enabled" in
 	true | false) ;;
 	*) fail "BASIC_AUTH_ENABLED debe ser true o false (valor actual: '$enabled')." ;;
@@ -29,6 +30,15 @@ if [ "$enabled" = true ]; then
 		*) fail "BASIC_AUTH_HASH no es un hash bcrypt (debe empezar con \$2a\$, \$2b\$ o \$2y\$). En .env escríbalo entre comillas simples." ;;
 	esac
 fi
+
+case "${TLS_MODE:-auto}" in
+	auto | internal) ;;
+	*) fail "TLS_MODE debe ser auto (Let's Encrypt) o internal (certificado propio de Caddy)." ;;
+esac
+case "${HSTS_ENABLED:-false}" in
+	true | false) ;;
+	*) fail "HSTS_ENABLED debe ser true o false." ;;
+esac
 
 export BASIC_AUTH_ENABLED="$enabled"
 exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile

@@ -1,0 +1,65 @@
+# Producción: límites de CPU y memoria, reinicio automático, logs con rotación y respaldo diario.
+# Se usa junto con compose.yml (y compose.public.yml para publicar con dominio): `make up-public`.
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
+services:
+  proxy:
+    restart: always
+    logging: *logging
+    deploy: { resources: { limits: { cpus: "0.50", memory: 256M } } }
+  web:
+    restart: always
+    logging: *logging
+    deploy: { resources: { limits: { cpus: "0.25", memory: 128M } } }
+  api:
+    restart: always
+    logging: *logging
+    environment:
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+    deploy: { resources: { limits: { cpus: "${API_CPUS:-2.0}", memory: "${API_MEMORY:-2G}" } } }
+  worker:
+    restart: always
+    logging: *logging
+    deploy: { resources: { limits: { cpus: "1.0", memory: 1G } } }
+  tiler:
+    restart: always
+    logging: *logging
+    deploy: { resources: { limits: { cpus: "1.0", memory: 1G } } }
+  db:
+    restart: always
+    logging: *logging
+    deploy: { resources: { limits: { cpus: "1.0", memory: "${DB_MEMORY:-1G}" } } }
+  cache:
+    restart: always
+    logging: *logging
+    deploy: { resources: { limits: { cpus: "0.25", memory: 192M } } }
+
+  # Respaldo diario (pg_dump + ortofotos) con retención; ver infra/backup/respaldo.sh.
+  backup:
+    image: postgis/postgis:16-3.4@sha256:44126d872ac91993766c341e369c539e8196614321765d36a6f1bab0419a5fa5
+    user: "999:999"
+    entrypoint: ["/bin/sh", "/opt/respaldo.sh"]
+    command: ["loop"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: always
+    logging: *logging
+    env_file: ../.env
+    environment:
+      DB_HOST: db
+      BACKUP_TIME: ${BACKUP_TIME:-03:30}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      TZ: ${TZ:-America/Santiago}
+    volumes:
+      - ./backup/respaldo.sh:/opt/respaldo.sh:ro
+      - ortho:/data/ortho:ro
+      - ${BACKUP_DIR:-/var/backups/trazo-hidraulico}:/backups
+    tmpfs:
+      - /tmp:uid=999,gid=999
+    networks: [back]
+    depends_on:
+      db: { condition: service_healthy }
+    deploy: { resources: { limits: { cpus: "0.50", memory: 512M } } }

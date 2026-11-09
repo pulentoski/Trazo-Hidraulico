@@ -6,6 +6,8 @@ import uuid
 
 from sqlalchemy.orm import Session
 
+from app.services.auth import new_project_org
+
 from app.core.config import get_settings
 from app.models import Project
 from app.repositories import catalog as catalog_repo
@@ -136,7 +138,7 @@ def create_from_excel(session: Session, filename: str, content: bytes, *, name: 
     _check_srid(srid)
     default = catalog_repo.default_profile(session)
     stem = re.sub(r"\.(xlsx|csv)$", "", filename or "planilla", flags=re.I)
-    project = Project(id=uuid.uuid4(), name=(name or stem)[:200], description="Creado desde planilla Excel",
+    project = Project(id=uuid.uuid4(), org_id=new_project_org(session), name=(name or stem)[:200], description="Creado desde planilla Excel",
                       length_srid=srid, design_profile_id=default.id if default else None)
     session.add(project)
     session.flush()

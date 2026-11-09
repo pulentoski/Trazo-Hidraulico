@@ -46,17 +46,68 @@ def database():
     yield s.database_url
 
 
-@pytest.fixture(scope="session")
-def client(database):
+TEST_PASSWORD = "Prueba-segura-2026"
+
+
+def make_user(email: str, org: str, role: str, *, password: str = TEST_PASSWORD, superadmin: bool = False):
+    """Crea (o actualiza) un usuario con membresía en la organización indicada. Devuelve (user_id, org_id)."""
+    import uuid as _uuid
+
+    from sqlalchemy import select
+
+    from app.core.db import get_sessionmaker
+    from app.models import Membership, Organization, User
+    from app.services import auth
+
+    with get_sessionmaker()() as session:
+        tok = auth.current.set(auth.SYSTEM)
+        try:
+            o = session.scalars(select(Organization).where(Organization.name == org)).first()
+            if o is None:
+                o = Organization(id=_uuid.uuid4(), name=org, kind="apr", plan="ilimitado")
+                session.add(o)
+                session.flush()
+            u = auth.user_by_email(session, email)
+            if u is None:
+                u = User(id=_uuid.uuid4(), email=email, name=email.split("@")[0])
+                session.add(u)
+            auth.set_password(session, u, password)
+            u.is_superadmin = superadmin
+            u.active, u.locked_until, u.failed_logins = True, None, 0
+            session.flush()
+            m = session.get(Membership, (u.id, o.id))
+            if m is None:
+                session.add(Membership(user_id=u.id, org_id=o.id, role=role, active=True))
+            else:
+                m.role, m.active = role, True
+            session.commit()
+            return u.id, o.id
+        finally:
+            auth.current.reset(tok)
+
+
+def new_client(email: str | None = None, password: str = TEST_PASSWORD):
+    """Cliente HTTP (https, para que viaje la cookie Secure); con correo, ya autenticado."""
     from fastapi.testclient import TestClient
 
-    from app.core.cache import get_redis
     from app.main import app
+
+    c = TestClient(app, base_url="https://testserver")
+    if email:
+        r = c.post("/api/auth/login", json={"email": email, "password": password})
+        assert r.status_code == 200, r.text
+    return c
+
+
+@pytest.fixture(scope="session")
+def client(database):
+    from app.core.cache import get_redis
 
     if get_settings().redis_db == 0:
         pytest.exit("Las pruebas usan una base Redis distinta de la 0", returncode=2)
     get_redis().flushdb()
-    with TestClient(app) as c:
+    make_user("pruebas@trazo.test", "Organización de pruebas", "admin")
+    with new_client("pruebas@trazo.test") as c:
         yield c
 
 

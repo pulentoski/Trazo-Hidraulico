@@ -1,6 +1,7 @@
 """Recorrido visual e2e de Trazo Hidráulico con Playwright (make test-e2e; fuera de make test).
 
-Requiere la pila levantada (make up) en http://localhost:8080 con BASIC_AUTH_ENABLED=false. Crea un proyecto
+Requiere la pila levantada (make up) en http://localhost:8080; ingresa con E2E_EMAIL/E2E_PASSWORD (make test-e2e
+crea ese usuario administrador en la organización «Recorrido e2e»). Crea un proyecto
 «APR Demo (e2e)» desde examples/apr-demo.xlsx, recorre menú, herramientas, importación Excel, ortofoto,
 consultas, cuarteles, factibilidad, escenarios, simulación de 24 h, gráficos, deslizador de hora, diagnóstico,
 mediciones y exportaciones, y toma capturas en tema claro y oscuro a 1440 y 1024 px (docs/capturas/).
@@ -8,7 +9,12 @@ Falla si hay errores de consola o solicitudes fallidas, y elimina el proyecto al
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import os
+import struct
+import time
 import re
 import sys
 from pathlib import Path
@@ -16,6 +22,8 @@ from pathlib import Path
 from playwright.sync_api import Page, expect, sync_playwright
 
 BASE = os.environ.get("BASE_URL", "http://localhost:8080")
+EMAIL = os.environ.get("E2E_EMAIL", "e2e@trazo.local")
+PASSWORD = os.environ.get("E2E_PASSWORD", "Recorrido-e2e-2026")
 ROOT = Path(__file__).resolve().parent.parent
 SHOTS = ROOT / "docs" / "capturas"
 DEMO = ROOT / "examples" / "apr-demo.xlsx"
@@ -35,10 +43,16 @@ def log(msg: str) -> None:
 
 def watch(page: Page) -> None:
     def on_console(m):
+        # Antes de ingresar, la consulta de sesión (/api/auth/me) responde 401: esperado. Cualquier otro 401
+        # queda registrado por el observador de respuestas.
+        if "status of 401" in m.text:
+            return
         if m.type == "error" and not any(p.search(m.text) for p in IGNORED):
             problems.append(f"consola: {m.text} ({page.url})")
 
     def on_response(r):
+        if r.status == 401 and r.url.endswith("/api/auth/me"):
+            return
         if r.status >= 400 and not any(p.search(r.url) for p in IGNORED):
             problems.append(f"HTTP {r.status}: {r.request.method} {r.url}")
 
@@ -194,6 +208,17 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         expect(page.locator(".props")).to_contain_text("H manométrica", timeout=30000)
         shot(page, "pozo", theme, width)
 
+        log("perfil y organización")
+        page.goto(f"{BASE}/perfil")
+        expect(page.get_by_role("heading", name="Sesiones activas")).to_be_visible()
+        shot(page, "perfil", theme, width)
+        page.goto(f"{BASE}/organizacion")
+        expect(page.get_by_role("heading", name="Auditoría")).to_be_visible()
+        expect(page.locator("table").last).to_contain_text("login.ok")
+        shot(page, "organizacion", theme, width)
+        page.goto(f"{BASE}/proyecto/{pid}")
+        wait_sim(page)
+
         log("exportaciones")
         for path in ("sig/export.xlsx", "export.dxf", "export.gpkg", "export.trazo", "export.inp", "report.html"):
             r = page.request.get(f"{BASE}/api/projects/{pid}/{path}")
@@ -203,11 +228,43 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         page.keyboard.press("Escape")
 
 
+def totp(secret: str) -> str:
+    key = base64.b32decode(secret + "=" * (-len(secret) % 8), casefold=True)
+    mac = hmac.new(key, struct.pack(">Q", int(time.time()) // 30), hashlib.sha1).digest()
+    off = mac[-1] & 0x0F
+    return str((struct.unpack(">I", mac[off:off + 4])[0] & 0x7FFFFFFF) % 1_000_000).zfill(6)
+
+
+def login(browser) -> dict:
+    """Ingreso por la pantalla /login (con TOTP si el rol lo exige); devuelve el estado de sesión."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="es-CL")
+    page = ctx.new_page()
+    watch(page)
+    page.goto(f"{BASE}/acerca-de")
+    expect(page).to_have_url(re.compile(r"/login\?volver="))
+    shot(page, "login", "light", 1440)
+    page.get_by_label("Correo").fill(EMAIL)
+    page.get_by_label("Contraseña").fill(PASSWORD)
+    page.get_by_role("button", name="Ingresar").click()
+    page.wait_for_url(re.compile(r"/(acerca-de|perfil)"), timeout=15000)
+    if "/perfil" in page.url:  # el rol exige segundo factor: configurarlo
+        log("configurando TOTP del usuario e2e")
+        page.get_by_role("button", name="Configurar").click()
+        secret = page.locator(".mono.small").first.inner_text().strip()
+        page.get_by_label("Código de 6 dígitos").fill(totp(secret))
+        page.get_by_role("button", name="Activar").click()
+        expect(page.get_by_text("Activo.")).to_be_visible()
+    state = ctx.storage_state()
+    ctx.close()
+    return state
+
+
 def main() -> int:
     SHOTS.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        api = p.request.new_context(base_url=BASE)
+        state = login(browser)
+        api = p.request.new_context(base_url=BASE, storage_state=state)
         r = api.post("/api/projects/import-excel", multipart={
             "file": {"name": "apr-demo.xlsx", "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                      "buffer": DEMO.read_bytes()}, "name": "APR Demo (e2e)"})
@@ -216,7 +273,8 @@ def main() -> int:
         try:
             for i, (theme, width) in enumerate((("claro", 1440), ("oscuro", 1440), ("claro", 1024), ("oscuro", 1024))):
                 log(f"== tema {theme}, {width} px ==")
-                ctx = browser.new_context(viewport={"width": width, "height": 900}, accept_downloads=True, locale="es-CL")
+                ctx = browser.new_context(viewport={"width": width, "height": 900}, accept_downloads=True, locale="es-CL",
+                                          storage_state=state)
                 page = ctx.new_page()
                 watch(page)
                 try:

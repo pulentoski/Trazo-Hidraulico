@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.core.db import get_session
 from app.repositories import projects as projects_repo
 from app.schemas.project import ImportResult, ProjectCreate, ProjectOut, ProjectUpdate, VersionOut
+from app.services import auth
 from app.services import projects as svc
 from app.services.network import get_project_or_404, get_version_or_404
 
@@ -16,9 +17,13 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @router.get("", response_model=list[ProjectOut], summary="Listar proyectos")
-def list_projects(session: SessionDep) -> list[ProjectOut]:
+def list_projects(session: SessionDep,
+                  org: Annotated[uuid.UUID | None, Query(description="Organización (todas las suyas si se omite)")] = None
+                  ) -> list[ProjectOut]:
+    p = auth.principal()
+    orgs = [o for o in p.roles if org is None or o == org]
     out = []
-    for project, latest, count in projects_repo.list_projects(session):
+    for project, latest, count in projects_repo.list_projects(session, orgs):
         item = ProjectOut.model_validate(project)
         item.latest_version, item.version_count = latest, count
         out.append(item)

@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.services.auth import new_project_org
+
 from app.core.config import get_settings
 from app.models import Orthophoto, Project, SavedQuery
 from app.repositories import catalog as catalog_repo
@@ -115,7 +117,7 @@ def import_file(session: Session, filename: str, content: bytes, *, name: str | 
     profiles = {pr.name: pr.id for pr in catalog_repo.list_profiles(session)}
     default = catalog_repo.default_profile(session)
     srid = int(p.get("length_srid") or get_settings().length_srid)
-    project = Project(id=uuid.uuid4(), name=(name or p.get("name") or "Proyecto .trazo")[:200],
+    project = Project(id=uuid.uuid4(), org_id=new_project_org(session), name=(name or p.get("name") or "Proyecto .trazo")[:200],
                       description=p.get("description") or "", length_srid=srid,
                       design_profile_id=profiles.get(p.get("design_profile")) or (default.id if default else None),
                       design_params=p.get("design_params"), demand_projection=p.get("demand_projection"))

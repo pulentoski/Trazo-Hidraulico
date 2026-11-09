@@ -29,6 +29,7 @@ class ProjectUpdate(BaseModel):
 class ProjectOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
+    org_id: uuid.UUID
     name: str
     description: str
     length_srid: int

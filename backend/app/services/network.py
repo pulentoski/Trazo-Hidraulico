@@ -11,6 +11,7 @@ from app.repositories import network as network_repo
 from app.repositories import projects as projects_repo
 from app.schemas.network import HydraulicOptions, NetworkFeatureCollection, NetworkModel, ValveScenario
 from app.schemas.project import LinkLengths, NetworkDocument, NetworkSave, NetworkSaveResult
+from app.services.auth import audit, check_project
 from app.services.errors import Conflict, InvalidNetwork, NotFound
 from app.services.geometry import place_shutoffs, recompute_lengths
 from app.validators.network_validator import validate_model
@@ -29,6 +30,7 @@ def get_project_or_404(session: Session, project_id: uuid.UUID) -> Project:
     project = projects_repo.get_project(session, project_id)
     if project is None:
         raise NotFound("Proyecto no encontrado")
+    check_project(project)  # aislamiento por organización y permiso del rol
     return project
 
 
@@ -64,6 +66,8 @@ def create_version(session: Session, project: Project, model: NetworkModel, *, k
     session.add(version)
     session.flush()
     network_repo.insert_network(session, version, model.network)
+    audit(session, "red.version", org_id=project.org_id, project_id=project.id, version=number,
+          detail={"tipo": kind, "etiqueta": label, "nudos": len(model.network.nodes()), "tramos": len(model.network.links())})
     project.updated_at = func.now()
     return version
 

@@ -8,6 +8,7 @@ import { useEditor, writePref } from "../state/store";
 import { Modal } from "./Dialogs";
 import { Icon } from "./Icons";
 import { Brand } from "./PageHeader";
+import { UserMenu } from "./UserMenu";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   idle: { label: "Sin cambios", cls: "idle" },
@@ -148,6 +149,8 @@ export function TopBar() {
         {s.serverVersion !== null && <>v{s.serverVersion} · {dirty ? "cambios sin guardar" : `${s.lastSaveKind === "manual" ? "guardado" : "autoguardado"} ${time}`}</>}
       </div>
       <button className="ghost" onClick={() => s.set({ versionsOpen: true })} disabled={!s.project} title="Versiones del modelo"><Icon.history /></button>
+      {s.readOnly && <span className="badge warn" title="Su rol en esta organización no permite editar">solo lectura</span>}
+      <UserMenu />
       <button className="ghost" onClick={toggleTheme} title={s.theme === "dark" ? "Tema claro" : "Tema oscuro"}>{s.theme === "dark" ? <Icon.sun /> : <Icon.moon />}</button>
       {saveOpen && (
         <Modal title="Guardar versión" onClose={() => setSaveOpen(false)}>

@@ -33,6 +33,25 @@ class Settings(BaseSettings):
     max_ortho_mb: int = 500  # tamaño máximo de una ortofoto subida
     ortho_dir: str = "/data/ortho"  # almacenamiento compartido de ortofotos (volumen)
 
+    # Autenticación y sesiones (etapa 5)
+    session_hours: float = 12.0  # expiración de la sesión
+    cookie_secure: bool = True  # cookie solo por HTTPS (en http://localhost los navegadores la aceptan igual)
+    cookie_name: str = "trazo_session"
+    login_max_attempts: int = 5  # intentos fallidos antes del bloqueo temporal
+    login_lockout_minutes: int = 15
+    login_rate_per_minute: int = 10  # intentos de ingreso por IP y minuto
+    mfa_required_for_admins: bool = True  # administradores (de organización y de plataforma) deben usar TOTP
+    password_min_length: int = 10
+    public_url: str = "http://localhost:8080"  # para enlaces de recuperación e invitación
+    reset_token_hours: int = 24
+    invite_token_days: int = 7
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_tls: bool = True
+
     # Umbrales del validador (advertencias)
     short_pipe_m: float = 1.0
     elevation_jump_m: float = 50.0

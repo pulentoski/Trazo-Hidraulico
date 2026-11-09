@@ -20,6 +20,7 @@ from app.schemas.network import NetworkModel
 from app.schemas.simulation import EngineInfo, LinkSeries, NodeSeries, SimulationResult
 from app.schemas.validation import ValidationReport
 from app.services import design
+from app.services import auth
 from app.services.criteria import criteria_alerts
 from app.services.errors import SimulationBlockedError
 from app.services.network import get_version_or_404, load_model, sha256_of
@@ -105,6 +106,8 @@ def simulate_version(session: Session, project: Project, number: int) -> Simulat
         links = {k: LinkSeries(**v) for k, v in cached["links"].items()}
         meta = cached["meta"]
     else:
+        auth.check_limit(session, project.org_id, "simulation")
+        auth.add_usage(session, project.org_id, "simulation")
         run = run_model(model)
         assert run.inp_sha256 == inp_sha
         ok, elapsed, messages = run.ok, run.elapsed_ms, run.messages

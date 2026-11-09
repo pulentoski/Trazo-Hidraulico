@@ -1,4 +1,4 @@
-# Trazo Hidráulico — Etapas 1 a 4
+# Trazo Hidráulico — Etapas 1 a 5
 
 Plataforma local para diseñar y simular redes de agua potable. Editor tipo CAD/GIS sobre Google Maps,
 motor hidráulico **OWA-EPANET 2.3.5** en el backend (único motor), resultados reproducibles y ligados
@@ -33,11 +33,21 @@ y se muestra un aviso en lugar del mapa. Para usar el mapa base:
 La key es **única para toda la plataforma** (la define quien administra el servidor). La pantalla
 Configuración solo indica si está configurada; nunca la muestra.
 
-### Acceso (basic auth)
+### Acceso (usuarios propios)
 
-Mientras no existan usuarios (etapa 5, ver [docs/autenticacion.md](docs/autenticacion.md)), todo el
-sitio queda protegido con basic auth en Caddy. **Sin usuario y hash definidos, `make up` y el proxy
-no arrancan** y explican qué falta.
+Desde la etapa 5 la aplicación tiene usuarios, organizaciones y roles (ver [docs/autenticacion.md](docs/autenticacion.md)):
+
+```bash
+make create-admin    # superadministrador de plataforma (pide correo y contraseña)
+make demo            # solo local: organización «Demo APR» con un usuario por rol (docs/demo.md)
+```
+
+Despliegue en una instancia Ubuntu: `deploy/instalar.sh` y [docs/despliegue.md](docs/despliegue.md).
+
+### Basic auth (opcional, desactivado)
+
+Barrera adicional en Caddy, desactivada por defecto (el acceso lo controla el ingreso propio). Para
+activarla defina usuario y hash; con `BASIC_AUTH_ENABLED=true` y sin ellos el proxy no arranca.
 
 ```bash
 docker run --rm -it caddy:2.11.9-alpine caddy hash-password   # pide la contraseña y entrega el hash bcrypt
@@ -50,8 +60,6 @@ BASIC_AUTH_ENABLED=true
 BASIC_AUTH_USER=equipo
 BASIC_AUTH_HASH='$2a$14$...'
 ```
-
-Solo para desarrollo local en su propio equipo puede desactivarse con `BASIC_AUTH_ENABLED=false`.
 
 Además, la API limita las solicitudes a `/api` por IP (`RATE_LIMIT_PER_MINUTE`, 300 por minuto por
 defecto; responde 429) y el tamaño del `.inp` importado (`MAX_INP_MB`, 20 MB; Caddy y la API
@@ -109,29 +117,17 @@ técnico imprimible. `make test-e2e` hace el recorrido visual con Playwright (ca
 
 ## Publicar en un dominio con HTTPS
 
-Caddy obtiene y renueva el certificado automáticamente (Let's Encrypt) cuando el sitio tiene un
-dominio. Requisitos: un servidor con IP pública, un registro DNS `A`/`AAAA` del dominio apuntando a
-él y los puertos **80 y 443** abiertos (80 es necesario para emitir el certificado y redirigir a HTTPS).
+Lo más simple es el instalador para Ubuntu 22.04/24.04 (`deploy/instalar.sh`); la guía completa (instancia
+mínima, puertos 22/80/443, DNS, modo sin dominio, actualización, respaldos y restauración en otra instancia) está
+en [docs/despliegue.md](docs/despliegue.md). A mano:
 
-1. En `.env`:
-   ```
-   SITE_ADDRESS=trazo.midominio.cl
-   BASIC_AUTH_ENABLED=true
-   BASIC_AUTH_USER=equipo
-   BASIC_AUTH_HASH='$2a$14$...'
-   ```
-2. **Restrinja la key de Google Maps al dominio**: en Google Cloud → Credenciales → la key →
-   «Sitios web», reemplace las entradas de localhost por `https://trazo.midominio.cl/*` (y solo las
-   APIs Maps JavaScript y Geocoding). Una key sin restricción publicada en un sitio puede ser usada
-   por terceros con cargo a su cuenta.
-3. Publique:
-   ```bash
-   make up-public
-   ```
-   Usa `infra/compose.public.yml`: publica 80/443 en todas las interfaces, guarda los certificados en
-   un volumen persistente (`caddy_data`) y exige basic auth. La base de datos, Redis y la API siguen
-   sin exponerse.
-4. Verifique `https://trazo.midominio.cl` (pide usuario y contraseña) y que `http://` redirige a `https://`.
+1. En `.env`: `SITE_ADDRESS=trazo.midominio.cl`, `PUBLIC_URL=https://trazo.midominio.cl` y
+   `MFA_REQUIRED_FOR_ADMINS=true`.
+2. **Restrinja la key de Google Maps al dominio** (`https://trazo.midominio.cl/*`, solo Maps JavaScript y
+   Geocoding).
+3. `make up-public` (compose base + `compose.public.yml` + `compose.prod.yml`: HTTPS automático, HSTS, límites
+   de recursos, logs con rotación y respaldo diario) y `make create-admin`.
+4. Verifique `https://trazo.midominio.cl/healthz` y que `http://` redirige a `https://`.
 
 Copie también `.env` fuera del servidor de forma segura: contiene las claves de PostgreSQL y Redis.
 
@@ -157,6 +153,9 @@ Ejecuta todo dentro de contenedores y sin depender de Google:
   lat/lon y demo de 24 h.
 - Etapa 4: BombaPozo1 (Hman 138,4 m, 12,3 kW), lecturas de medidor (15,49 L/s), comparación con tolerancias,
   diagnóstico con sugerencia verificada e informe técnico.
+- Etapa 5: contraseñas (Argon2id y política), sesión y cookie, bloqueo y límite de ingresos, TOTP, recuperación,
+  invitaciones, roles, aislamiento entre organizaciones (lectura, edición, exportación, ortofotos y adivinanza de
+  IDs), auditoría, uso, límites y suspensión.
 - Frontend: `tsc --noEmit`, pruebas unitarias (vitest) y verificación de que `schema.d.ts` está al día con OpenAPI.
 
 Los resultados y las tolerancias quedan en [`docs/validation/`](docs/validation/tolerancias.md).

@@ -6,10 +6,11 @@ from sqlalchemy.orm import Session
 from app.models import NetworkLink, NetworkNode, Project, ProjectVersion, SimulationRun
 
 
-def list_projects(session: Session) -> list[tuple[Project, int | None, int]]:
+def list_projects(session: Session, org_ids: list[uuid.UUID] | None = None) -> list[tuple[Project, int | None, int]]:
     stmt = (
         select(Project, func.max(ProjectVersion.number), func.count(ProjectVersion.id))
         .outerjoin(ProjectVersion, ProjectVersion.project_id == Project.id)
+        .where(Project.org_id.in_(org_ids or []) if org_ids is not None else True)
         .group_by(Project.id)
         .order_by(Project.updated_at.desc())
     )

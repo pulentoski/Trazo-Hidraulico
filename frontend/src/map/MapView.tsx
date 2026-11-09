@@ -1,5 +1,6 @@
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { api } from "../api/client";
 import { LabelsControl } from "../components/LabelsControl";
 import { Legend } from "../components/Legend";
 import { ScaleBar } from "../components/ScaleBar";
@@ -61,7 +62,12 @@ export function MapView() {
   const mapType = useEditor((s) => s.mapType);
   const theme = useEditor((s) => s.theme);
   const setStore = useEditor((s) => s.set);
-  const useGoogle = Boolean(API_KEY) && !mapFailed;
+  const [quotaDenied, setQuotaDenied] = useState(false);
+  useEffect(() => {
+    if (!API_KEY) return;
+    api.mapLoad().then((r) => { if (!r.allowed) setQuotaDenied(true); }).catch(() => undefined);
+  }, []);
+  const useGoogle = Boolean(API_KEY) && !mapFailed && !quotaDenied;
   const { orthos } = useOrthos();
   const [noticeClosed, setNoticeClosed] = useState(() => {
     try { return localStorage.getItem("trazo.hideMapNotice") === "true"; } catch { return false; }
@@ -116,7 +122,7 @@ export function MapView() {
         <div className="map-notice" role="status">
           <button className="ghost small notice-close" aria-label="Cerrar aviso" onClick={() => { setNoticeClosed(true); writePref("hideMapNotice", true); }}>✕</button>
           <strong>Mapa base no disponible.</strong>{" "}
-          {API_KEY ? "No se pudo cargar Google Maps (revise la key y sus restricciones)." :
+          {quotaDenied ? "Se alcanzó el límite mensual de cargas del mapa del plan de su organización." : API_KEY ? "No se pudo cargar Google Maps (revise la key y sus restricciones)." :
             "Configure VITE_GOOGLE_MAPS_API_KEY en .env y ejecute make up."} El editor y la simulación funcionan igual sobre este lienzo; también puede usar una ortofoto propia como fondo (pestaña Capas).
         </div>
       )}
