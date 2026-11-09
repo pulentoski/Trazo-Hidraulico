@@ -38,3 +38,13 @@ generan desde ese esquema (`make gen-types` → `frontend/src/api/schema.d.ts`) 
 
 Alertas de resultados (`alerts`): `PRESSURE_LOW`, `PRESSURE_HIGH`, `VELOCITY_LOW`, `VELOCITY_HIGH` y
 `BOTTLENECK` (pérdida unitaria sobre el criterio del perfil, 10 m/km por defecto).
+
+## Protección mínima (hasta la etapa 5)
+
+| Respuesta | Cuándo |
+|---|---|
+| `401` | Sin credenciales de basic auth (lo responde Caddy; ver README) |
+| `413` | `.inp` mayor que `MAX_INP_MB` (20 MB) o solicitud a `/api` mayor que 50 MB |
+| `429` | Más de `RATE_LIMIT_PER_MINUTE` (300) solicitudes a `/api` por IP en el minuto; incluye `Retry-After` |
+
+`/api/health` no se limita. La IP se toma del último valor de `X-Forwarded-For`, que agrega Caddy.

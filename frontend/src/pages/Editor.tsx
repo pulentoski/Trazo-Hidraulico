@@ -1,13 +1,16 @@
-import { useEffect } from "react";
-import { api } from "./api/client";
-import { BottomPanel } from "./components/BottomPanel";
-import { ConfirmDelete, ProjectsDialog, Toasts, VersionsDialog, openProject } from "./components/Dialogs";
-import { PropertiesPanel } from "./components/PropertiesPanel";
-import { TOOLS, ToolPanel } from "./components/ToolPanel";
-import { TopBar } from "./components/TopBar";
-import { MapView } from "./map/MapView";
-import { saveNow, simulateNow, startLive } from "./state/live";
-import { useEditor } from "./state/store";
+// Editor de un proyecto (/proyecto/:id).
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { BottomPanel } from "../components/BottomPanel";
+import { ConfirmDelete, VersionsDialog } from "../components/Dialogs";
+import { PropertiesPanel } from "../components/PropertiesPanel";
+import { TOOLS, ToolPanel } from "../components/ToolPanel";
+import { TopBar } from "../components/TopBar";
+import { MapView } from "../map/MapView";
+import { PATHS } from "../paths";
+import { saveNow, simulateNow, startLive, stopLive } from "../state/live";
+import { errorText, openProject } from "../state/projects";
+import { useEditor } from "../state/store";
 
 function useShortcuts() {
   useEffect(() => {
@@ -30,43 +33,47 @@ function useShortcuts() {
   }, []);
 }
 
-export default function App() {
-  const theme = useEditor((s) => s.theme);
-  const set = useEditor((s) => s.set);
+export function EditorPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const loaded = useEditor((s) => s.project?.id === id);
+  const [failed, setFailed] = useState(false);
   useShortcuts();
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
-
-  useEffect(() => {
+    if (!id) return;
+    let alive = true;
+    setFailed(false);
+    openProject(id).catch((e) => {
+      if (!alive) return;
+      setFailed(true);
+      useEditor.getState().toast(`No se pudo abrir el proyecto: ${errorText(e)}`, "error");
+      navigate(PATHS.home, { replace: true });
+    });
     const stop = startLive();
-    Promise.all([api.catalog(), api.profiles(), api.engine()])
-      .then(([catalog, profiles, engine]) => set({ catalog, profiles, engine }))
-      .catch(() => useEditor.getState().toast("No fue posible conectar con la API.", "error"));
-    let last: string | null = null;
-    try { last = JSON.parse(localStorage.getItem("trazo.lastProject") ?? "null"); } catch { last = null; }
-    if (last) openProject(last).catch(() => set({ projectsOpen: true }));
-    else set({ projectsOpen: true });
     const warn = (e: BeforeUnloadEvent) => {
       const s = useEditor.getState();
       if (s.revision !== s.savedRevision) e.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
-    return () => { stop(); window.removeEventListener("beforeunload", warn); };
-  }, [set]);
+    return () => {
+      alive = false;
+      stop();
+      stopLive();
+      window.removeEventListener("beforeunload", warn);
+      useEditor.getState().closeProject();
+    };
+  }, [id, navigate]);
 
   return (
     <div className="app">
       <TopBar />
       <ToolPanel />
-      <main className="center"><MapView /></main>
+      <main className="center">{loaded ? <MapView /> : <div className="loading">{failed ? "" : "Abriendo proyecto…"}</div>}</main>
       <PropertiesPanel />
       <BottomPanel />
-      <ProjectsDialog />
       <VersionsDialog />
       <ConfirmDelete />
-      <Toasts />
     </div>
   );
 }

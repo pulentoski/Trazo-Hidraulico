@@ -19,5 +19,12 @@ export const Icon = {
   folder: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 6.5h6l2 2h10V19H3z" /></svg>,
   history: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3.5 2" /></svg>,
   sun: () => <svg viewBox="0 0 24 24" {...P}><circle cx="12" cy="12" r="4" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" /></svg>,
+  back: () => <svg viewBox="0 0 24 24" {...P}><path d="M10 6l-6 6 6 6M4 12h16" /></svg>,
+  home: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 11l9-7 9 7M5.5 9.5V20h13V9.5" /></svg>,
+  gear: () => <svg viewBox="0 0 24 24" {...P}><circle cx="12" cy="12" r="3" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></svg>,
+  info: () => <svg viewBox="0 0 24 24" {...P}><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.5" /></svg>,
+  upload: () => <svg viewBox="0 0 24 24" {...P}><path d="M12 15V3M7 8l5-5 5 5M4 20h16" /></svg>,
+  plus: () => <svg viewBox="0 0 24 24" {...P}><path d="M12 5v14M5 12h14" /></svg>,
+  tag: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 12V3h9l9 9-9 9z" /><circle cx="7.5" cy="7.5" r="1.3" /></svg>,
   moon: () => <svg viewBox="0 0 24 24" {...P}><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></svg>,
 };

@@ -127,6 +127,30 @@ async function cycle(): Promise<void> {
   }
 }
 
+/**
+ * Guarda de inmediato los cambios pendientes y espera a que terminen (p. ej. antes de salir del editor).
+ * Devuelve false si no se pudo guardar dentro del plazo.
+ */
+export async function flushPending(timeoutMs = 8000): Promise<boolean> {
+  const t0 = Date.now();
+  if (st().revision !== st().savedRevision) {
+    window.clearTimeout(timer);
+    void cycle();
+  }
+  while (Date.now() - t0 < timeoutMs) {
+    const s = st();
+    if (!busy && s.revision === s.savedRevision) return true;
+    if (!busy && s.simStatus === "error" && s.revision !== s.savedRevision) return false;
+    await new Promise((r) => window.setTimeout(r, 100));
+  }
+  return false;
+}
+
+/** Cancela el ciclo programado (al salir del editor). */
+export function stopLive(): void {
+  window.clearTimeout(timer);
+}
+
 /** Suscripción: cualquier cambio de revisión o fin de arrastre programa el ciclo. */
 export function startLive(): () => void {
   return useEditor.subscribe((s, prev) => {

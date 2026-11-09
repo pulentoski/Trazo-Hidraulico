@@ -5,11 +5,35 @@ import { fmt, fmtLen } from "../lib/format";
 import type { ELink, ENode, LinkProps, Network, NodeProps } from "../lib/network";
 import { ROUGHNESS_LABEL, estimatedLength, roughnessFor, tankStorage } from "../lib/network";
 import { useEditor } from "../state/store";
-import { NumField, Readout, TextField } from "./Fields";
+import { FieldLabel, NumField, Readout, TextField } from "./Fields";
 
 const ID_RE = /^[^\s;"]{1,31}$/;
 const KIND_LABEL = { junction: "Nudo de consumo", reservoir: "Reservorio", tank: "Estanque", pipe: "Tubería", pump: "Bomba", valve: "Válvula" };
 const SOURCE_LABEL = { manual: "Manual", inp: "Importada (.inp)", supuesta: "Supuesta en la importación (por verificar)" };
+/** Ayudas de los campos técnicos. */
+export const HELP = {
+  elevationGround: "Cota del terreno en el nudo (m). La presión es cota piezométrica − cota de terreno. Es obligatoria: no se supone.",
+  elevationTank: "Cota del fondo del estanque (m). Los niveles se miden desde aquí: cota piezométrica = cota de fondo + nivel de agua.",
+  initLevel: "Altura de agua sobre el fondo al inicio de la simulación (m). Debe estar entre el nivel mínimo y el máximo.",
+  minLevel: "Nivel mínimo sobre el fondo (m): bajo él el estanque se considera vacío y deja de entregar agua.",
+  maxLevel: "Nivel máximo sobre el fondo (m): nivel de rebalse; sobre él el estanque no recibe más agua.",
+  tankDiameter: "Diámetro interior del estanque cilíndrico (m). Define el área: volumen = área × altura de agua.",
+  minVolume: "Volumen bajo el nivel mínimo (m³), p. ej. por fondo no cilíndrico. Con 0, EPANET usa área × nivel mínimo.",
+  overflow: "Cota del nivel máximo = cota de fondo + nivel máximo (m).",
+  waterLevel: "Altura del agua sobre el fondo del estanque (m) en el periodo mostrado.",
+  storedVolume: "Volumen de agua almacenado en el periodo mostrado (m³), calculado como EPANET: Vmín + área × (nivel − nivel mínimo).",
+  baseDemand: "Consumo medio del nudo (L/s). Se multiplica por el patrón horario, si lo hay. En PDA la entrega depende de la presión.",
+  roughness: {
+    "H-W": "Coeficiente C de Hazen-Williams (adimensional): mayor C, menos pérdida. PVC/HDPE nuevos ≈ 150.",
+    "D-W": "Rugosidad absoluta ε de Darcy-Weisbach en milímetros (mm). PVC ≈ 0,0015 mm; HDPE ≈ 0,007 mm.",
+    "C-M": "Coeficiente n de Manning (s/m^1/3). PVC ≈ 0,009.",
+  } as Record<string, string>,
+  dn: "DN: diámetro nominal comercial (en PVC y HDPE coincide con el diámetro exterior). No es el de cálculo.",
+  innerDiameter: "Diámetro interior que usa el motor: diámetro exterior − 2 × espesor, según material y clase. Con catálogo se fija automáticamente.",
+  lengthChoice: "Origen del largo hidráulico: con pendiente (planta + desnivel entre cotas), en planta, o manual.",
+  lengthHydraulic: "Largo que se envía al motor (m). Escriba un valor para fijarlo a mano: prevalece sobre el largo geométrico.",
+};
+
 const STATUS_TXT: Record<number, string> = { 0: "cerrada (sin altura)", 1: "cerrado temporalmente", 2: "cerrado", 3: "abierto", 4: "activa", 5: "sobre caudal máx.", 6: "sin caudal de consigna", 7: "sin presión de consigna" };
 
 function updateNode(uid: string, patch: { id?: string; props?: Partial<NodeProps> }) {
@@ -72,7 +96,7 @@ function NodePanel({ node }: { node: ENode }) {
       <fieldset>
         <legend>Cota</legend>
         <NumField label={node.kind === "tank" ? "Cota de fondo" : "Cota de terreno"} unit="m" value={p.elevation} allowNull onCommit={setElev} invalid={p.elevation == null}
-          hint={p.elevation == null ? "Sin cota: ingrésela para poder simular" : undefined} />
+          hint={node.kind === "tank" ? HELP.elevationTank : HELP.elevationGround} />
         {p.elevation == null && <ul className="issues"><li className="error">Falta la cota: es obligatoria para simular.</li></ul>}
         {p.elevation_source === "supuesta" && <ul className="issues"><li className="warning">Cota supuesta en la importación{p.elevation_method ? ` (${p.elevation_method})` : ""}: ingrese la cota real.</li></ul>}
         <label className="field"><span>Fuente</span>
@@ -85,7 +109,7 @@ function NodePanel({ node }: { node: ENode }) {
       {node.kind === "junction" && (
         <fieldset>
           <legend>Demanda</legend>
-          <NumField label="Demanda base" unit="L/s" value={p.base_demand} onCommit={(v) => updateNode(node.uid, { props: { base_demand: v ?? 0 } })} />
+          <NumField label="Demanda base" unit="L/s" hint={HELP.baseDemand} value={p.base_demand} onCommit={(v) => updateNode(node.uid, { props: { base_demand: v ?? 0 } })} />
           <TextField label="Patrón" value={p.demand_pattern} placeholder="(ninguno)" onCommit={(v) => updateNode(node.uid, { props: { demand_pattern: v || null } })} />
           {(p.demands?.length ?? 0) > 0 && <div className="muted">+ {p.demands!.length} categorías de demanda adicionales (importadas)</div>}
         </fieldset>
@@ -99,20 +123,20 @@ function NodePanel({ node }: { node: ENode }) {
       {node.kind === "tank" && (
         <fieldset>
           <legend>Estanque</legend>
-          <NumField label="Nivel inicial" unit="m" value={p.init_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { init_level: v } })} />
-          <NumField label="Nivel mínimo" unit="m" value={p.min_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_level: v } })} />
-          <NumField label="Nivel máximo" unit="m" value={p.max_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { max_level: v } })} />
-          <NumField label="Diámetro" unit="m" value={p.tank_diameter} allowNull onCommit={(v) => updateNode(node.uid, { props: { tank_diameter: v } })} />
-          <NumField label="Volumen mínimo" unit="m³" value={p.min_volume} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_volume: v } })} />
-          <Readout label="Cota de rebalse (fondo + nivel máx.)" value={fmt(tank?.overflowElevation, 2)} unit="m" />
+          <NumField label="Nivel inicial" unit="m" hint={HELP.initLevel} value={p.init_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { init_level: v } })} />
+          <NumField label="Nivel mínimo" unit="m" hint={HELP.minLevel} value={p.min_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_level: v } })} />
+          <NumField label="Nivel máximo" unit="m" hint={HELP.maxLevel} value={p.max_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { max_level: v } })} />
+          <NumField label="Diámetro" unit="m" hint={HELP.tankDiameter} value={p.tank_diameter} allowNull onCommit={(v) => updateNode(node.uid, { props: { tank_diameter: v } })} />
+          <NumField label="Volumen mínimo" unit="m³" hint={HELP.minVolume} value={p.min_volume} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_volume: v } })} />
+          <Readout label="Cota de rebalse" hint={HELP.overflow} value={fmt(tank?.overflowElevation, 2)} unit="m" />
         </fieldset>
       )}
       {r && (
         <fieldset className="results">
           <legend>Resultados {result!.times.length > 1 ? `(t = ${Math.round(result!.times[period] / 360) / 10} h)` : ""}</legend>
           {node.kind === "tank" ? (<>
-            <Readout label="Nivel de agua" value={fmt(r.pressure[period], 2)} unit="m" />
-            <Readout label="Volumen almacenado" value={fmt(tank?.volume, 1)} unit="m³" />
+            <Readout label="Nivel de agua" hint={HELP.waterLevel} value={fmt(r.pressure[period], 2)} unit="m" />
+            <Readout label="Volumen almacenado" hint={HELP.storedVolume} value={fmt(tank?.volume, 1)} unit="m³" />
           </>) : <Readout label="Presión" value={fmt(r.pressure[period], 2)} unit="m" tone={r.pressure[period] < 0 ? "bad" : ""} />}
           <Readout label="Cota piezométrica" value={fmt(r.head[period], 2)} unit="m" />
           <Readout label={node.kind === "junction" ? "Demanda" : "Aporte (−) / consumo (+)"} value={fmt(r.demand[period], 3)} unit="L/s" />
@@ -156,7 +180,7 @@ function PipeSelect({ links, catalog, formula }: { links: ELink[]; catalog: Cata
               {classes.map((c) => <option key={c}>{c}</option>)}
             </select>
           </label>
-          <label className="field"><span>DN</span>
+          <label className="field"><FieldLabel label="DN" help={HELP.dn} />
             <select value={first.dn ?? ""} onChange={(e) => apply(material, cls, Number(e.target.value))}>
               {dns.map((d) => <option key={d.id} value={d.dn}>{d.dn}</option>)}
             </select>
@@ -164,10 +188,10 @@ function PipeSelect({ links, catalog, formula }: { links: ELink[]; catalog: Cata
         </>)}
       </div>
       {material !== "custom" && verified === false && <div className="muted small">Catálogo referencial (no verificado).</div>}
-      <NumField label="Diámetro interior" unit="mm" value={first.inner_diameter_mm} allowNull disabled={material !== "custom"}
+      <NumField label="Diámetro interior" unit="mm" hint={HELP.innerDiameter} value={first.inner_diameter_mm} allowNull disabled={material !== "custom"}
         onCommit={(v) => updateLinks(uids, { inner_diameter_mm: v })} />
       <NumField label={ROUGHNESS_LABEL[formula]} value={first.roughness} allowNull digits={4} disabled={material !== "custom"}
-        onCommit={(v) => updateLinks(uids, { roughness: v })} hint="El significado depende de la fórmula de pérdida del proyecto" />
+        onCommit={(v) => updateLinks(uids, { roughness: v })} hint={HELP.roughness[formula]} />
       <NumField label="Coef. pérdidas menores" value={first.minor_loss} onCommit={(v) => updateLinks(uids, { minor_loss: v ?? 0 })} />
       <label className="field"><span>Estado inicial</span>
         <select value={first.initial_status} onChange={(e) => updateLinks(uids, { initial_status: e.target.value as LinkProps["initial_status"] })}>
@@ -204,7 +228,7 @@ function LinkPanel({ link }: { link: ELink }) {
             <legend>Largos</legend>
             <Readout label="En planta" value={fmtLen(p.length_plan_m ?? est)} />
             <Readout label="Con pendiente" value={fmtLen(p.length_slope_m)} />
-            <label className="field"><span>Largo hidráulico usado</span>
+            <label className="field"><FieldLabel label="Largo hidráulico usado" help={HELP.lengthChoice} />
               <select value={p.length_choice} onChange={(e) => {
                 const choice = e.target.value as LinkProps["length_choice"];
                 const geo = choice === "plan" ? p.length_plan_m ?? est : choice === "slope" ? p.length_slope_m ?? est : p.length_hydraulic_m ?? est;
@@ -216,7 +240,7 @@ function LinkPanel({ link }: { link: ELink }) {
               </select>
             </label>
             <NumField label="Largo hidráulico (enviado al motor)" unit="m" value={p.length_hydraulic_m} allowNull invalid={!p.length_hydraulic_m}
-              hint="Escriba un largo para fijarlo a mano: prevalece sobre el geométrico"
+              hint={HELP.lengthHydraulic}
               onCommit={(v) => updateLinks([link.uid], { length_hydraulic_m: v, length_choice: "manual" })} />
           </fieldset>
         </>

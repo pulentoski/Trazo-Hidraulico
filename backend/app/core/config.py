@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     runepanet: str = "/usr/local/bin/runepanet"
     report_dir: str | None = None
 
+    # Protección mínima para publicar (sin usuarios todavía)
+    rate_limit_per_minute: int = 300  # solicitudes a /api por IP y minuto; 0 desactiva
+    max_inp_mb: int = 20  # tamaño máximo del .inp importado (Caddy aplica el mismo límite)
+
     # Umbrales del validador (advertencias)
     short_pipe_m: float = 1.0
     elevation_jump_m: float = 50.0

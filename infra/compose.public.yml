@@ -1,0 +1,45 @@
+# Publicación en un dominio con HTTPS automático (Caddy + Let's Encrypt).
+#
+#   docker compose --env-file .env -f infra/compose.yml -f infra/compose.public.yml up -d --build --wait
+#   (o `make up-public`)
+#
+# Requiere en .env: SITE_ADDRESS (dominio cuyo DNS apunta a este servidor), BASIC_AUTH_USER y
+# BASIC_AUTH_HASH (basic auth activo). Puertos 80 y 443 abiertos en el firewall.
+services:
+  # Los certificados se guardan en un volumen persistente (evita reemitirlos en cada reinicio).
+  proxy-data-init:
+    image: caddy:2.11.9-alpine
+    user: "0:0"
+    entrypoint: ["sh", "-c", "chown -R 1000:1000 /data"]
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    security_opt: ["no-new-privileges:true"]
+    network_mode: none
+    restart: "no"
+    volumes:
+      - caddy_data:/data
+
+  proxy:
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    # Permite a Caddy (usuario sin privilegios y sin capacidades) escuchar en 80 y 443.
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: "0"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Defina SITE_ADDRESS (dominio público) en .env}
+      BASIC_AUTH_ENABLED: "true"
+      CADDY_HTTP_PORT: "80"
+      CADDY_HTTPS_PORT: "443"
+    tmpfs: !override
+      - /config:uid=1000,gid=1000,mode=0700
+      - /tmp:uid=1000,gid=1000
+    volumes:
+      - caddy_data:/data
+    depends_on:
+      proxy-data-init: { condition: service_completed_successfully }
+
+volumes:
+  caddy_data: {}

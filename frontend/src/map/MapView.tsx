@@ -1,6 +1,9 @@
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { LabelsControl } from "../components/LabelsControl";
 import { Legend } from "../components/Legend";
+import { ScaleBar } from "../components/ScaleBar";
+import { GOOGLE_MAPS_API_KEY as API_KEY } from "../lib/mapConfig";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { fitBounds, zoomAt } from "../lib/geo";
 import type { MapType } from "../state/store";
@@ -8,7 +11,6 @@ import { useEditor, writePref } from "../state/store";
 import { BlankBase, GoogleBase, useGeocoder } from "./GoogleBase";
 import { NetworkLayer } from "./NetworkLayer";
 
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 const DEFAULT_CENTER: LngLat = [
   Number(import.meta.env.VITE_DEFAULT_MAP_CENTER_LNG || -70.6693),
   Number(import.meta.env.VITE_DEFAULT_MAP_CENTER_LAT || -33.4489),
@@ -83,6 +85,7 @@ export function MapView() {
         {useGoogle ? <AddressSearch onLocate={setCamera} /> : (
           <div className="map-search disabled" title="Requiere la key de Google Maps"><input disabled placeholder="Búsqueda no disponible sin mapa base" /></div>
         )}
+        <LabelsControl />
       </div>
       <div className="map-controls top-right">
         <div className="seg" role="group" aria-label="Tipo de mapa">
@@ -105,7 +108,7 @@ export function MapView() {
             "Configure VITE_GOOGLE_MAPS_API_KEY en .env y ejecute make up."} El editor y la simulación funcionan igual sobre este lienzo.
         </div>
       )}
-      <div className="map-scale">Zoom {camera.zoom}</div>
+      <ScaleBar camera={camera} />
     </div>
   );
 

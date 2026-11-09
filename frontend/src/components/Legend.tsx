@@ -1,20 +1,13 @@
 import { useMemo, useState } from "react";
 import { LINK_MODES, legendClasses, linkScale, linkValue, pressureScale } from "../lib/colors";
-import type { Labels } from "../state/store";
 import { criteriaOf, useEditor, writePref } from "../state/store";
 
 function initialOpen(): boolean {
   try { return JSON.parse(localStorage.getItem("trazo.legendOpen") ?? "true") !== false; } catch { return true; }
 }
 
-const LABEL_OPTS: { key: keyof Labels; label: string }[] = [
-  { key: "nodeIds", label: "ID nudos" }, { key: "linkIds", label: "ID tramos" }, { key: "dn", label: "DN" },
-  { key: "pressure", label: "Presión" }, { key: "flow", label: "Caudal" }, { key: "velocity", label: "Velocidad" },
-  { key: "headloss", label: "Pérdida unit." },
-];
-
 export function Legend() {
-  const { linkMode, labels, result, net, period, profiles, project, set } = useEditor();
+  const { linkMode, result, net, period, profiles, project, set } = useEditor();
   const [open, setOpenState] = useState(initialOpen);
   const setOpen = (v: boolean) => { setOpenState(v); writePref("legendOpen", v); };
   const profile = profiles.find((p) => p.id === project?.design_profile_id);
@@ -27,8 +20,8 @@ export function Legend() {
   const ps = pressureScale(crit);
 
   return (
-    <div className={`legend ${open ? "" : "collapsed"}`}>
-      <button className="legend-toggle" onClick={() => setOpen(!open)}>{open ? "Leyenda ▾" : "Leyenda ▸"}</button>
+    <div className={`legend ${open ? "" : "collapsed"}`} aria-label="Leyenda">
+      <button className="legend-toggle" onClick={() => setOpen(!open)} aria-expanded={open} title={open ? "Plegar la leyenda" : "Mostrar la leyenda"}>{open ? "Leyenda ▾" : "Leyenda ▸"}</button>
       {open && (
         <>
           <label className="legend-row">
@@ -48,18 +41,6 @@ export function Legend() {
           <ul className="swatches dots">
             {ps.labels.map((l, i) => <li key={l}><i style={{ background: ps.colors[i] }} />{l}</li>)}
           </ul>
-          <div className="legend-sub">Etiquetas</div>
-          <div className="chips">
-            {LABEL_OPTS.map((o) => (
-              <label key={o.key} className={labels[o.key] ? "on" : ""}>
-                <input type="checkbox" checked={labels[o.key]} onChange={(e) => {
-                  const next = { ...labels, [o.key]: e.target.checked };
-                  set({ labels: next });
-                  writePref("labels", next);
-                }} />{o.label}
-              </label>
-            ))}
-          </div>
           {!profile?.verified && profile && <div className="legend-note">Criterios: {profile.name} — <em>no verificado</em></div>}
         </>
       )}

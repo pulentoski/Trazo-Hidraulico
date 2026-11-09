@@ -8,7 +8,7 @@ HOST_UID ?= $(shell stat -c %u .)
 HOST_GID ?= $(shell stat -c %g .)
 export HOST_UID HOST_GID
 
-.PHONY: help env up down logs ps build test test-backend test-frontend reset-db gen-types
+.PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend reset-db gen-types
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -20,10 +20,27 @@ env: ## Crea .env desde .env.example con claves aleatorias (si no existe)
 	  chmod 600 .env; echo "Creado .env (claves aleatorias). Agrega tu key de Google Maps si la tienes."; \
 	fi
 
-up: env ## Construye y levanta la pila; espera a que todo esté healthy
+check-auth: env ## Verifica la configuración de basic auth en .env antes de arrancar
+	@set -a; . ./.env; set +a; \
+	case "$${BASIC_AUTH_ENABLED:-true}" in \
+	  false) echo "Aviso: basic auth DESACTIVADO (BASIC_AUTH_ENABLED=false). Solo para desarrollo local." ;; \
+	  true) if [ -z "$${BASIC_AUTH_USER:-}" ] || [ -z "$${BASIC_AUTH_HASH:-}" ]; then \
+	          echo "ERROR: basic auth activo pero faltan BASIC_AUTH_USER y/o BASIC_AUTH_HASH en .env." >&2; \
+	          echo "  Genere el hash: docker run --rm -it caddy:2.11.9-alpine caddy hash-password" >&2; \
+	          echo "  y guárdelo entre comillas simples: BASIC_AUTH_HASH='\$$2a\$$14\$$...'" >&2; \
+	          echo "  Para desarrollo local puede usar BASIC_AUTH_ENABLED=false (ver README)." >&2; exit 1; fi ;; \
+	  *) echo "ERROR: BASIC_AUTH_ENABLED debe ser true o false." >&2; exit 1 ;; \
+	esac
+
+up: check-auth ## Construye y levanta la pila; espera a que todo esté healthy
 	$(COMPOSE) up -d --build --wait --wait-timeout 300
 	@$(COMPOSE) ps --format 'table {{.Service}}\t{{.Status}}'
 	@echo "Editor disponible en http://localhost:$$(grep -E '^HTTP_PORT=' .env | cut -d= -f2)"
+
+up-public: check-auth ## Publica en SITE_ADDRESS con HTTPS automático (ver README)
+	@set -a; . ./.env; set +a; [ "$${BASIC_AUTH_ENABLED:-true}" = true ] || { echo "ERROR: para publicar, BASIC_AUTH_ENABLED debe ser true." >&2; exit 1; }
+	$(COMPOSE) -f infra/compose.public.yml up -d --build --wait --wait-timeout 300
+	@$(COMPOSE) -f infra/compose.public.yml ps --format 'table {{.Service}}\t{{.Status}}'
 
 down: ## Detiene la pila (conserva datos)
 	$(COMPOSE) down

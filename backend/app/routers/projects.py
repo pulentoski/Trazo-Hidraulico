@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.db import get_session
 from app.repositories import projects as projects_repo
 from app.schemas.project import ImportResult, ProjectCreate, ProjectOut, ProjectUpdate, VersionOut
@@ -12,7 +13,6 @@ from app.services.network import get_project_or_404, get_version_or_404
 
 router = APIRouter(prefix="/projects", tags=["proyectos"])
 SessionDep = Annotated[Session, Depends(get_session)]
-MAX_INP_BYTES = 20 * 1024 * 1024
 
 
 @router.get("", response_model=list[ProjectOut], summary="Listar proyectos")
@@ -42,9 +42,10 @@ def import_project(
     name: Annotated[str | None, Form()] = None,
     crs: Annotated[str, Form(description="auto, local o EPSG:xxxx de las coordenadas del archivo")] = "auto",
 ) -> ImportResult:
-    content = file.file.read(MAX_INP_BYTES + 1)
-    if len(content) > MAX_INP_BYTES:
-        raise HTTPException(status_code=413, detail="El archivo supera 20 MB")
+    max_mb = get_settings().max_inp_mb
+    content = file.file.read(max_mb * 1024 * 1024 + 1)
+    if len(content) > max_mb * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"El archivo supera {max_mb} MB")
     try:
         return svc.import_inp(session, file.filename or "red.inp", content, name=name, crs=crs)
     except svc.InpImportError as exc:

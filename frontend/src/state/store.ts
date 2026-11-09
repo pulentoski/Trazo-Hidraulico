@@ -13,8 +13,10 @@ export type Tool = "select" | "multiselect" | "junction" | "pipe" | "tank" | "re
 export type SimStatus = "idle" | "pending" | "running" | "ok" | "error";
 export type MapType = "roadmap" | "terrain" | "satellite" | "hybrid";
 export type Theme = "light" | "dark";
+export type ThemePref = Theme | "system";
 
-export interface Labels { nodeIds: boolean; linkIds: boolean; pressure: boolean; flow: boolean; velocity: boolean; headloss: boolean; dn: boolean }
+export interface Labels { nodeIds: boolean; linkIds: boolean; pressure: boolean; flow: boolean; velocity: boolean; headloss: boolean; dn: boolean; length: boolean }
+export const DEFAULT_LABELS: Labels = { nodeIds: true, linkIds: false, pressure: false, flow: false, velocity: false, headloss: false, dn: false, length: false };
 
 interface Snapshot { net: Network; options: HydraulicOptions }
 
@@ -70,10 +72,11 @@ export interface EditorState {
   labels: Labels;
   mapType: MapType;
   theme: Theme;
+  themePref: ThemePref;
+  defaultProfileId: number | null;
   pendingDelete: string[] | null;
   cameraRequest: { points: LngLat[]; nonce: number } | null;
   toasts: Toast[];
-  projectsOpen: boolean;
   versionsOpen: boolean;
 
   loadDocument: (project: ProjectOut, doc: NetworkDocument) => void;
@@ -98,6 +101,14 @@ export interface EditorState {
 }
 
 const HISTORY_LIMIT = 200;
+
+export function systemTheme(): Theme {
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+export function resolveTheme(pref: ThemePref): Theme {
+  return pref === "system" ? systemTheme() : pref;
+}
 let toastSeq = 0;
 
 export function criteriaOf(profile: DesignProfile | undefined): Criteria {
@@ -161,13 +172,14 @@ export const useEditor = create<EditorState>()((set, get) => ({
   simError: null,
   period: 0,
   linkMode: readPref<LinkColorMode>("linkMode", "headloss"),
-  labels: readPref<Labels>("labels", { nodeIds: true, linkIds: false, pressure: false, flow: false, velocity: false, headloss: false, dn: false }),
+  labels: { ...DEFAULT_LABELS, ...readPref<Partial<Labels>>("labels", {}) },
   mapType: readPref<MapType>("mapType", "roadmap"),
-  theme: readPref<Theme>("theme", window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
+  themePref: readPref<ThemePref>("theme", "system"),
+  theme: resolveTheme(readPref<ThemePref>("theme", "system")),
+  defaultProfileId: readPref<number | null>("defaultProfileId", null),
   pendingDelete: null,
   cameraRequest: null,
   toasts: [],
-  projectsOpen: false,
   versionsOpen: false,
 
   loadDocument: (project, doc) => {
@@ -181,7 +193,10 @@ export const useEditor = create<EditorState>()((set, get) => ({
     });
     writePref("lastProject", project.id);
   },
-  closeProject: () => set({ project: null, net: EMPTY, result: null, validation: null, serverVersion: null }),
+  closeProject: () => set({
+    project: null, net: EMPTY, result: null, validation: null, serverVersion: null, revision: 0, savedRevision: 0,
+    past: [], future: [], selection: [], simStatus: "idle", simError: null, versionsOpen: false, pendingDelete: null,
+  }),
 
   commit: (fn, options) => {
     const s = get();

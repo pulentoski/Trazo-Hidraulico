@@ -1,0 +1,34 @@
+#!/bin/sh
+# Valida la configuración de acceso antes de arrancar Caddy: sin credenciales el sitio no se publica.
+set -eu
+
+fail() {
+	echo "" >&2
+	echo "ERROR (proxy): $1" >&2
+	echo "  Revise .env y el README (sección «Publicar»). Para desarrollo local: BASIC_AUTH_ENABLED=false" >&2
+	echo "" >&2
+	exit 64
+}
+
+enabled="${BASIC_AUTH_ENABLED:-true}"
+case "$enabled" in
+	true | false) ;;
+	*) fail "BASIC_AUTH_ENABLED debe ser true o false (valor actual: '$enabled')." ;;
+esac
+
+if [ "$enabled" = true ]; then
+	missing=""
+	[ -n "${BASIC_AUTH_USER:-}" ] || missing="$missing BASIC_AUTH_USER"
+	[ -n "${BASIC_AUTH_HASH:-}" ] || missing="$missing BASIC_AUTH_HASH"
+	[ -z "$missing" ] || fail "basic auth activo pero falta definir:$missing. Genere el hash con: docker run --rm caddy:2.11.9-alpine caddy hash-password"
+	case "$BASIC_AUTH_USER" in
+		*[[:space:]]*) fail "BASIC_AUTH_USER no puede contener espacios." ;;
+	esac
+	case "$BASIC_AUTH_HASH" in
+		'$2a$'* | '$2b$'* | '$2y$'*) ;;
+		*) fail "BASIC_AUTH_HASH no es un hash bcrypt (debe empezar con \$2a\$, \$2b\$ o \$2y\$). En .env escríbalo entre comillas simples." ;;
+	esac
+fi
+
+export BASIC_AUTH_ENABLED="$enabled"
+exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile

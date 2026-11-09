@@ -1,11 +1,45 @@
+# Trazo Hidráulico — punto de entrada único.
+#
+# Local (por defecto): HTTP en :8080, publicado solo en 127.0.0.1.
+# Público: SITE_ADDRESS=midominio.cl con infra/compose.public.yml → HTTPS automático (Let's Encrypt).
+# Las variables {$...} se reemplazan al leer este archivo; infra/caddy/entrypoint.sh las valida antes.
 {
 	admin off
-	auto_https off
 	persist_config off
+	http_port {$CADDY_HTTP_PORT:8080}
+	https_port {$CADDY_HTTPS_PORT:8443}
 }
 
-:8080 {
+# Basic auth para todo el sitio (protección temporal hasta tener usuarios, etapa 5).
+# /healthz queda libre para monitores externos.
+(auth_true) {
+	@protegido not path /healthz
+	basic_auth @protegido {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+}
+(auth_false) {
+}
+
+# Chequeo de salud del contenedor: puerto interno, sin autenticación ni TLS.
+http://:8099 {
+	bind 127.0.0.1
+	respond /healthz "ok" 200
+}
+
+{$SITE_ADDRESS::8080} {
+	import auth_{$BASIC_AUTH_ENABLED:true}
+
 	encode zstd gzip
+
+	# Tamaño máximo de las solicitudes: el .inp importado (igual que la API) y el resto de /api.
+	@importar path /api/projects/import
+	request_body @importar {
+		max_size {$MAX_INP_MB:20}MB
+	}
+	request_body /api/* {
+		max_size 50MB
+	}
 
 	header {
 		-Server

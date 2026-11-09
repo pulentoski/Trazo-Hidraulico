@@ -6,7 +6,7 @@ import { fmt, fmtLen } from "../lib/format";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { distToSegment, haversine, panBy, project, unproject, zoomAt } from "../lib/geo";
 import type { ELink, ENode, Network } from "../lib/network";
-import { defaultNodeProps, defaultPipeProps, linkCoords, nextId, roughnessFor, uid } from "../lib/network";
+import { defaultNodeProps, defaultPipeProps, estimatedLength, linkCoords, nextId, roughnessFor, uid } from "../lib/network";
 import { criteriaOf, useEditor } from "../state/store";
 
 type Pt = [number, number];
@@ -336,6 +336,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     const r = linkRes?.[l.id];
     if (labels.linkIds) texts.push(l.id);
     if (labels.dn && l.props.dn) texts.push(`DN ${l.props.dn}`);
+    if (labels.length && l.kind === "pipe") texts.push(fmtLen(l.props.length_hydraulic_m ?? estimatedLength(net, l)));
     if (r && labels.flow) texts.push(`${fmt(r.flow[period], 2)} L/s`);
     if (r && labels.velocity) texts.push(`${fmt(Math.abs(r.velocity[period]), 2)} m/s`);
     if (r && labels.headloss && l.kind === "pipe") texts.push(`${fmt(Math.abs(r.headloss[period]), 2)} m/km`);

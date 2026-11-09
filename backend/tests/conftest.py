@@ -7,6 +7,21 @@ from sqlalchemy import create_engine, text
 
 from app.core.config import get_settings
 
+def pytest_sessionstart(session):
+    """Aborta antes de cualquier prueba si el entorno no apunta a la base y la caché de prueba.
+
+    Ninguna prueba puede tocar la base de desarrollo (trazo) ni la base Redis 0 de la pila normal.
+    """
+    s = get_settings()
+    problems = []
+    if not s.postgres_db.endswith("_test"):
+        problems.append(f"POSTGRES_DB={s.postgres_db!r} (debe terminar en _test)")
+    if s.redis_db == 0:
+        problems.append("REDIS_DB=0 (las pruebas usan otra base Redis)")
+    if problems:
+        pytest.exit("Entorno de pruebas inseguro: " + "; ".join(problems) + ". Ejecute `make test`.", returncode=2)
+
+
 NETWORKS_DIR = Path(os.environ.get("NETWORKS_DIR", "/app/examples/networks"))
 REPORT_DIR = Path(os.environ.get("REPORT_DIR", "/tmp/reports"))
 

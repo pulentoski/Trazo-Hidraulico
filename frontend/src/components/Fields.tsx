@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { fmt, parseNum } from "../lib/format";
 
+/** Ícono «?» con ayuda contextual (visible al pasar el mouse o con el foco del teclado). */
+export function Help({ text }: { text: string }) {
+  return <span className="help" tabIndex={0} role="note" data-tip={text} aria-label={`Ayuda: ${text}`}>?</span>;
+}
+
+/** Texto de una etiqueta de campo, con ayuda opcional. */
+export function FieldLabel({ label, help }: { label: string; help?: string }) {
+  return <span>{label}{help && <Help text={help} />}</span>;
+}
+
 /** Campo numérico con coma decimal; confirma al salir o con Enter (una entrada de historial por edición). */
 export function NumField({ label, value, unit, onCommit, digits = 3, allowNull = false, disabled, hint, invalid }: {
   label: string; value: number | null | undefined; unit?: string; onCommit: (v: number | null) => void;
@@ -19,8 +29,8 @@ export function NumField({ label, value, unit, onCommit, digits = 3, allowNull =
     if (v !== (value ?? null)) onCommit(v);
   };
   return (
-    <label className={`field num ${invalid ? "invalid" : ""}`} title={hint}>
-      <span>{label}</span>
+    <label className={`field num ${invalid ? "invalid" : ""}`}>
+      <FieldLabel label={label} help={hint} />
       <div className="with-unit">
         <input inputMode="decimal" value={text} disabled={disabled} onFocus={() => setFocus(true)}
           onChange={(e) => setText(e.target.value)} onBlur={() => { setFocus(false); commit(); }}
@@ -31,14 +41,14 @@ export function NumField({ label, value, unit, onCommit, digits = 3, allowNull =
   );
 }
 
-export function TextField({ label, value, onCommit, error, placeholder }: {
-  label: string; value: string | null | undefined; onCommit: (v: string) => void; error?: string | null; placeholder?: string;
+export function TextField({ label, value, onCommit, error, placeholder, hint }: {
+  label: string; value: string | null | undefined; onCommit: (v: string) => void; error?: string | null; placeholder?: string; hint?: string;
 }) {
   const [text, setText] = useState(value ?? "");
   useEffect(() => setText(value ?? ""), [value]);
   return (
     <label className={`field ${error ? "invalid" : ""}`}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={hint} />
       <input value={text} placeholder={placeholder} onChange={(e) => setText(e.target.value)}
         onBlur={() => text !== (value ?? "") && onCommit(text)}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
@@ -47,6 +57,6 @@ export function TextField({ label, value, onCommit, error, placeholder }: {
   );
 }
 
-export function Readout({ label, value, unit, tone }: { label: string; value: string; unit?: string; tone?: string }) {
-  return <div className={`readout ${tone ?? ""}`}><span>{label}</span><b>{value}</b>{unit && <em>{unit}</em>}</div>;
+export function Readout({ label, value, unit, tone, hint }: { label: string; value: string; unit?: string; tone?: string; hint?: string }) {
+  return <div className={`readout ${tone ?? ""}`}><FieldLabel label={label} help={hint} /><b>{value}</b>{unit && <em>{unit}</em>}</div>;
 }

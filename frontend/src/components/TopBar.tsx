@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { api } from "../api/client";
-import { saveNow, simulateNow } from "../state/live";
+import { fmt, fmtDate } from "../lib/format";
+import { PATHS } from "../paths";
+import { flushPending, saveNow, simulateNow } from "../state/live";
 import { useEditor, writePref } from "../state/store";
 import { Modal } from "./Dialogs";
 import { Icon } from "./Icons";
+import { Brand } from "./PageHeader";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   idle: { label: "Sin cambios", cls: "idle" },
@@ -13,28 +17,88 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   error: { label: "Error", cls: "error" },
 };
 
+/** Detalle del último error o de la última corrida (se abre al hacer clic en el indicador de estado). */
+function StatusDetail({ onClose }: { onClose: () => void }) {
+  const { simStatus, simError, result, validation, serverVersion, revision, savedRevision, focus, net } = useEditor();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const down = (e: MouseEvent) => { if (ref.current && !ref.current.closest(".status-wrap")?.contains(e.target as Node)) onClose(); };
+    const key = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("mousedown", down);
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("mousedown", down); window.removeEventListener("keydown", key); };
+  }, [onClose]);
+  const uidOf = (type: string | null | undefined, id: string | null | undefined) => {
+    if (!id) return null;
+    const pool = type === "link" ? Object.values(net.links) : Object.values(net.nodes);
+    return pool.find((e) => e.id === id)?.uid ?? null;
+  };
+  const errors = validation?.errors ?? [];
+  const engineErrors = (result?.messages ?? []).filter((m) => m.severity === "error");
+  return (
+    <div className="popover status-detail" ref={ref} role="dialog" aria-label="Detalle del cálculo">
+      {simStatus === "error" ? (<>
+        <h4 className="bad-text">Error en el último cálculo</h4>
+        {simError && <p>{simError}</p>}
+        {[...errors.map((e) => ({ m: e.message, t: e.element_type, id: e.element_id })),
+          ...engineErrors.map((e) => ({ m: e.message, t: e.element_type, id: e.element_id }))].slice(0, 12).map((e, i) => {
+          const uid = uidOf(e.t, e.id);
+          return <p key={i} className="issue-line">{e.m} {uid && <button className="link" onClick={() => { focus([uid]); onClose(); }}>ver</button>}</p>;
+        })}
+        {errors.length + engineErrors.length > 12 && <p className="muted small">… y {errors.length + engineErrors.length - 12} más (pestaña Validación).</p>}
+      </>) : simStatus === "pending" || simStatus === "running" ? (
+        <p>Guardando la versión y calculando con OWA-EPANET…</p>
+      ) : result ? (<>
+        <h4>Última corrida</h4>
+        <dl className="kv compact">
+          <dt>Versión del modelo</dt><dd>v{result.model_version}{result.model_version !== serverVersion ? " (anterior)" : ""}</dd>
+          <dt>Estado</dt><dd>{{ ok: "correcta", warning: "con advertencias", error: "con errores" }[result.status] ?? result.status}</dd>
+          <dt>Origen</dt><dd>{result.cached ? "reutilizada (misma versión ya calculada)" : "calculada ahora"}</dd>
+          <dt>Fecha</dt><dd>{fmtDate(result.created_at)}</dd>
+          <dt>Tiempo del motor</dt><dd>{fmt(result.elapsed_ms, 0)} ms</dd>
+          <dt>Periodos</dt><dd>{result.times.length}</dd>
+          <dt>Mensajes del motor</dt><dd>{result.messages.length}</dd>
+          <dt>Alertas de criterios</dt><dd>{result.alerts.length}</dd>
+          <dt>Motor</dt><dd>OWA-EPANET {result.engine.wheel_version}</dd>
+          <dt>Corrida</dt><dd className="mono small">{result.run_id.slice(0, 8)}</dd>
+        </dl>
+        {result.messages.slice(0, 5).map((m, i) => <p key={i} className={`issue-line ${m.severity}`}>{m.message}</p>)}
+        {revision !== savedRevision && <p className="muted small">Hay cambios aún no guardados.</p>}
+      </>) : <p className="muted">Aún no hay corridas en esta sesión.</p>}
+    </div>
+  );
+}
+
 export function TopBar() {
   const s = useEditor();
+  const navigate = useNavigate();
   const [saveOpen, setSaveOpen] = useState(false);
+  const [detail, setDetail] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [label, setLabel] = useState("");
   const st = STATUS[s.simStatus];
   const dirty = s.revision !== s.savedRevision;
   const time = s.lastSavedAt ? new Date(s.lastSavedAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }) : "";
   const toggleTheme = () => {
     const theme = s.theme === "dark" ? "light" : "dark";
-    s.set({ theme });
+    s.set({ themePref: theme, theme });
     writePref("theme", theme);
+  };
+  const back = async () => {
+    setLeaving(true);
+    const ok = await flushPending();
+    setLeaving(false);
+    if (ok) navigate(PATHS.home);
+    else s.toast("No se pudieron guardar los últimos cambios; revise el estado antes de salir.", "error");
   };
 
   return (
     <header className="topbar">
-      <div className="brand" title="Trazo Hidráulico — diseño y simulación de redes de agua potable">
-        <svg viewBox="0 0 32 32" aria-hidden><path d="M5 23 L13 12 L19 18 L27 7" /><circle cx="5" cy="23" r="2.6" /><circle cx="13" cy="12" r="2.6" /><circle cx="19" cy="18" r="2.6" /><circle cx="27" cy="7" r="2.6" /></svg>
-        <span>Trazo Hidráulico</span>
-      </div>
-      <button className="project-btn" onClick={() => s.set({ projectsOpen: true })} title="Abrir, crear o importar proyectos">
-        <Icon.folder /> <span>{s.project?.name ?? "Sin proyecto"}</span>
+      <button className="ghost back-btn" onClick={() => void back()} disabled={leaving} title="Volver al menú principal (guarda los cambios pendientes)">
+        <Icon.back /><span>{leaving ? "Guardando…" : "Menú"}</span>
       </button>
+      <Brand />
+      <div className="project-name" title={s.project?.name ?? ""}>{s.project?.name ?? "…"}</div>
       <div className="tb-group">
         <button onClick={() => { setLabel(""); setSaveOpen(true); }} disabled={!s.project} title="Guardar versión con nombre (Ctrl+S)"><Icon.save /><span>Guardar</span></button>
         <button onClick={s.undo} disabled={!s.past.length} title="Deshacer (Ctrl+Z)"><Icon.undo /></button>
@@ -46,8 +110,11 @@ export function TopBar() {
           aria-disabled={!s.project || dirty} title={dirty ? "Esperando guardado" : "Exportar la versión actual como .inp"}><Icon.download /><span>Exportar .inp</span></a>
       </div>
       <div className="tb-spacer" />
-      <div className={`status ${st.cls}`} title={s.simError ?? ""} role="status">
-        <i />{st.label}
+      <div className="status-wrap">
+        <button className={`status ${st.cls}`} onClick={() => setDetail(!detail)} aria-expanded={detail} title="Ver detalle del cálculo">
+          <i />{st.label}
+        </button>
+        {detail && <StatusDetail onClose={() => setDetail(false)} />}
       </div>
       <div className="version-info" title="Cada guardado crea una versión inmutable">
         {s.serverVersion !== null && <>v{s.serverVersion} · {dirty ? "cambios sin guardar" : `${s.lastSaveKind === "manual" ? "guardado" : "autoguardado"} ${time}`}</>}

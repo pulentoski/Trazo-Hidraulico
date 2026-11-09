@@ -87,3 +87,19 @@ export function distToSegment(p: [number, number], a: [number, number], b: [numb
   const t = len2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2)) : 0;
   return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
 }
+
+/** Metros por píxel de pantalla en el centro de la cámara (Web Mercator, mosaicos de 256 px). */
+export function metersPerPixel(cam: Camera): number {
+  const lat = (Math.max(-MAX_LAT, Math.min(MAX_LAT, cam.center[1])) * Math.PI) / 180;
+  return (2 * Math.PI * 6378137 * Math.cos(lat)) / (TILE * 2 ** cam.zoom);
+}
+
+/** Escala gráfica: el mayor largo «redondo» (1, 2 o 5 × 10ⁿ m) que cabe en `maxPx` píxeles. */
+export function scaleBar(cam: Camera, maxPx = 120): { meters: number; px: number; label: string } {
+  const mpp = metersPerPixel(cam);
+  const max = mpp * maxPx;
+  const pow = 10 ** Math.floor(Math.log10(max));
+  const meters = [5, 2, 1].map((m) => m * pow).find((m) => m <= max) ?? pow;
+  const label = meters >= 1000 ? `${(meters / 1000).toLocaleString("es-CL")} km` : `${meters.toLocaleString("es-CL")} m`;
+  return { meters, px: meters / mpp, label };
+}

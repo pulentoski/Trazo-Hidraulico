@@ -17,8 +17,14 @@ export class ApiError extends Error {
   }
 }
 
+const STATUS_TEXT: Record<number, string> = {
+  401: "Acceso no autorizado: vuelva a ingresar usuario y contraseña.",
+  413: "El archivo o la solicitud supera el tamaño máximo permitido.",
+  429: "Demasiadas solicitudes: espere un momento y reintente.",
+};
+
 function fail(status: number, body: unknown): never {
-  let msg = `Error ${status}`;
+  let msg = STATUS_TEXT[status] ?? `Error ${status}`;
   if (body && typeof body === "object" && "detail" in body) {
     const d = (body as { detail: unknown }).detail;
     if (typeof d === "string") msg = d;
@@ -35,8 +41,10 @@ async function unwrap<T>(p: Promise<{ data?: unknown; error?: unknown; response:
 
 export const api = {
   listProjects: () => unwrap<ProjectOut[]>(client.GET("/api/projects")),
-  createProject: (name: string, description = "") =>
-    unwrap<ProjectOut>(client.POST("/api/projects", { body: { name, description } })),
+  createProject: (name: string, description = "", designProfileId: number | null = null) =>
+    unwrap<ProjectOut>(client.POST("/api/projects", {
+      body: { name, description, ...(designProfileId != null ? { design_profile_id: designProfileId } : {}) },
+    })),
   getProject: (id: string) => unwrap<ProjectOut>(client.GET("/api/projects/{project_id}", { params: { path: { project_id: id } } })),
   updateProject: (id: string, body: { name?: string; description?: string; design_profile_id?: number | null }) =>
     unwrap<ProjectOut>(client.PATCH("/api/projects/{project_id}", { params: { path: { project_id: id } }, body })),
