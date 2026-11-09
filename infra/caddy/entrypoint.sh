@@ -40,5 +40,10 @@ case "${HSTS_ENABLED:-false}" in
 	*) fail "HSTS_ENABLED debe ser true o false." ;;
 esac
 
+# Nombre del certificado para clientes sin SNI (acceso por IP): host de SITE_ADDRESS sin esquema ni puerto.
+sni="${SITE_ADDRESS:-}"
+sni="${sni#*://}"; sni="${sni%%/*}"; sni="${sni%:*}"
+export CADDY_DEFAULT_SNI="${sni:-localhost}"
+
 export BASIC_AUTH_ENABLED="$enabled"
 exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile

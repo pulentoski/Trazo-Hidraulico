@@ -148,6 +148,10 @@ Primera prueba de `deploy/instalar.sh` en una instancia AWS limpia (Ubuntu, acce
 - **umask de root**: con `umask 077` el clon quedaba ilegible para el usuario sin privilegios de nginx dentro
   de la imagen `web` («open() default.conf failed (13: Permission denied)», contenedor *unhealthy*). El script
   fija `umask 022`; `.env` sigue con permisos 600.
+- **HTTPS por IP sin SNI**: los clientes no envían SNI al conectarse a una IP y, dentro de Docker, Caddy no ve
+  la IP pública como dirección local: el handshake fallaba con «tlsv1 alert internal error» aunque el
+  certificado interno se había emitido. El Caddyfile ahora fija `default_sni` con el host de `SITE_ADDRESS`
+  (lo calcula `infra/caddy/entrypoint.sh`).
 - **IP dinámica**: la instancia cambia de IP pública cada 4 h; `trazo-ip.timer` + `deploy/actualizar-ip.sh`
   mantienen `SITE_ADDRESS` y `PUBLIC_URL` al día sin intervención.
 - **Verificación**: el instalador comprueba `/healthz` al terminar e indica los comandos de cuentas.

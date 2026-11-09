@@ -8,6 +8,9 @@
 	persist_config off
 	http_port {$CADDY_HTTP_PORT:8080}
 	https_port {$CADDY_HTTPS_PORT:8443}
+	# Los navegadores no envían SNI al entrar por IP (https://IP): sin esto Caddy no encuentra el certificado
+	# interno y corta el handshake («tlsv1 alert internal error»). entrypoint.sh lo deriva de SITE_ADDRESS.
+	default_sni {$CADDY_DEFAULT_SNI:localhost}
 }
 
 # Basic auth opcional (barrera adicional, desactivada por defecto): el acceso lo controla la autenticación
