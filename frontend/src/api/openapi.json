@@ -1,1 +1,2887 @@
-{}
+{
+  "components": {
+    "schemas": {
+      "Body_import_project_api_projects_import_post": {
+        "properties": {
+          "crs": {
+            "default": "auto",
+            "description": "auto, local o EPSG:xxxx de las coordenadas del archivo",
+            "title": "Crs",
+            "type": "string"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "Archivo .inp de EPANET",
+            "title": "File",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_project_api_projects_import_post",
+        "type": "object"
+      },
+      "CatalogPipeOut": {
+        "properties": {
+          "dn": {
+            "title": "Dn",
+            "type": "integer"
+          },
+          "dw_roughness_mm": {
+            "title": "Dw Roughness Mm",
+            "type": "number"
+          },
+          "hw_c": {
+            "title": "Hw C",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "inner_diameter_mm": {
+            "title": "Inner Diameter Mm",
+            "type": "number"
+          },
+          "manning_n": {
+            "title": "Manning N",
+            "type": "number"
+          },
+          "material": {
+            "title": "Material",
+            "type": "string"
+          },
+          "od_mm": {
+            "title": "Od Mm",
+            "type": "number"
+          },
+          "pipe_class": {
+            "title": "Pipe Class",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "standard": {
+            "title": "Standard",
+            "type": "string"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "wall_mm": {
+            "title": "Wall Mm",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "material",
+          "standard",
+          "dn",
+          "pipe_class",
+          "od_mm",
+          "wall_mm",
+          "inner_diameter_mm",
+          "hw_c",
+          "dw_roughness_mm",
+          "manning_n",
+          "verified",
+          "source"
+        ],
+        "title": "CatalogPipeOut",
+        "type": "object"
+      },
+      "CriteriaAlert": {
+        "properties": {
+          "code": {
+            "enum": [
+              "PRESSURE_LOW",
+              "PRESSURE_HIGH",
+              "VELOCITY_LOW",
+              "VELOCITY_HIGH",
+              "BOTTLENECK"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "element_id": {
+            "title": "Element Id",
+            "type": "string"
+          },
+          "element_type": {
+            "enum": [
+              "node",
+              "link"
+            ],
+            "title": "Element Type",
+            "type": "string"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "number"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "const": "warning",
+            "default": "warning",
+            "title": "Severity",
+            "type": "string"
+          },
+          "time": {
+            "title": "Time",
+            "type": "integer"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "element_type",
+          "element_id",
+          "value",
+          "limit",
+          "unit",
+          "time"
+        ],
+        "title": "CriteriaAlert",
+        "type": "object"
+      },
+      "Criterion": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max"
+          },
+          "min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "unit"
+        ],
+        "title": "Criterion",
+        "type": "object"
+      },
+      "DemandCategory": {
+        "properties": {
+          "base": {
+            "description": "Demanda base (L/s)",
+            "title": "Base",
+            "type": "number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pattern"
+          }
+        },
+        "required": [
+          "base"
+        ],
+        "title": "DemandCategory",
+        "type": "object"
+      },
+      "DesignProfileOut": {
+        "properties": {
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/Criterion"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "valid_from": {
+            "format": "date",
+            "title": "Valid From",
+            "type": "string"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "source",
+          "version",
+          "valid_from",
+          "valid_to",
+          "verified",
+          "status",
+          "criteria",
+          "notes"
+        ],
+        "title": "DesignProfileOut",
+        "type": "object"
+      },
+      "EngineInfo": {
+        "properties": {
+          "en_getversion": {
+            "title": "En Getversion",
+            "type": "integer"
+          },
+          "engine": {
+            "title": "Engine",
+            "type": "string"
+          },
+          "epanet_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epanet Sha"
+          },
+          "epanet_tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epanet Tag"
+          },
+          "runepanet_banner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runepanet Banner"
+          },
+          "wheel_package": {
+            "title": "Wheel Package",
+            "type": "string"
+          },
+          "wheel_version": {
+            "title": "Wheel Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "engine",
+          "wheel_package",
+          "wheel_version",
+          "en_getversion",
+          "epanet_tag",
+          "epanet_sha",
+          "runepanet_banner"
+        ],
+        "title": "EngineInfo",
+        "type": "object"
+      },
+      "EngineMessage": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "element_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Element Id"
+          },
+          "element_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "node",
+                  "link",
+                  "network"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Element Type"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "original": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original"
+          },
+          "severity": {
+            "enum": [
+              "error",
+              "warning",
+              "info"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
+        "title": "EngineMessage",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HydraulicOptions": {
+        "additionalProperties": false,
+        "description": "Opciones hidráulicas del modelo. La rugosidad de los tramos se interpreta según `headloss`.",
+        "properties": {
+          "demand_model": {
+            "default": "DDA",
+            "enum": [
+              "DDA",
+              "PDA"
+            ],
+            "title": "Demand Model",
+            "type": "string"
+          },
+          "extra": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Otras opciones del motor en formato .inp (TRIALS, ACCURACY, PATTERN, ...)",
+            "title": "Extra",
+            "type": "object"
+          },
+          "headloss": {
+            "default": "H-W",
+            "enum": [
+              "H-W",
+              "D-W",
+              "C-M"
+            ],
+            "title": "Headloss",
+            "type": "string"
+          },
+          "minimum_pressure": {
+            "default": 0.0,
+            "description": "PDA: presión bajo la cual no hay entrega (m)",
+            "title": "Minimum Pressure",
+            "type": "number"
+          },
+          "pressure_exponent": {
+            "default": 0.5,
+            "description": "PDA: exponente de la relación presión-caudal",
+            "exclusiveMinimum": 0.0,
+            "title": "Pressure Exponent",
+            "type": "number"
+          },
+          "required_pressure": {
+            "default": 15.0,
+            "description": "PDA: presión para entregar la demanda completa (m)",
+            "title": "Required Pressure",
+            "type": "number"
+          }
+        },
+        "title": "HydraulicOptions",
+        "type": "object"
+      },
+      "ImportResult": {
+        "properties": {
+          "georeference": {
+            "title": "Georeference",
+            "type": "string"
+          },
+          "link_count": {
+            "title": "Link Count",
+            "type": "integer"
+          },
+          "node_count": {
+            "title": "Node Count",
+            "type": "integer"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "project": {
+            "$ref": "#/components/schemas/ProjectOut"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project",
+          "version",
+          "georeference",
+          "notes",
+          "node_count",
+          "link_count"
+        ],
+        "title": "ImportResult",
+        "type": "object"
+      },
+      "LineStringGeometry": {
+        "properties": {
+          "coordinates": {
+            "description": "[[lon, lat], ...] EPSG:4326",
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "minItems": 2,
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "const": "LineString",
+            "default": "LineString",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "coordinates"
+        ],
+        "title": "LineStringGeometry",
+        "type": "object"
+      },
+      "LinkFeature": {
+        "properties": {
+          "geometry": {
+            "$ref": "#/components/schemas/LineStringGeometry"
+          },
+          "id": {
+            "description": "ID EPANET del tramo",
+            "title": "Id",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/LinkProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "default": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "LinkFeature",
+        "type": "object"
+      },
+      "LinkLengths": {
+        "properties": {
+          "length_hydraulic_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Hydraulic M"
+          },
+          "length_plan_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Plan M"
+          },
+          "length_slope_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Slope M"
+          }
+        },
+        "required": [
+          "length_plan_m",
+          "length_slope_m",
+          "length_hydraulic_m"
+        ],
+        "title": "LinkLengths",
+        "type": "object"
+      },
+      "LinkProperties": {
+        "properties": {
+          "catalog_pipe_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Pipe Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "dn": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Diámetro nominal (mm)",
+            "title": "Dn"
+          },
+          "element": {
+            "const": "link",
+            "default": "link",
+            "title": "Element",
+            "type": "string"
+          },
+          "from_node": {
+            "description": "ID del nudo inicial",
+            "title": "From Node",
+            "type": "string"
+          },
+          "initial_status": {
+            "default": "open",
+            "enum": [
+              "open",
+              "closed",
+              "cv",
+              "active"
+            ],
+            "title": "Initial Status",
+            "type": "string"
+          },
+          "inner_diameter_mm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Diámetro interior de cálculo (mm)",
+            "title": "Inner Diameter Mm"
+          },
+          "kind": {
+            "default": "pipe",
+            "enum": [
+              "pipe",
+              "pump",
+              "valve"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "length_choice": {
+            "default": "slope",
+            "enum": [
+              "plan",
+              "slope",
+              "manual"
+            ],
+            "title": "Length Choice",
+            "type": "string"
+          },
+          "length_hydraulic_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Largo usado en el cálculo (m)",
+            "title": "Length Hydraulic M"
+          },
+          "length_plan_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Largo geométrico en planta (m)",
+            "title": "Length Plan M"
+          },
+          "length_slope_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Largo con pendiente desde las cotas (m)",
+            "title": "Length Slope M"
+          },
+          "material": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material"
+          },
+          "minor_loss": {
+            "default": 0.0,
+            "title": "Minor Loss",
+            "type": "number"
+          },
+          "pipe_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipe Class"
+          },
+          "pump_curve": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pump Curve"
+          },
+          "pump_pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pump Pattern"
+          },
+          "pump_power": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Potencia constante (kW)",
+            "title": "Pump Power"
+          },
+          "pump_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pump Speed"
+          },
+          "roughness": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "C (H-W), ε mm (D-W) o n (C-M)",
+            "title": "Roughness"
+          },
+          "to_node": {
+            "description": "ID del nudo final",
+            "title": "To Node",
+            "type": "string"
+          },
+          "uid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uid"
+          },
+          "valve_curve": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valve Curve"
+          },
+          "valve_setting": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valve Setting"
+          },
+          "valve_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "PRV",
+                  "PSV",
+                  "PBV",
+                  "FCV",
+                  "TCV",
+                  "GPV",
+                  "PCV"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valve Type"
+          }
+        },
+        "required": [
+          "from_node",
+          "to_node"
+        ],
+        "title": "LinkProperties",
+        "type": "object"
+      },
+      "LinkSeries": {
+        "properties": {
+          "flow": {
+            "description": "Caudal (L/s); signo según sentido nudo inicial → final",
+            "items": {
+              "type": "number"
+            },
+            "title": "Flow",
+            "type": "array"
+          },
+          "headloss": {
+            "description": "Pérdida unitaria (m/km) en tuberías; pérdida (m) en bombas y válvulas",
+            "items": {
+              "type": "number"
+            },
+            "title": "Headloss",
+            "type": "array"
+          },
+          "status": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Status",
+            "type": "array"
+          },
+          "velocity": {
+            "description": "Velocidad (m/s)",
+            "items": {
+              "type": "number"
+            },
+            "title": "Velocity",
+            "type": "array"
+          }
+        },
+        "required": [
+          "flow",
+          "velocity",
+          "headloss",
+          "status"
+        ],
+        "title": "LinkSeries",
+        "type": "object"
+      },
+      "NetworkDocument": {
+        "description": "Red de una versión: GeoJSON + opciones hidráulicas + secciones complementarias.",
+        "properties": {
+          "aux": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Aux",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "auto",
+              "manual",
+              "import"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "length_srid": {
+            "title": "Length Srid",
+            "type": "integer"
+          },
+          "network": {
+            "$ref": "#/components/schemas/NetworkFeatureCollection"
+          },
+          "options": {
+            "$ref": "#/components/schemas/HydraulicOptions"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "version",
+          "kind",
+          "label",
+          "created_at",
+          "length_srid",
+          "options",
+          "aux",
+          "network"
+        ],
+        "title": "NetworkDocument",
+        "type": "object"
+      },
+      "NetworkFeatureCollection": {
+        "properties": {
+          "features": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/NodeFeature"
+                },
+                {
+                  "$ref": "#/components/schemas/LinkFeature"
+                }
+              ]
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "type": {
+            "const": "FeatureCollection",
+            "default": "FeatureCollection",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "title": "NetworkFeatureCollection",
+        "type": "object"
+      },
+      "NetworkSave": {
+        "additionalProperties": false,
+        "properties": {
+          "aux": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aux"
+          },
+          "base_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Versión sobre la que se editó (control de concurrencia)",
+            "title": "Base Version"
+          },
+          "kind": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "manual"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "network": {
+            "$ref": "#/components/schemas/NetworkFeatureCollection"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HydraulicOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Si se omite, se conservan las de la versión base"
+          }
+        },
+        "required": [
+          "network"
+        ],
+        "title": "NetworkSave",
+        "type": "object"
+      },
+      "NetworkSaveResult": {
+        "properties": {
+          "content_sha256": {
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "created": {
+            "description": "False si el contenido era idéntico a la versión base (guardado automático)",
+            "title": "Created",
+            "type": "boolean"
+          },
+          "lengths": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkLengths"
+            },
+            "description": "Largos recalculados por ID de tramo",
+            "title": "Lengths",
+            "type": "object"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "created",
+          "content_sha256",
+          "lengths"
+        ],
+        "title": "NetworkSaveResult",
+        "type": "object"
+      },
+      "NodeFeature": {
+        "properties": {
+          "geometry": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "id": {
+            "description": "ID EPANET del nudo",
+            "title": "Id",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/NodeProperties"
+          },
+          "type": {
+            "const": "Feature",
+            "default": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "title": "NodeFeature",
+        "type": "object"
+      },
+      "NodeProperties": {
+        "properties": {
+          "base_demand": {
+            "default": 0.0,
+            "description": "Demanda base (L/s)",
+            "title": "Base Demand",
+            "type": "number"
+          },
+          "can_overflow": {
+            "default": false,
+            "title": "Can Overflow",
+            "type": "boolean"
+          },
+          "demand_pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demand Pattern"
+          },
+          "demands": {
+            "description": "Categorías de demanda adicionales",
+            "items": {
+              "$ref": "#/components/schemas/DemandCategory"
+            },
+            "title": "Demands",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "element": {
+            "const": "node",
+            "default": "node",
+            "title": "Element",
+            "type": "string"
+          },
+          "elevation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cota de terreno (m)",
+            "title": "Elevation"
+          },
+          "elevation_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevation Method"
+          },
+          "elevation_source": {
+            "default": "manual",
+            "enum": [
+              "manual",
+              "inp",
+              "supuesta"
+            ],
+            "title": "Elevation Source",
+            "type": "string"
+          },
+          "emitter_coeff": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emitter Coeff"
+          },
+          "head": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reservorio: carga total (m)",
+            "title": "Head"
+          },
+          "head_pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head Pattern"
+          },
+          "init_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estanque: nivel inicial (m)",
+            "title": "Init Level"
+          },
+          "initial_quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial Quality"
+          },
+          "kind": {
+            "enum": [
+              "junction",
+              "reservoir",
+              "tank"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Level"
+          },
+          "min_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Level"
+          },
+          "min_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estanque: volumen mínimo (m³)",
+            "title": "Min Volume"
+          },
+          "tank_diameter": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estanque: diámetro (m)",
+            "title": "Tank Diameter"
+          },
+          "uid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uid"
+          },
+          "volume_curve": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume Curve"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "NodeProperties",
+        "type": "object"
+      },
+      "NodeSeries": {
+        "properties": {
+          "demand": {
+            "description": "Demanda (L/s; negativa en fuentes)",
+            "items": {
+              "type": "number"
+            },
+            "title": "Demand",
+            "type": "array"
+          },
+          "head": {
+            "description": "Cota piezométrica (m)",
+            "items": {
+              "type": "number"
+            },
+            "title": "Head",
+            "type": "array"
+          },
+          "pressure": {
+            "description": "Presión (m)",
+            "items": {
+              "type": "number"
+            },
+            "title": "Pressure",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pressure",
+          "head",
+          "demand"
+        ],
+        "title": "NodeSeries",
+        "type": "object"
+      },
+      "PointGeometry": {
+        "properties": {
+          "coordinates": {
+            "description": "[longitud, latitud] EPSG:4326",
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "const": "Point",
+            "default": "Point",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "coordinates"
+        ],
+        "title": "PointGeometry",
+        "type": "object"
+      },
+      "ProjectCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "design_profile_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Design Profile Id"
+          },
+          "length_srid": {
+            "default": 32719,
+            "description": "SRID métrico para calcular largos (p. ej. 32719 = UTM 19S)",
+            "title": "Length Srid",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HydraulicOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ProjectCreate",
+        "type": "object"
+      },
+      "ProjectOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "design_profile_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Design Profile Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "latest_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version"
+          },
+          "length_srid": {
+            "title": "Length Srid",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version_count": {
+            "default": 0,
+            "title": "Version Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "length_srid",
+          "design_profile_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProjectOut",
+        "type": "object"
+      },
+      "ProjectUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "design_profile_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Design Profile Id"
+          },
+          "length_srid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Srid"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "ProjectUpdate",
+        "type": "object"
+      },
+      "SimulateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "model_version": {
+            "description": "Número de versión del modelo a simular",
+            "title": "Model Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_version"
+        ],
+        "title": "SimulateRequest",
+        "type": "object"
+      },
+      "SimulationBlocked": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "integer"
+          },
+          "status": {
+            "const": "blocked",
+            "default": "blocked",
+            "title": "Status",
+            "type": "string"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ValidationReport"
+          }
+        },
+        "required": [
+          "model_version",
+          "detail",
+          "validation"
+        ],
+        "title": "SimulationBlocked",
+        "type": "object"
+      },
+      "SimulationResult": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/CriteriaAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "cached": {
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "elapsed_ms": {
+            "title": "Elapsed Ms",
+            "type": "number"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/EngineInfo"
+          },
+          "inp_sha256": {
+            "title": "Inp Sha256",
+            "type": "string"
+          },
+          "links": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkSeries"
+            },
+            "title": "Links",
+            "type": "object"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/EngineMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "integer"
+          },
+          "nodes": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NodeSeries"
+            },
+            "title": "Nodes",
+            "type": "object"
+          },
+          "options": {
+            "$ref": "#/components/schemas/HydraulicOptions"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "profile_verified": {
+            "default": false,
+            "title": "Profile Verified",
+            "type": "boolean"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "times": {
+            "description": "Instantes de reporte (s)",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Times",
+            "type": "array"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ValidationReport"
+          }
+        },
+        "required": [
+          "run_id",
+          "project_id",
+          "model_version",
+          "status",
+          "cached",
+          "created_at",
+          "elapsed_ms",
+          "engine",
+          "options",
+          "inp_sha256",
+          "times",
+          "nodes",
+          "links",
+          "messages",
+          "alerts",
+          "validation"
+        ],
+        "title": "SimulationResult",
+        "type": "object"
+      },
+      "ValidateRequest": {
+        "additionalProperties": false,
+        "description": "Valida una versión guardada (`model_version`) o una red en edición (`network`).",
+        "properties": {
+          "aux": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aux"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "network": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NetworkFeatureCollection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HydraulicOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ValidateRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "ValidationIssue": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "element_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Element Id"
+          },
+          "element_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "node",
+                  "link",
+                  "network"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Element Type"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "error",
+              "warning"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
+        "title": "ValidationIssue",
+        "type": "object"
+      },
+      "ValidationReport": {
+        "properties": {
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "errors",
+          "warnings"
+        ],
+        "title": "ValidationReport",
+        "type": "object"
+      },
+      "VersionOut": {
+        "properties": {
+          "content_sha256": {
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "has_results": {
+            "default": false,
+            "title": "Has Results",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "auto",
+              "manual",
+              "import"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "link_count": {
+            "title": "Link Count",
+            "type": "integer"
+          },
+          "node_count": {
+            "title": "Node Count",
+            "type": "integer"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "parent_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Number"
+          }
+        },
+        "required": [
+          "number",
+          "kind",
+          "label",
+          "parent_number",
+          "created_at",
+          "content_sha256",
+          "node_count",
+          "link_count"
+        ],
+        "title": "VersionOut",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Diseño y simulación de redes de agua potable. Motor único: OWA-EPANET 2.3.5 (backend).",
+    "title": "Trazo Hidráulico API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/catalog/pipes": {
+      "get": {
+        "operationId": "list_pipes_api_catalog_pipes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogPipeOut"
+                  },
+                  "title": "Response List Pipes Api Catalog Pipes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Catálogo de tuberías PVC y HDPE",
+        "tags": [
+          "catálogo y motor"
+        ]
+      }
+    },
+    "/api/design-profiles": {
+      "get": {
+        "operationId": "list_profiles_api_design_profiles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DesignProfileOut"
+                  },
+                  "title": "Response List Profiles Api Design Profiles Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Perfiles de criterios de diseño",
+        "tags": [
+          "catálogo y motor"
+        ]
+      }
+    },
+    "/api/engine": {
+      "get": {
+        "operationId": "get_engine_api_engine_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngineInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Versión verificada del motor hidráulico",
+        "tags": [
+          "catálogo y motor"
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Api Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Estado de la API, la base de datos y la caché",
+        "tags": [
+          "sistema"
+        ]
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "operationId": "list_projects_api_projects_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectOut"
+                  },
+                  "title": "Response List Projects Api Projects Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Listar proyectos",
+        "tags": [
+          "proyectos"
+        ]
+      },
+      "post": {
+        "operationId": "create_project_api_projects_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Crear proyecto",
+        "tags": [
+          "proyectos"
+        ]
+      }
+    },
+    "/api/projects/import": {
+      "post": {
+        "operationId": "import_project_api_projects_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_project_api_projects_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Importar un archivo .inp como proyecto nuevo",
+        "tags": [
+          "proyectos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}": {
+      "delete": {
+        "operationId": "delete_project_api_projects__project_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Eliminar proyecto y sus versiones",
+        "tags": [
+          "proyectos"
+        ]
+      },
+      "get": {
+        "operationId": "get_project_api_projects__project_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener proyecto",
+        "tags": [
+          "proyectos"
+        ]
+      },
+      "patch": {
+        "operationId": "update_project_api_projects__project_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar datos del proyecto",
+        "tags": [
+          "proyectos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/export.inp": {
+      "get": {
+        "operationId": "export_inp_api_projects__project_id__export_inp_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar una versión como .inp",
+        "tags": [
+          "proyectos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/network": {
+      "get": {
+        "operationId": "get_network_api_projects__project_id__network_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Número de versión (última si se omite)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número de versión (última si se omite)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkDocument"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Red de una versión como GeoJSON",
+        "tags": [
+          "red y simulación"
+        ]
+      },
+      "put": {
+        "operationId": "put_network_api_projects__project_id__network_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NetworkSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkSaveResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "La versión base no es la última"
+          },
+          "422": {
+            "description": "Red con errores de estructura"
+          }
+        },
+        "summary": "Guardar la red (crea una versión nueva inmutable)",
+        "tags": [
+          "red y simulación"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/runs/{run_id}": {
+      "get": {
+        "operationId": "get_run_api_projects__project_id__runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resultados de una corrida guardada",
+        "tags": [
+          "red y simulación"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/simulate": {
+      "post": {
+        "operationId": "simulate_api_projects__project_id__simulate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationBlocked"
+                }
+              }
+            },
+            "description": "Errores bloqueantes: no se ejecutó"
+          }
+        },
+        "summary": "Simular una versión del modelo (síncrono)",
+        "tags": [
+          "red y simulación"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/validate": {
+      "post": {
+        "operationId": "validate_api_projects__project_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validar una versión o una red en edición",
+        "tags": [
+          "red y simulación"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/versions": {
+      "get": {
+        "operationId": "list_versions_api_projects__project_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VersionOut"
+                  },
+                  "title": "Response List Versions Api Projects  Project Id  Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Listar versiones (más reciente primero)",
+        "tags": [
+          "proyectos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/versions/{number}": {
+      "get": {
+        "operationId": "get_version_api_projects__project_id__versions__number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "title": "Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener una versión",
+        "tags": [
+          "proyectos"
+        ]
+      }
+    },
+    "/api/roughness-meaning": {
+      "get": {
+        "operationId": "roughness_meaning_api_roughness_meaning_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Roughness Meaning Api Roughness Meaning Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Significado de la rugosidad por fórmula",
+        "tags": [
+          "catálogo y motor"
+        ]
+      }
+    }
+  }
+}

@@ -136,6 +136,8 @@ def _extract(ph, si: dict[str, list[str]]):
                                minimum_pressure=float(pmin), required_pressure=float(preq),
                                pressure_exponent=float(pexp) if pexp > 0 else 0.5, extra=extra)
 
+    si["CURVES"] = _precise_curves(ph, si.get("CURVES", []))
+    si["CONTROLS"] = _precise_controls(ph, si.get("CONTROLS", []))
     aux = {name.lower(): "\n".join(lines) for name, lines in si.items() if name in PASSTHROUGH and lines}
 
     status_lines: dict[str, str] = {}
@@ -231,6 +233,56 @@ def _extract(ph, si: dict[str, list[str]]):
     model = NetworkModel(title="\n".join(title_lines), options=options, aux=aux,
                          network=NetworkFeatureCollection(features=[*nodes, *links]))
     return model, raw_xy
+
+
+def _num(x: float) -> str:
+    return f"{float(x):.12g}"
+
+
+def _precise_curves(ph, lines: list[str]) -> list[str]:
+    """Reemplaza los valores X/Y de [CURVES] (4 decimales en el .inp SI) por los de doble precisión del toolkit."""
+    points: dict[str, list[tuple[float, float]]] = {}
+    for c in range(1, en.getcount(ph, en.CURVECOUNT) + 1):
+        cid = en.getcurveid(ph, c)
+        points[cid] = [tuple(en.getcurvevalue(ph, c, k)) for k in range(1, en.getcurvelen(ph, c) + 1)]
+    used: dict[str, int] = {}
+    out = []
+    for line in lines:
+        toks = line.split()
+        if line.strip().startswith(";") or len(toks) < 3 or toks[0] not in points:
+            out.append(line)
+            continue
+        k = used.get(toks[0], 0)
+        used[toks[0]] = k + 1
+        if k < len(points[toks[0]]):
+            x, y = points[toks[0]][k]
+            toks[1], toks[2] = _num(x), _num(y)
+        out.append(" " + "\t".join(toks))
+    return out
+
+
+def _precise_controls(ph, lines: list[str]) -> list[str]:
+    """Reemplaza consigna y nivel de cada control simple por los valores de doble precisión del toolkit."""
+    data = [en.getcontrol(ph, i) for i in range(1, en.getcount(ph, en.CONTROLCOUNT) + 1)]
+    out, k = [], 0
+    for line in lines:
+        s = line.strip()
+        if not s or s.startswith(";") or not s.upper().startswith("LINK"):
+            out.append(line)
+            continue
+        if k < len(data):
+            ctype, _link, setting, _node, level = data[k]
+            toks = s.split()
+            if len(toks) > 2 and re.match(r"^-?[\d.]+$", toks[2]):
+                toks[2] = _num(setting)
+            up = [t.upper() for t in toks]
+            for kw in ("ABOVE", "BELOW"):
+                if kw in up and up.index(kw) + 1 < len(toks):
+                    toks[up.index(kw) + 1] = _num(level)
+            line = " " + " ".join(toks)
+        k += 1
+        out.append(line)
+    return out
 
 
 def _georeference(model: NetworkModel, raw_xy: dict, crs: str, length_srid: int,
