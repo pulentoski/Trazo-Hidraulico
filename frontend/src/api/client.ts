@@ -227,9 +227,9 @@ export const api = {
     if (!res.ok) fail(res.status, body);
     return body;
   },
-  mapsConfig: () => unwrap<{ api_key?: string | null; map_id?: string | null; source: "db" | "none" }>(client.GET("/api/maps/config")),
+  mapsConfig: () => unwrap<{ provider?: "google" | "osm" | "auto"; api_key?: string | null; map_id?: string | null; source: "db" | "none" }>(client.GET("/api/maps/config")),
   mapsStatus: () => unwrap<MapsStatus>(client.GET("/api/admin/maps")),
-  saveMaps: (body: { api_key?: string; map_id?: string }) => unwrap<MapsStatus>(client.PUT("/api/admin/maps", { body })),
+  saveMaps: (body: { provider?: "google" | "osm" | "auto"; api_key?: string; map_id?: string }) => unwrap<MapsStatus>(client.PUT("/api/admin/maps", { body })),
   deleteMaps: () => unwrap<MapsStatus>(client.DELETE("/api/admin/maps")),
   summary: (id: string, q: { version?: number; scenario?: string; period?: number | null }) =>
     unwrap<SummaryResult>(client.GET("/api/projects/{project_id}/summary", {

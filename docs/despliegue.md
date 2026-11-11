@@ -107,9 +107,15 @@ sus administradores.
 - Servicio `backup`: respaldo diario a las `BACKUP_TIME` (03:30, hora de `TZ`) con retención de
   `BACKUP_RETENTION_DAYS` días (14) en `BACKUP_DIR` (`/var/backups/trazo-hidraulico`).
 
-## Mapa base (Google Maps)
+## Mapa base (OpenStreetMap o Google Maps)
 
-La key se ingresa en **Configuración → Mapa base** con el superadministrador y queda cifrada en la base
+Sin key, el mapa base es OpenStreetMap con MapLibre: teselas de `tile.openstreetmap.org`, satélite opcional de
+`server.arcgisonline.com` (Esri World Imagery) y búsqueda de direcciones con `nominatim.openstreetmap.org`, cada uno
+con su atribución en el mapa. Son servicios públicos con políticas de uso justo (sin uso masivo; Nominatim, una
+consulta por búsqueda): para mucho tráfico conviene un servidor de teselas propio o contratado. El proveedor se
+elige en **Configuración → Mapa base** (automático, Google Maps u OpenStreetMap) y se aplica sin reconstruir.
+
+La key de Google se ingresa en **Configuración → Mapa base** con el superadministrador y queda cifrada en la base
 (Fernet) con `SETTINGS_SECRET_KEY` del `.env` (`make env` la agrega si falta). Respalde el `.env`: sin esa clave
 la key guardada no se puede leer y hay que volver a ingresarla. El frontend la pide en tiempo de ejecución
 (`/api/maps/config`), así que guardarla no requiere reconstruir contenedores.
@@ -119,7 +125,8 @@ la key guardada no se puede leer y hay que volver a ingresarla. El frontend la p
 - Autenticación propia (ver [autenticacion.md](autenticacion.md)): Argon2id, bloqueo temporal tras 5 intentos,
   límite de 10 ingresos por minuto e IP, cookie `HttpOnly` + `Secure` + `SameSite=Strict`, TOTP para
   administradores. El basic auth de Caddy quedó como barrera adicional opcional (`BASIC_AUTH_ENABLED=false`).
-- Cabeceras (Caddy): `Content-Security-Policy` (solo orígenes propios y los de Google Maps; `frame-ancestors
+- Cabeceras (Caddy): `Content-Security-Policy` (solo orígenes propios, los de Google Maps y los de OpenStreetMap,
+  Esri y Nominatim para el mapa sin key; `frame-ancestors
   'none'`, `object-src 'none'`), `Strict-Transport-Security` de un año con dominio (`HSTS_ENABLED=true`),
   `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Cross-Origin-Opener-Policy`,
   `Cross-Origin-Resource-Policy`, `Permissions-Policy` y `Cache-Control: no-store` en `/api`.

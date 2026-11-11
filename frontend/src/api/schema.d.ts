@@ -3734,6 +3734,13 @@ export interface components {
             /** Map Id */
             map_id?: string | null;
             /**
+             * Provider
+             * @description google, osm (OpenStreetMap, sin key) o auto (Google si hay key)
+             * @default auto
+             * @enum {string}
+             */
+            provider: "google" | "osm" | "auto";
+            /**
              * Source
              * @description db = guardada desde Configuración; none = usar el respaldo del frontend (VITE_GOOGLE_MAPS_API_KEY) si lo hay
              * @enum {string}
@@ -3757,6 +3764,12 @@ export interface components {
             /** Map Id */
             map_id: string | null;
             /**
+             * Provider
+             * @default auto
+             * @enum {string}
+             */
+            provider: "google" | "osm" | "auto";
+            /**
              * Unreadable
              * @description Hay una key guardada que no se puede descifrar (cambió la clave)
              */
@@ -3778,6 +3791,11 @@ export interface components {
              * @description Map ID (vacío lo borra; omitir lo conserva)
              */
             map_id?: string | null;
+            /**
+             * Provider
+             * @description Proveedor del mapa base (omitir para conservar)
+             */
+            provider?: ("google" | "osm" | "auto") | null;
         };
         /** Me */
         Me: {

@@ -5118,6 +5118,17 @@
             ],
             "title": "Map Id"
           },
+          "provider": {
+            "default": "auto",
+            "description": "google, osm (OpenStreetMap, sin key) o auto (Google si hay key)",
+            "enum": [
+              "google",
+              "osm",
+              "auto"
+            ],
+            "title": "Provider",
+            "type": "string"
+          },
           "source": {
             "description": "db = guardada desde Configuración; none = usar el respaldo del frontend (VITE_GOOGLE_MAPS_API_KEY) si lo hay",
             "enum": [
@@ -5167,6 +5178,16 @@
               }
             ],
             "title": "Map Id"
+          },
+          "provider": {
+            "default": "auto",
+            "enum": [
+              "google",
+              "osm",
+              "auto"
+            ],
+            "title": "Provider",
+            "type": "string"
           },
           "unreadable": {
             "description": "Hay una key guardada que no se puede descifrar (cambió la clave)",
@@ -5236,6 +5257,23 @@
             ],
             "description": "Map ID (vacío lo borra; omitir lo conserva)",
             "title": "Map Id"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "enum": [
+                  "google",
+                  "osm",
+                  "auto"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Proveedor del mapa base (omitir para conservar)",
+            "title": "Provider"
           }
         },
         "title": "MapsUpdate",

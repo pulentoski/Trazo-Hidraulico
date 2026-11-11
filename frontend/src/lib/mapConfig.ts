@@ -1,13 +1,19 @@
-// Configuración del mapa base en tiempo de ejecución: la key y el Map ID guardados por el superadministrador
+// Configuración del mapa base en tiempo de ejecución: proveedor, key y Map ID guardados por el superadministrador
 // (Configuración → Mapa base) llegan desde /api/maps/config; las variables VITE_ quedan solo como respaldo.
-// La key nunca se muestra en la interfaz.
+// La key nunca se muestra en la interfaz. Sin key de Google, el mapa base es OpenStreetMap (MapLibre).
 import { create } from "zustand";
 import { api } from "../api/client";
+import type { MapProvider } from "./mapBase";
+
+export type { BaseKind, MapProvider } from "./mapBase";
+export { baseOf } from "./mapBase";
 
 const BUILD_KEY: string = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 const BUILD_MAP_ID: string = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || "";
 
+
 interface MapConfigState {
+  provider: MapProvider;
   apiKey: string;
   mapId: string;
   source: "db" | "build" | "none";
@@ -16,19 +22,22 @@ interface MapConfigState {
 }
 
 export const useMapConfig = create<MapConfigState>()((set) => ({
+  provider: "auto",
   apiKey: "",
   mapId: "",
   source: "none",
   loaded: false,
   load: async () => {
+    let provider: MapProvider = "auto";
     try {
       const c = await api.mapsConfig();
+      provider = c.provider ?? "auto";
       if (c.api_key) {
-        set({ apiKey: c.api_key, mapId: c.map_id ?? "", source: "db", loaded: true });
+        set({ provider, apiKey: c.api_key, mapId: c.map_id ?? "", source: "db", loaded: true });
         return;
       }
     } catch { /* sin sesión o API no disponible: respaldo */ }
-    set({ apiKey: BUILD_KEY, mapId: BUILD_KEY ? BUILD_MAP_ID : "", source: BUILD_KEY ? "build" : "none", loaded: true });
+    set({ provider, apiKey: BUILD_KEY, mapId: BUILD_KEY ? BUILD_MAP_ID : "", source: BUILD_KEY ? "build" : "none", loaded: true });
   },
 }));
 

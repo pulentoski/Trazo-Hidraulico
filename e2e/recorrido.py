@@ -38,6 +38,7 @@ TOOLS = ["V", "B", "N", "T", "E", "R", "M", "X", "D", "C", "L", "G", "W", "F"]
 IGNORED = [
     re.compile(r"/tiles/.+\.png"),  # teselas fuera de los límites de la ortofoto: 404 esperado
     re.compile(r"maps\.googleapis|gstatic"),
+    re.compile(r"tile\.openstreetmap\.org|server\.arcgisonline\.com|nominatim\.openstreetmap\.org"),  # servicios externos del mapa OSM
 ]
 
 problems: list[str] = []

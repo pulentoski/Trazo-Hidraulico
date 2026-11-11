@@ -3,10 +3,13 @@
 Regresión del mapa que, al volver a abrir un proyecto, dejaba la capa de la red en 0×0: la rueda no acercaba, el
 arrastre no movía el mapa, los botones +/− hacían desaparecer la red e «ir al elemento» no llevaba a ningún lado.
 
-Se ejecuta dos veces:
-  · con la key de Google Maps guardada en Configuración (se omite si la plataforma no tiene una), verificando que el
+Se ejecuta con cada mapa base:
+  · Google Maps con la key guardada en Configuración (se omite si la plataforma no tiene una), verificando que el
     mapa de Google recibe los gestos (gestureHandling «greedy») y que ninguna capa transparente los intercepta;
-  · sin key (la configuración del mapa se intercepta y llega vacía): lienzo neutro, mismos gestos sobre la red.
+  · OpenStreetMap elegido como proveedor (aunque haya key): MapLibre recibe los gestos, atribución de OSM y de Esri
+    (satélite) y búsqueda de direcciones con Nominatim (respuesta simulada: no depende del servicio externo);
+  · sin key (proveedor automático): OpenStreetMap por defecto;
+  · sin WebGL (MapLibre no puede iniciar): lienzo neutro, mismos gestos sobre la red.
 
 En cada caso: abrir, dibujar un nudo y guardar; luego volver al menú y entrar de nuevo 3 veces. En cada vuelta se
 verifica zoom con rueda, arrastre, red visible tras + y −, «Centrar en la red» e «ir al elemento» desde 4 lugares
@@ -70,25 +73,25 @@ def empty_point(page: Page) -> tuple[float, float]:
     for fx, fy in ((0.5, 0.75), (0.3, 0.7), (0.7, 0.7), (0.5, 0.5), (0.25, 0.4), (0.75, 0.4)):
         x, y = box["x"] + box["width"] * fx, box["y"] + box["height"] * fy
         free = page.evaluate("""([x, y]) => { const el = document.elementFromPoint(x, y);
-          return !!el && !el.closest('[data-t], .map-controls, .legend, .scale-bar, .hour-slider, .map-notice'); }""", [x, y])
+          return !!el && !el.closest('[data-t], .map-controls, .legend, .scale-bar, .hour-slider, .map-notice, .osm-attrib'); }""", [x, y])
         if free:
             return x, y
     raise AssertionError("no hay un punto libre del mapa para arrastrar")
 
 
-def check_gestures(page: Page, google: bool) -> None:
+def check_gestures(page: Page, base: str) -> None:
     box = map_box(page)
     svg = page.locator(".net-layer")
     assert abs(float(svg.get_attribute("width")) - box["width"]) < 2, "la capa de la red no cubre el mapa"
     assert abs(float(svg.get_attribute("height")) - box["height"]) < 2, "la capa de la red no cubre el mapa"
-    if google:
-        expect(page.locator(".map-base .gm-style").first).to_be_attached(timeout=20000)
+    expect_base(page, base)
     page.get_by_role("button", name="Centrar en la red").click()
     settle(page)
     x, y = empty_point(page)
-    if google:  # el fondo debe llegar al mapa de Google (sin capas transparentes encima)
+    if base != "blank":  # el fondo debe llegar al mapa base (sin capas transparentes encima)
         on_map = page.evaluate("([x, y]) => !!document.elementFromPoint(x, y)?.closest('.map-base')", [x, y])
-        assert on_map, "una capa intercepta los gestos sobre el mapa de Google"
+        top = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return e ? `${e.tagName}.${e.getAttribute('class')}` : null; }", [x, y])
+        assert on_map, f"una capa intercepta los gestos sobre el mapa base ({base}): {top}"
 
     # Rueda: acerca y aleja.
     z0 = zoom_of(page)
@@ -114,9 +117,9 @@ def check_gestures(page: Page, google: bool) -> None:
     page.mouse.up()
     settle(page)
     after = node_pos(page, uid)
-    # Google descarta unos px al iniciar el arrastre (umbral) y puede sumar algo de inercia: se exige la dirección y
-    # una magnitud cercana a la del gesto; sin key, la capa propia desplaza exactamente lo arrastrado.
-    tol = 30 if google else 3
+    # El mapa base descarta unos px al iniciar el arrastre (umbral) y puede sumar algo de inercia: se exige la dirección
+    # y una magnitud cercana a la del gesto; en el lienzo neutro, la capa propia desplaza exactamente lo arrastrado.
+    tol = 3 if base == "blank" else 30
     assert before and after and abs(after[0] - before[0] + 90) < tol and abs(after[1] - before[1] + 50) < tol, \
         f"el arrastre no movió el mapa: {before} → {after}"
 
@@ -166,6 +169,41 @@ def check_goto(page: Page) -> None:
     page.keyboard.press("Escape")
 
 
+def expect_base(page: Page, base: str) -> None:
+    if base == "google":
+        expect(page.locator(".map-base .gm-style").first).to_be_attached(timeout=20000)
+    elif base == "osm":
+        expect(page.locator(".map-base.osm canvas.maplibregl-canvas")).to_be_attached(timeout=20000)
+        expect(page.locator(".osm-attrib")).to_contain_text("OpenStreetMap", timeout=20000)
+        expect(page.locator(".map-base .gm-style")).to_have_count(0)
+    else:
+        expect(page.locator(".map-base.blank")).to_be_attached()
+        expect(page.locator(".map-base.osm, .map-base .gm-style")).to_have_count(0)
+
+
+def check_osm_extras(page: Page) -> None:
+    """Satélite de Esri con su atribución y búsqueda de direcciones con Nominatim."""
+    page.get_by_role("group", name="Tipo de mapa").get_by_role("button", name="Satélite").click()
+    expect(page.locator(".osm-attrib")).to_contain_text("Esri", timeout=20000)
+    page.get_by_role("group", name="Tipo de mapa").get_by_role("button", name="Calle").click()
+    expect(page.locator(".osm-attrib")).to_contain_text("OpenStreetMap", timeout=20000)
+    asked: list[str] = []
+
+    def fake(route):
+        asked.append(route.request.url)
+        route.fulfill(status=200, content_type="application/json", headers={"Access-Control-Allow-Origin": "*"},
+                      body=json.dumps([{"lat": "-29.9027", "lon": "-71.2519", "display_name": "La Serena, Chile"}]))
+    page.route("https://nominatim.openstreetmap.org/**", fake)
+    page.get_by_role("button", name="Centrar en la red").click()
+    settle(page)
+    page.get_by_label("Buscar dirección").fill("La Serena")
+    page.get_by_label("Buscar dirección").press("Enter")
+    expect(page.locator(".scale-bar")).to_have_attribute("title", "Zoom 17", timeout=10000)
+    settle(page)
+    assert asked and "q=La+Serena" in asked[0], f"no se consultó Nominatim: {asked}"
+    page.unroute("https://nominatim.openstreetmap.org/**")
+
+
 def open_project(page: Page) -> None:
     page.get_by_role("article", name=NAME).get_by_role("button", name="Abrir").click()
     expect(page.locator(".net-layer g.node").first).to_be_attached(timeout=30000)
@@ -178,21 +216,30 @@ def back_to_menu(page: Page) -> None:
     expect(page.get_by_role("article", name=NAME)).to_be_visible()
 
 
-def run(browser, state: dict, google: bool) -> None:
+def run(browser, state: dict, mode: str) -> None:
+    """mode: google | osm (proveedor elegido) | sin-key (automático sin key → OSM) | sin-webgl (lienzo neutro)."""
+    base = {"google": "google", "osm": "osm", "sin-key": "osm", "sin-webgl": "blank"}[mode]
     ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="es-CL", storage_state=state,
                               ignore_https_errors=INSECURE)
     page = ctx.new_page()
     watch(page)
-    if not google:  # lienzo neutro: la configuración del mapa llega sin key
-        page.route("**/api/maps/config", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(
-            {"provider": "auto", "api_key": None, "map_id": None, "source": "none"})))
+
+    def config(route):
+        cfg = route.fetch().json()
+        if mode == "osm":
+            cfg["provider"] = "osm"
+        else:
+            cfg.update({"provider": "auto", "api_key": None, "map_id": None, "source": "none"})
+        route.fulfill(status=200, content_type="application/json", body=json.dumps(cfg))
+    if mode != "google":
+        page.route("**/api/maps/config", config)
+    if mode == "sin-webgl":  # navegador sin WebGL: MapLibre no inicia y el editor queda sobre el lienzo neutro
+        page.add_init_script("""(() => { const g = HTMLCanvasElement.prototype.getContext;
+          HTMLCanvasElement.prototype.getContext = function (t, ...a) { return /webgl/.test(String(t)) ? null : g.call(this, t, ...a); }; })()""")
     try:
         page.goto(f"{BASE}/")
         open_project(page)
-        if google:
-            expect(page.locator(".map-base .gm-style").first).to_be_attached(timeout=20000)
-        else:
-            expect(page.locator(".map-base.blank")).to_be_attached()
+        expect_base(page, base)
         log("dibujar un tramo entre dos nudos y guardar")
         links0 = page.locator('.net-layer [data-t="link"].hit').count()
         box = map_box(page)
@@ -212,9 +259,12 @@ def run(browser, state: dict, google: bool) -> None:
             back_to_menu(page)
             open_project(page)
             log(f"vuelta {i}: gestos y botones")
-            check_gestures(page, google)
+            check_gestures(page, base)
             log(f"vuelta {i}: ir al elemento")
             check_goto(page)
+        if base == "osm":
+            log("satélite Esri y búsqueda Nominatim")
+            check_osm_extras(page)
     except Exception:
         page.screenshot(path=str(ROOT / "e2e" / "fallo.png"))
         print("Problemas hasta el fallo:", *dict.fromkeys(problems), sep="\n  - ")
@@ -237,11 +287,15 @@ def main() -> int:
         try:
             if has_key:
                 log("== mapa de Google (key de Configuración) ==")
-                run(browser, state, google=True)
+                run(browser, state, "google")
             else:
                 log("== mapa de Google: omitido (la plataforma no tiene key guardada) ==")
-            log("== lienzo neutro (sin key) ==")
-            run(browser, state, google=False)
+            log("== OpenStreetMap (proveedor elegido) ==")
+            run(browser, state, "osm")
+            log("== sin key: OpenStreetMap por defecto ==")
+            run(browser, state, "sin-key")
+            log("== sin WebGL: lienzo neutro ==")
+            run(browser, state, "sin-webgl")
         finally:
             api.delete(f"/api/projects/{pid}")
             browser.close()

@@ -18,6 +18,8 @@ from app.models import PlatformSetting
 
 MAPS_KEY = "google_maps_api_key"
 MAPS_ID = "google_maps_map_id"
+MAPS_PROVIDER = "map_provider"  # google | osm; sin valor = automático (Google si hay key, si no OpenStreetMap)
+PROVIDERS = ("google", "osm")
 KEY_RE = re.compile(r"^[A-Za-z0-9_\-]{20,200}$")
 MAP_ID_RE = re.compile(r"^[A-Za-z0-9_\-]{1,100}$")
 
@@ -75,6 +77,18 @@ def maps_config(session: Session) -> tuple[str | None, str | None]:
     return _value(session, MAPS_KEY), _value(session, MAPS_ID)
 
 
+def provider(session: Session) -> str:
+    """Proveedor elegido por el superadministrador: google, osm o auto."""
+    v = _value(session, MAPS_PROVIDER)
+    return v if v in PROVIDERS else "auto"
+
+
+def save_provider(session: Session, value: str, who: str | None) -> None:
+    if value not in (*PROVIDERS, "auto"):
+        raise SettingsError("Proveedor de mapa base desconocido.")
+    _put(session, MAPS_PROVIDER, None if value == "auto" else value, encrypt=False, who=who)
+
+
 def hint(key: str | None) -> str | None:
     """Solo los primeros 4 y los últimos 4 caracteres (nunca la key completa)."""
     if not key:
@@ -86,7 +100,7 @@ def maps_status(session: Session) -> dict:
     key, map_id = maps_config(session)
     row = _get(session, MAPS_KEY) or _get(session, MAPS_ID)
     stored_unreadable = _get(session, MAPS_KEY) is not None and key is None
-    return {"configured": bool(key), "key_hint": hint(key), "map_id": map_id,
+    return {"configured": bool(key), "key_hint": hint(key), "map_id": map_id, "provider": provider(session),
             "updated_at": row.updated_at if row else None, "updated_by": row.updated_by if row else None,
             "encryption_ready": encryption_ready(), "unreadable": stored_unreadable}
 

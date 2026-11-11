@@ -1,6 +1,6 @@
 # Trazo Hidráulico — Etapas 1 a 5
 
-Plataforma local para diseñar y simular redes de agua potable. Editor tipo CAD/GIS sobre Google Maps,
+Plataforma local para diseñar y simular redes de agua potable. Editor tipo CAD/GIS sobre OpenStreetMap o Google Maps,
 motor hidráulico **OWA-EPANET 2.3.5** en el backend (único motor), resultados reproducibles y ligados
 a versiones inmutables del modelo. Unidades SI, caudal en L/s.
 
@@ -16,8 +16,11 @@ a versiones inmutables del modelo. Unidades SI, caudal en L/s.
 make env          # crea .env desde .env.example con claves aleatorias para PostgreSQL y Redis
 ```
 
-Google Maps es opcional. Sin key, el editor y la simulación funcionan igual sobre un lienzo neutro
-y se muestra un aviso en lugar del mapa. Para usar el mapa base:
+El mapa base no necesita key: sin key de Google, el editor usa **OpenStreetMap** (MapLibre) con calles de OSM,
+satélite opcional de **Esri World Imagery** (cada uno con su atribución) y búsqueda de direcciones con **Nominatim**.
+En **Configuración → Mapa base** el superadministrador elige el proveedor: *Automático* (Google si hay key; si no,
+OpenStreetMap), *Google Maps* u *OpenStreetMap*. Si el navegador no tiene WebGL, el editor sigue sobre un lienzo
+neutro. Para usar Google Maps:
 
 1. En Google Cloud, habilite **Maps JavaScript API** (y **Geocoding API** para la búsqueda de dirección).
 2. Cree una API key con **restricción de aplicación «Sitios web»** (el dominio publicado, o

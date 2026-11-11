@@ -23,13 +23,13 @@ def test_solo_superadmin_gestiona_y_todos_leen(client, admin):
     assert client.put("/api/admin/maps", json={"api_key": KEY}).status_code == 404
     st = admin.get("/api/admin/maps").json()
     assert st["encryption_ready"] and not st["configured"]
-    assert client.get("/api/maps/config").json() == {"api_key": None, "map_id": None, "source": "none"}
+    assert client.get("/api/maps/config").json() == {"provider": "auto", "api_key": None, "map_id": None, "source": "none"}
 
     st = admin.put("/api/admin/maps", json={"api_key": KEY, "map_id": "mapa-oscuro-01"}).json()
     assert st["configured"] and st["key_hint"] == "AIza…fXYZ" and st["map_id"] == "mapa-oscuro-01"
     assert KEY not in str(st)
     cfg = client.get("/api/maps/config").json()
-    assert cfg == {"api_key": KEY, "map_id": "mapa-oscuro-01", "source": "db"}
+    assert cfg == {"provider": "auto", "api_key": KEY, "map_id": "mapa-oscuro-01", "source": "db"}
     # En la base queda cifrada.
     with get_sessionmaker()() as s:
         row = s.scalar(select(PlatformSetting).where(PlatformSetting.key == "google_maps_api_key"))
@@ -61,3 +61,12 @@ def test_listado_con_clientes_y_km(client):
     pid = create_demo(client, "APR listado")
     p = next(x for x in client.get("/api/projects").json() if x["id"] == pid)
     assert p["client_count"] == 30 and 2.0 < p["network_km"] < 2.6 and p["latest_version"] == 1
+
+
+def test_proveedor_del_mapa_base(client, admin):
+    assert client.get("/api/maps/config").json()["provider"] == "auto"
+    st = admin.put("/api/admin/maps", json={"provider": "osm"}).json()
+    assert st["provider"] == "osm" and not st["configured"]
+    assert client.get("/api/maps/config").json()["provider"] == "osm"
+    assert admin.put("/api/admin/maps", json={"provider": "bing"}).status_code == 422
+    assert admin.put("/api/admin/maps", json={"provider": "auto"}).json()["provider"] == "auto"

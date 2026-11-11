@@ -1,10 +1,12 @@
-// Configuración → Mapa base: estado de la key de Google Maps para todos; el superadministrador la ingresa, prueba
-// y borra. Se guarda cifrada en la base y el mapa se activa sin reconstruir contenedores.
+// Configuración → Mapa base: proveedor (automático, Google Maps u OpenStreetMap) y estado de la key de Google Maps
+// para todos; el superadministrador elige el proveedor y gestiona la key (cifrada en la base). El editor lo aplica
+// sin reconstruir contenedores. Sin key de Google, el mapa base es OpenStreetMap.
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { MapsStatus } from "../api/types";
 import { fmtDate } from "../lib/format";
-import { testMapsKey, useMapConfig } from "../lib/mapConfig";
+import type { MapProvider } from "../lib/mapConfig";
+import { baseOf, testMapsKey, useMapConfig } from "../lib/mapConfig";
 import { useAuth } from "../state/auth";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
@@ -40,13 +42,23 @@ export function MapBaseSection() {
     try {
       const body: { api_key?: string; map_id?: string } = { map_id: mapId };
       if (key.trim()) body.api_key = key.trim();
-      await after(await api.saveMaps(body), "Mapa base guardado: el editor ya usa Google Maps.");
+      await after(await api.saveMaps(body), cfg.provider === "osm" ? "Key guardada (el proveedor elegido sigue siendo OpenStreetMap)." : "Mapa base guardado: el editor ya usa Google Maps.");
     } catch (e) { toast(errorText(e), "error"); } finally { setBusy(false); }
   };
   const remove = async () => {
-    if (!window.confirm("¿Borrar la key y el Map ID guardados? El editor volverá al lienzo neutro (o a la key del respaldo).")) return;
+    if (!window.confirm("¿Borrar la key y el Map ID guardados? El editor usará OpenStreetMap (o la key del respaldo).")) return;
     setBusy(true);
     try { await after(await api.deleteMaps(), "Key borrada."); } catch (e) { toast(errorText(e), "error"); } finally { setBusy(false); }
+  };
+  const setProvider = async (provider: MapProvider) => {
+    setBusy(true);
+    try {
+      const st = await api.saveMaps({ provider });
+      setStatus(st);
+      await cfg.load();
+      const eff = baseOf(provider, useMapConfig.getState().apiKey);
+      toast(`Proveedor guardado: el editor usa ${eff === "google" ? "Google Maps" : "OpenStreetMap"}.`);
+    } catch (e) { toast(errorText(e), "error"); } finally { setBusy(false); }
   };
   const probe = async () => {
     setTest(null);
@@ -59,12 +71,16 @@ export function MapBaseSection() {
 
   const state = cfg.source === "db" ? <span className="ok-text">● Configurada desde esta pantalla</span>
     : cfg.source === "build" ? <span className="ok-text">● Configurada en el servidor (respaldo VITE_GOOGLE_MAPS_API_KEY)</span>
-      : <span className="warn-text">● Sin key: el editor usa un lienzo neutro</span>;
+      : <span className="muted">● Sin key</span>;
+  const effective = baseOf(cfg.provider, cfg.apiKey);
+  const providerText = { auto: "Automático", google: "Google Maps", osm: "OpenStreetMap" }[cfg.provider];
 
   return (
     <section className="card" aria-label="Mapa base">
       <h2>Mapa base</h2>
       <dl className="kv">
+        <dt>Mapa del editor</dt><dd>{cfg.loaded ? <span className="ok-text">● {effective === "google" ? "Google Maps" : "OpenStreetMap (sin key)"}</span> : "…"}
+          {cfg.loaded && <span className="muted small"> · proveedor: {providerText}</span>}</dd>
         <dt>Google Maps</dt><dd>{cfg.loaded ? state : "…"}</dd>
         <dt>Map ID (estilo vectorial)</dt><dd>{cfg.mapId ? "Configurado" : "No configurado (tema oscuro del mapa no disponible)"}</dd>
       </dl>
@@ -72,6 +88,17 @@ export function MapBaseSection() {
       {superadmin && status && (
         <div className="maps-admin">
           <h3>Administración de la plataforma</h3>
+          <fieldset className="field stacked provider-choice" aria-label="Proveedor del mapa base" disabled={busy}>
+            <legend>Proveedor del mapa base</legend>
+            {([["auto", "Automático", "Google Maps si hay key guardada; si no, OpenStreetMap."],
+              ["google", "Google Maps", "Requiere la key de abajo (sin key se usa OpenStreetMap)."],
+              ["osm", "OpenStreetMap", "Sin key ni costo: calles de OSM y satélite de Esri, con búsqueda de direcciones Nominatim."]] as const).map(([v, label, help]) => (
+              <label key={v} className="radio-row">
+                <input type="radio" name="map-provider" value={v} checked={(status.provider ?? "auto") === v} onChange={() => void setProvider(v)} />
+                <span><b>{label}</b> <span className="muted small">{help}</span></span>
+              </label>
+            ))}
+          </fieldset>
           {!status.encryption_ready && <p className="notice warn small">Falta <code>SETTINGS_SECRET_KEY</code> en el .env del servidor: sin ella no se puede guardar la key cifrada (<code>make env</code> la agrega).</p>}
           {status.unreadable && <p className="notice warn small">Hay una key guardada que no se puede leer (cambió <code>SETTINGS_SECRET_KEY</code>): vuelva a ingresarla.</p>}
           <dl className="kv compact">

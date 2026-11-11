@@ -122,6 +122,13 @@ button.link { border: 0; background: none; padding: 0; height: auto; color: var(
 .center { grid-area: center; position: relative; min-width: 0; min-height: 0; }
 .map { position: absolute; inset: 0; overflow: hidden; background: var(--canvas); }
 .map-base { position: absolute; inset: 0; }
+/* MapLibre pone position: relative en su contenedor (.maplibregl-map): se mantiene ocupando todo el mapa. */
+.map-base.osm { position: absolute; inset: 0; }
+/* OpenStreetMap (MapLibre): atribución legible sobre el mapa; calle en tema oscuro con filtro (el satélite no). */
+.osm-attrib { position: absolute; left: 0; bottom: 0; z-index: 2; max-width: 70%; padding: 1px 6px; font: 0.731rem var(--font);
+  background: color-mix(in srgb, var(--panel) 80%, transparent); color: var(--text); border-top-right-radius: 4px; }
+.osm-attrib a { color: inherit; }
+.map-base.osm-dark .maplibregl-canvas { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); }
 .map-base.blank {
   background-color: var(--canvas);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px),
@@ -789,3 +796,8 @@ a.btn.primary, a.btn.primary:visited { color: #fff; }
 /* Editor: el nombre del proyecto antes que el texto de la marca (el ícono queda) */
 @media (max-width: 1600px) { .topbar .brand span { display: none; } }
 .topbar .project-name { flex: 0 1 auto; min-width: 80px; }
+
+/* Configuración → Mapa base: proveedor */
+.provider-choice { border: 0; padding: 0; margin: 0 0 12px; }
+.provider-choice legend { font-weight: 600; margin-bottom: 6px; }
+.provider-choice .radio-row { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; cursor: pointer; }

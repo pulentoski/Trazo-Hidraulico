@@ -1,10 +1,12 @@
 import { APIProvider } from "@vis.gl/react-google-maps";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/client";
 import { LabelsControl } from "../components/LabelsControl";
 import { Legend } from "../components/Legend";
 import { ScaleBar } from "../components/ScaleBar";
-import { useMapConfig } from "../lib/mapConfig";
+import type { BaseKind } from "../lib/mapConfig";
+import { baseOf, useMapConfig } from "../lib/mapConfig";
+import { nominatim } from "../lib/nominatim";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { fitBounds, unproject, zoomAt } from "../lib/geo";
 import type { MapType } from "../state/store";
@@ -21,27 +23,31 @@ const DEFAULT_CENTER: LngLat = [
   Number(import.meta.env.VITE_DEFAULT_MAP_CENTER_LNG || -70.6693),
   Number(import.meta.env.VITE_DEFAULT_MAP_CENTER_LAT || -33.4489),
 ];
-const MAP_TYPES: { id: MapType; label: string }[] = [
+const GOOGLE_TYPES: { id: MapType; label: string }[] = [
   { id: "roadmap", label: "Calle" }, { id: "terrain", label: "Terreno" },
   { id: "satellite", label: "Satélite" }, { id: "hybrid", label: "Híbrido" },
 ];
+/** OpenStreetMap: calle (OSM) o satélite (Esri World Imagery, con su atribución). */
+const OSM_TYPES: { id: MapType; label: string }[] = [{ id: "roadmap", label: "Calle" }, { id: "satellite", label: "Satélite" }];
+const isSatellite = (t: MapType) => t === "satellite" || t === "hybrid";
 
-function AddressSearch({ onLocate }: { onLocate: (c: Camera) => void }) {
-  const geocoder = useGeocoder();
+type Geocode = (q: string) => Promise<LngLat | null>;
+
+/** Búsqueda de dirección: Geocoder de Google o Nominatim (OpenStreetMap), según el mapa base. */
+function AddressSearch({ onLocate, geocode, failText }: { onLocate: (c: Camera) => void; geocode: Geocode | null; failText: string }) {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const toast = useEditor((s) => s.toast);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!geocoder || !q.trim()) return;
+    if (!geocode || !q.trim()) return;
     setBusy(true);
     try {
-      const { results } = await geocoder.geocode({ address: q, region: "cl", language: "es" });
-      const loc = results[0]?.geometry.location;
-      if (loc) onLocate({ center: [loc.lng(), loc.lat()], zoom: 17 });
+      const pos = await geocode(q.trim());
+      if (pos) onLocate({ center: pos, zoom: 17 });
       else toast("No se encontró la dirección.", "error");
     } catch {
-      toast("La búsqueda de direcciones no está disponible (revise la API de Geocoding de la key).", "error");
+      toast(failText, "error");
     } finally {
       setBusy(false);
     }
@@ -49,10 +55,28 @@ function AddressSearch({ onLocate }: { onLocate: (c: Camera) => void }) {
   return (
     <form className="map-search" onSubmit={submit}>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar dirección…" aria-label="Buscar dirección" />
-      <button type="submit" disabled={busy || !geocoder}>{busy ? "…" : "Ir"}</button>
+      <button type="submit" disabled={busy || !geocode}>{busy ? "…" : "Ir"}</button>
     </form>
   );
 }
+
+function GoogleAddressSearch({ onLocate }: { onLocate: (c: Camera) => void }) {
+  const geocoder = useGeocoder();
+  const geocode = useMemo<Geocode | null>(() => geocoder && (async (q) => {
+    const { results } = await geocoder.geocode({ address: q, region: "cl", language: "es" });
+    const loc = results[0]?.geometry.location;
+    return loc ? [loc.lng(), loc.lat()] : null;
+  }), [geocoder]);
+  return <AddressSearch onLocate={onLocate} geocode={geocode}
+    failText="La búsqueda de direcciones no está disponible (revise la API de Geocoding de la key)." />;
+}
+
+function OsmAddressSearch({ onLocate }: { onLocate: (c: Camera) => void }) {
+  return <AddressSearch onLocate={onLocate} geocode={nominatim}
+    failText="La búsqueda de direcciones de OpenStreetMap (Nominatim) no respondió; intente de nuevo en unos segundos." />;
+}
+
+const OsmBase = lazy(() => import("./OsmBase"));
 
 /** Última vista del proyecto en este navegador (se restaura al volver a entrar). */
 function readView(pid: string): Camera | null {
@@ -83,29 +107,33 @@ function useElementSize(): [(el: HTMLDivElement | null) => void, Size, React.Ref
   return [ref, size, elRef];
 }
 
-/** Herramientas que no usan clics sobre el fondo: con Google, el mapa recibe arrastre y rueda directamente. */
+/** Herramientas que no usan clics sobre el fondo: con mapa base (Google u OSM), el mapa recibe arrastre y rueda. */
 const NAV_TOOLS = new Set(["select", "move"]);
 
 export function MapView() {
   const [ref, size, elRef] = useElementSize();
-  const { apiKey: API_KEY, loaded: mapConfigLoaded, load: loadMapConfig } = useMapConfig();
+  const { provider, apiKey: API_KEY, loaded: mapConfigLoaded, load: loadMapConfig } = useMapConfig();
   useEffect(() => { if (!mapConfigLoaded) void loadMapConfig(); }, [mapConfigLoaded, loadMapConfig]);
   const [mapFailed, setMapFailed] = useState(false);
   const ready = mapConfigLoaded && size.width > 0 && size.height > 0;
+  const wanted = baseOf(provider, API_KEY);
   // Las capas se montan una sola vez, con la configuración y el tamaño ya conocidos: un cambio posterior de
   // proveedor no reemplaza el contenedor medido (antes, la llegada de la key re-montaba .map y dejaba la capa en 0×0).
   return (
     <div className="map" ref={ref}>
-      {ready && (API_KEY
+      {ready && (wanted === "google"
         ? <APIProvider apiKey={API_KEY} language="es" region="CL" onError={() => setMapFailed(true)}>
-            <MapLayers apiKey={API_KEY} failed={mapFailed} size={size} host={elRef} />
+            <MapLayers wanted="google" googleFailed={mapFailed} size={size} host={elRef} />
           </APIProvider>
-        : <MapLayers apiKey="" failed={false} size={size} host={elRef} />)}
+        : <MapLayers wanted="osm" googleFailed={false} size={size} host={elRef} />)}
     </div>
   );
 }
 
-function MapLayers({ apiKey, failed, size, host }: { apiKey: string; failed: boolean; size: Size; host: React.RefObject<HTMLDivElement | null> }) {
+/** Mueve el mapa base de forma imperativa (Google: moveCamera; MapLibre: jumpTo). */
+interface BaseHandle { move: (c: Camera) => void }
+
+function MapLayers({ wanted, googleFailed, size, host }: { wanted: BaseKind; googleFailed: boolean; size: Size; host: React.RefObject<HTMLDivElement | null> }) {
   const pid = useEditor((s) => s.project?.id ?? "");
   // Vista inicial: la última guardada del proyecto o el encuadre de la red. El encuadre pedido al abrir queda atendido.
   const [initial] = useState<Camera>(() => {
@@ -119,8 +147,9 @@ function MapLayers({ apiKey, failed, size, host }: { apiKey: string; failed: boo
   const [camera, setCameraState] = useState<Camera>(initial);
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
-  const mapRef = useRef<google.maps.Map | null>(null);
+  const baseRef = useRef<BaseHandle | null>(null);
   const [quotaDenied, setQuotaDenied] = useState(false);
+  const [osmFailed, setOsmFailed] = useState(false);
   const cameraRequest = useEditor((s) => s.cameraRequest);
   const mapType = useEditor((s) => s.mapType);
   const theme = useEditor((s) => s.theme);
@@ -128,29 +157,39 @@ function MapLayers({ apiKey, failed, size, host }: { apiKey: string; failed: boo
   const picking = useEditor((s) => Boolean(s.mapPick));
   const setStore = useEditor((s) => s.set);
   useEffect(() => {
-    if (!apiKey) return;
+    if (wanted !== "google") return;
     let alive = true;
     api.mapLoad().then((r) => { if (alive && !r.allowed) setQuotaDenied(true); }).catch(() => undefined);
     return () => { alive = false; };
-  }, [apiKey]);
-  const useGoogle = Boolean(apiKey) && !failed && !quotaDenied;
+  }, [wanted]);
+  // Google no disponible (script, key o cuota) → OpenStreetMap; sin WebGL → lienzo neutro.
+  const googleDown = wanted === "google" && (googleFailed || quotaDenied);
+  const base: BaseKind | "blank" = wanted === "google" && !googleDown ? "google" : osmFailed ? "blank" : "osm";
   const { orthos } = useOrthos();
   const [noticeClosed, setNoticeClosed] = useState(() => {
     try { return localStorage.getItem("trazo.hideMapNotice") === "true"; } catch { return false; }
   });
   const hasOrtho = orthos.some((o) => o.status === "ready" && o.visible);
 
-  /** Mueve la cámara: con Google, el mapa es la autoridad (moveCamera) y su evento confirma la vista. */
+  /** Mueve la cámara: con mapa base, este es la autoridad (movimiento imperativo) y su evento confirma la vista. */
   const setCamera = useCallback((c: Camera) => {
     setCameraState(c);
-    mapRef.current?.moveCamera({ center: { lat: c.center[1], lng: c.center[0] }, zoom: c.zoom });
+    baseRef.current?.move(c);
   }, []);
   const onMapCamera = useCallback((c: Camera) => {
     const cur = cameraRef.current;
     if (cur.zoom === c.zoom && Math.abs(cur.center[0] - c.center[0]) < 1e-9 && Math.abs(cur.center[1] - c.center[1]) < 1e-9) return;
     setCameraState(c);
   }, []);
-  const onMap = useCallback((m: google.maps.Map | null) => { mapRef.current = m; }, []);
+  const onGoogleMap = useCallback((m: google.maps.Map | null) => {
+    baseRef.current = m && { move: (c) => m.moveCamera({ center: { lat: c.center[1], lng: c.center[0] }, zoom: c.zoom }) };
+  }, []);
+  const onOsm = useCallback((h: BaseHandle | null) => { baseRef.current = h; }, []);
+  const onWheelStep = useCallback((at: [number, number], d: number) => setCamera(zoomAt(cameraRef.current, size, at, d)), [setCamera, size]);
+  const onBackgroundClick = useCallback(() => {
+    const st = useEditor.getState();
+    if (NAV_TOOLS.has(st.tool) && !st.mapPick) st.select([]);
+  }, []);
 
   // Guarda la última vista del proyecto (para volver a entrar donde se quedó).
   useEffect(() => {
@@ -172,30 +211,38 @@ function MapLayers({ apiKey, failed, size, host }: { apiKey: string; failed: boo
   }, [cameraRequest, size, host, setCamera]);
 
   const zoom = (d: number) => setCamera(zoomAt(cameraRef.current, size, [size.width / 2, size.height / 2], d));
-  // Con Google y una herramienta de navegación, el fondo deja pasar los gestos al mapa (greedy); los elementos de la
-  // red siguen recibiendo clics. Las herramientas de dibujo, medición o selección de punto capturan el fondo y
+  // Con mapa base y una herramienta de navegación, el fondo deja pasar los gestos al mapa (greedy); los elementos de
+  // la red siguen recibiendo clics. Las herramientas de dibujo, medición o selección de punto capturan el fondo y
   // desplazan/acercan el mapa con la misma cámara.
-  const passThrough = useGoogle && NAV_TOOLS.has(tool) && !picking;
+  const passThrough = base !== "blank" && NAV_TOOLS.has(tool) && !picking;
+  const types = base === "google" ? GOOGLE_TYPES : base === "osm" ? OSM_TYPES : [];
+  const shownType = base === "osm" ? (isSatellite(mapType) ? "satellite" : "roadmap") : mapType;
 
   return (
     <>
-      {useGoogle
-        ? <GoogleBase initial={initial} mapType={mapType} theme={theme} onCamera={onMapCamera} onMap={onMap}
-            onBackgroundClick={() => { const st = useEditor.getState(); if (NAV_TOOLS.has(st.tool) && !st.mapPick) st.select([]); }} />
-        : <BlankBase camera={camera} />}
+      {base === "google" && <GoogleBase initial={initial} mapType={mapType} theme={theme} onCamera={onMapCamera} onMap={onGoogleMap}
+        onBackgroundClick={onBackgroundClick} />}
+      {base === "osm" && (
+        <Suspense fallback={<BlankBase camera={camera} />}>
+          <OsmBase initial={cameraRef.current} satellite={isSatellite(mapType)} dark={theme === "dark"} onCamera={onMapCamera} onReady={onOsm}
+            onBackgroundClick={onBackgroundClick} onWheelStep={onWheelStep} onError={() => setOsmFailed(true)} />
+        </Suspense>
+      )}
+      {base === "blank" && <BlankBase camera={camera} />}
       <OrthoLayer camera={camera} size={size} />
       <GcpPreviewLayer camera={camera} size={size} />
       <NetworkLayer camera={camera} size={size} setCamera={setCamera} passThrough={passThrough} />
       <div className="map-controls top-left">
-        {useGoogle && <AddressSearch onLocate={setCamera} />}
+        {base === "google" && <GoogleAddressSearch onLocate={setCamera} />}
+        {base === "osm" && <OsmAddressSearch onLocate={setCamera} />}
         <QuickSearch />
         <LabelsControl />
       </div>
       <div className="map-controls top-right">
-        {useGoogle && (
+        {types.length > 0 && (
           <div className="seg" role="group" aria-label="Tipo de mapa">
-            {MAP_TYPES.map((t) => (
-              <button key={t.id} className={mapType === t.id ? "on" : ""}
+            {types.map((t) => (
+              <button key={t.id} className={shownType === t.id ? "on" : ""}
                 onClick={() => { setStore({ mapType: t.id }); writePref("mapType", t.id); }}>{t.label}</button>
             ))}
           </div>
@@ -207,12 +254,18 @@ function MapLayers({ apiKey, failed, size, host }: { apiKey: string; failed: boo
         </div>
       </div>
       <Legend />
-      {!useGoogle && !hasOrtho && !noticeClosed && (
+      {(base === "blank" ? !hasOrtho : googleDown) && !noticeClosed && (
         <div className="map-notice" role="status">
           <button className="ghost small notice-close" aria-label="Cerrar aviso" onClick={() => { setNoticeClosed(true); writePref("hideMapNotice", true); }}>✕</button>
-          <strong>Mapa base no disponible.</strong>{" "}
-          {quotaDenied ? "Se alcanzó el límite mensual de cargas del mapa del plan de su organización." : apiKey ? "No se pudo cargar Google Maps (revise la key y sus restricciones)." :
-            "Un superadministrador puede ingresar la key en Configuración → Mapa base (sin reconstruir nada)."} El editor y la simulación funcionan igual sobre este lienzo; también puede usar una ortofoto propia como fondo (pestaña Capas).
+          {base === "blank" ? <>
+            <strong>Mapa base no disponible.</strong> Este navegador no pudo iniciar el mapa de OpenStreetMap (requiere
+            WebGL). El editor y la simulación funcionan igual sobre este lienzo; también puede usar una ortofoto propia como
+            fondo (pestaña Capas).
+          </> : <>
+            <strong>Se usa OpenStreetMap.</strong>{" "}
+            {quotaDenied ? "Se alcanzó el límite mensual de cargas de Google Maps del plan de su organización."
+              : "No se pudo cargar Google Maps (revise la key y sus restricciones en Configuración → Mapa base)."}
+          </>}
         </div>
       )}
       <ScaleBar camera={camera} />
