@@ -1,6 +1,7 @@
 """Configuración de la API, leída desde variables de entorno (.env)."""
 from functools import lru_cache
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,7 +31,13 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 300  # solicitudes a /api por IP y minuto; 0 desactiva
     max_inp_mb: int = 20  # tamaño máximo del .inp importado (Caddy aplica el mismo límite)
     max_xlsx_mb: int = 20  # tamaño máximo de planillas Excel/CSV importadas
-    max_ortho_mb: int = 500  # tamaño máximo de una ortofoto subida
+    # Tamaño máximo de una ortofoto (total de la subida por partes). ORTHO_MAX_MB; MAX_ORTHO_MB se acepta por
+    # compatibilidad con instalaciones anteriores.
+    max_ortho_mb: int = Field(2048, validation_alias=AliasChoices("ORTHO_MAX_MB", "MAX_ORTHO_MB", "max_ortho_mb"))
+    ortho_part_mb: int = 16  # ORTHO_PART_MB: tamaño de cada parte (debe ser menor que ORTHO_CHUNK_MB, el límite por parte de Caddy)
+    ortho_disk_factor: float = 3.0  # espacio libre exigido: tamaño × factor (original, intermedios y COG)
+    ortho_gdal_cachemax_mb: int = 256  # caché de bloques de GDAL en el worker (memoria acotada)
+    ortho_warp_mem_mb: int = 256  # memoria de trabajo de gdalwarp
     ortho_dir: str = "/data/ortho"  # almacenamiento compartido de ortofotos (volumen)
 
     # Autenticación y sesiones (etapa 5)

@@ -26,6 +26,8 @@ export interface OverlayPolygon { key: string; coords: LngLat[][]; color: string
 export interface Overlay { zones: OverlayPolygon[]; area: OverlayPolygon[] }
 export const EMPTY_OVERLAY: Overlay = { zones: [], area: [] };
 
+export interface GcpPreview { url: string; width: number; height: number; corners: LngLat[]; opacity: number }
+
 export interface Toast { id: number; text: string; kind: "info" | "error" }
 
 const DEFAULT_OPTIONS: HydraulicOptions = {
@@ -82,7 +84,8 @@ export interface EditorState {
   themePref: ThemePref;
   defaultProfileId: number | null;
   pendingDelete: string[] | null;
-  cameraRequest: { points: LngLat[]; nonce: number } | null;
+  /** Encuadre pedido; `coverLeft`: borde derecho (px de la ventana) de un panel que tapa el mapa por la izquierda. */
+  cameraRequest: { points: LngLat[]; nonce: number; coverLeft?: number } | null;
   toasts: Toast[];
   versionsOpen: boolean;
   /** Escenarios de llaves personalizados (se guardan con la versión). */
@@ -112,6 +115,8 @@ export interface EditorState {
   bottomCollapsed: boolean;
   /** Capas del panel general (Resumen) dibujadas sobre el mapa. */
   overlay: Overlay;
+  /** Vista previa del asistente de georreferenciación: imagen ubicada por sus 4 esquinas (lon/lat). */
+  gcpPreview: GcpPreview | null;
 
   loadDocument: (project: ProjectOut, doc: NetworkDocument) => void;
   closeProject: () => void;
@@ -238,6 +243,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   toolsCollapsed: readPref<boolean>("toolsCollapsed", false),
   bottomCollapsed: readPref<boolean>("bottomCollapsed", false),
   overlay: EMPTY_OVERLAY,
+  gcpPreview: null,
   themePref: readPref<ThemePref>("theme", "system"),
   theme: resolveTheme(readPref<ThemePref>("theme", "system")),
   defaultProfileId: readPref<number | null>("defaultProfileId", null),
@@ -275,7 +281,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     project: null, net: EMPTY, result: null, validation: null, serverVersion: null, revision: 0, savedRevision: 0,
     past: [], future: [], selection: [], simStatus: "idle", simError: null, versionsOpen: false, pendingDelete: null,
     scenarios: [], designParams: null, scenarioView: null, clientDraft: null, feasibilityDraft: null,
-    orthos: [], sectors: null, sectorFocus: null, highlight: [], mapPick: null, overlay: EMPTY_OVERLAY,
+    orthos: [], sectors: null, sectorFocus: null, highlight: [], mapPick: null, overlay: EMPTY_OVERLAY, gcpPreview: null,
   }),
 
   commit: (fn, options) => {

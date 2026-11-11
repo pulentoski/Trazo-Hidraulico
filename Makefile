@@ -12,7 +12,7 @@ export HOST_UID HOST_GID
 CADDY_CONFIG_HASH := $(shell cat infra/caddy/Caddyfile infra/caddy/entrypoint.sh 2>/dev/null | sha256sum | cut -c1-16)
 export CADDY_CONFIG_HASH
 
-.PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend test-e2e reset-db gen-types backup \
+.PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend test-e2e test-ortho-grande reset-db gen-types backup \
         create-admin unlock-user reset-password actualizar-ip demo restore-test backup-now
 
 help: ## Muestra esta ayuda
@@ -91,6 +91,9 @@ test-e2e: ## Recorrido visual con Playwright contra la pila levantada (make up; 
 	docker run --rm --network host --ipc=host -u $(HOST_UID):$(HOST_GID) -e HOME=/tmp -v $(CURDIR):/repo -w /repo \
 	  -e E2E_EMAIL=$(E2E_EMAIL) -e E2E_PASSWORD=$(E2E_PASSWORD) -e BASE_URL=$(BASE_URL) -e E2E_SHOTS=$(E2E_SHOTS) \
 	  trazo-hidraulico/e2e:local python3 e2e/recorrido.py
+
+test-ortho-grande: ## Ortofoto de ~800 MB: subida por partes, procesamiento, teselas, tiempos y memoria (docs/validation/ortofoto-grande.md)
+	@e2e/ortofoto-grande.sh
 
 create-admin: ## Crea o actualiza el superadministrador (pide correo y contraseña; o EMAIL=, y TRAZO_ADMIN_PASSWORD en el entorno)
 	@t=; [ -t 0 ] || t=-T; \

@@ -1054,6 +1054,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/orthophotos/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Iniciar una subida por partes (reanudable): verifica tamaño, cupo y espacio en disco */
+        post: operations["start_upload_api_projects__project_id__orthophotos_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/orthophotos/{ortho_id}": {
         parameters: {
             query?: never;
@@ -1099,6 +1116,24 @@ export interface paths {
         /** Imagen original (para puntos de control) */
         get: operations["original_api_projects__project_id__orthophotos__ortho_id__original_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/orthophotos/{ortho_id}/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estado de una subida (para retomarla) */
+        get: operations["upload_status_api_projects__project_id__orthophotos__ortho_id__upload_get"];
+        /** Agregar una parte (cuerpo binario) en `offset` */
+        put: operations["upload_part_api_projects__project_id__orthophotos__ortho_id__upload_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2826,12 +2861,25 @@ export interface components {
             /** Project Id */
             project_id: string;
         };
-        /** Gcp */
+        /**
+         * Gcp
+         * @description Punto de control: posición en la imagen y en el terreno (lat/lon WGS84, o UTM E/N con huso).
+         */
         Gcp: {
+            /**
+             * E
+             * @description UTM Este (m)
+             */
+            e?: number | null;
             /** Lat */
-            lat: number;
+            lat?: number | null;
             /** Lon */
-            lon: number;
+            lon?: number | null;
+            /**
+             * N
+             * @description UTM Norte (m)
+             */
+            n?: number | null;
             /**
              * Px
              * @description Columna en la imagen (píxeles, origen arriba a la izquierda)
@@ -2842,14 +2890,41 @@ export interface components {
              * @description Fila en la imagen (píxeles)
              */
             py: number;
+            /**
+             * South
+             * @description Hemisferio sur
+             * @default true
+             */
+            south: boolean;
+            /**
+             * Zone
+             * @description Huso UTM
+             */
+            zone?: number | null;
         };
         /** GcpFit */
         GcpFit: {
+            /**
+             * Corners
+             * @description [lon, lat] de las esquinas de la imagen: superior izquierda, superior derecha, inferior derecha, inferior izquierda (vista previa)
+             */
+            corners?: [
+                number,
+                number
+            ][] | null;
             /**
              * Method
              * @enum {string}
              */
             method: "similitud" | "afín";
+            /**
+             * Points
+             * @description [lon, lat] de cada punto
+             */
+            points?: [
+                number,
+                number
+            ][];
             /** Residuals M */
             residuals_m: number[];
             /** Rms M */
@@ -2861,6 +2936,11 @@ export interface components {
              * @description Parámetros del archivo world [A, D, B, E, C, F] en el SRID indicado
              */
             world: number[];
+            /**
+             * Worst
+             * @description Índice del punto con mayor error residual (3 o más puntos)
+             */
+            worst?: number | null;
         };
         /** GcpRequest */
         GcpRequest: {
@@ -2872,6 +2952,12 @@ export interface components {
             apply: boolean;
             /** Gcps */
             gcps: components["schemas"]["Gcp"][];
+            /**
+             * Save
+             * @description Guardar los puntos (sin procesar) para retomar el ajuste después
+             * @default false
+             */
+            save: boolean;
         };
         /** Group */
         Group: {
@@ -4141,6 +4227,11 @@ export interface components {
             /** Error */
             error: string | null;
             /**
+             * Gcps
+             * @description Puntos de control guardados
+             */
+            gcps?: components["schemas"]["Gcp"][] | null;
+            /**
              * Georef
              * @enum {string}
              */
@@ -4167,12 +4258,22 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "uploaded" | "pending" | "processing" | "ready" | "error";
+            status: "uploading" | "uploaded" | "pending" | "processing" | "ready" | "error";
+            /**
+             * Target Res M
+             * @description Resolución reducida pedida (m/píxel)
+             */
+            target_res_m?: number | null;
             /**
              * Tile Url
              * @description Plantilla XYZ de teselas ({z}/{x}/{y})
              */
             tile_url?: string | null;
+            /**
+             * Upload Offset
+             * @description Bytes recibidos (subida por partes en curso)
+             */
+            upload_offset?: number | null;
             /** Visible */
             visible: boolean;
             /** Width */
@@ -5276,6 +5377,58 @@ export interface components {
             pipe_class: string | null;
             /** Pressure New */
             pressure_new: number | null;
+        };
+        /**
+         * UploadInit
+         * @description Inicio de una subida por partes (reanudable).
+         */
+        UploadInit: {
+            /** Captured On */
+            captured_on?: string | null;
+            /** Filename */
+            filename: string;
+            /** Name */
+            name?: string | null;
+            /**
+             * Size
+             * @description Tamaño total del archivo (bytes)
+             */
+            size: number;
+            /** Source */
+            source?: string | null;
+            /**
+             * Src Crs
+             * @description EPSG del archivo world o de los puntos de control
+             */
+            src_crs?: string | null;
+            /**
+             * Target Res Cm
+             * @description Reducir a esta resolución (cm/píxel)
+             */
+            target_res_cm?: number | null;
+            /**
+             * World
+             * @description Contenido del archivo world (.jgw/.pgw/.wld)
+             */
+            world?: string | null;
+        };
+        /** UploadState */
+        UploadState: {
+            /**
+             * Chunk Size
+             * @description Tamaño sugerido de cada parte (bytes)
+             */
+            chunk_size: number;
+            /** Complete */
+            complete: boolean;
+            /**
+             * Offset
+             * @description Bytes ya recibidos: la siguiente parte empieza aquí
+             */
+            offset: number;
+            ortho: components["schemas"]["OrthophotoOut"];
+            /** Size */
+            size: number;
         };
         /** Usage */
         Usage: {
@@ -7232,6 +7385,8 @@ export interface operations {
             query?: {
                 /** @description Número de versión (última si se omite) */
                 version?: number | null;
+                /** @description Incluir los archivos de las ortofotos */
+                ortofotos?: boolean;
             };
             header?: never;
             path: {
@@ -7947,6 +8102,41 @@ export interface operations {
             };
         };
     };
+    start_upload_api_projects__project_id__orthophotos_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadInit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_orthophoto_api_projects__project_id__orthophotos__ortho_id__delete: {
         parameters: {
             query?: never;
@@ -8063,6 +8253,84 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_status_api_projects__project_id__orthophotos__ortho_id__upload_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                ortho_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_part_api_projects__project_id__orthophotos__ortho_id__upload_put: {
+        parameters: {
+            query: {
+                /** @description Byte inicial de la parte */
+                offset: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                ortho_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadState"];
+                };
+            };
+            /** @description La parte no empieza en el byte esperado: retomar desde `offset` */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

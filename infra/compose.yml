@@ -28,7 +28,8 @@ services:
       BASIC_AUTH_USER: ${BASIC_AUTH_USER:-}
       BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:-}
       MAX_INP_MB: ${MAX_INP_MB:-20}
-      MAX_ORTHO_MB: ${MAX_ORTHO_MB:-500}
+      ORTHO_MAX_MB: ${ORTHO_MAX_MB:-${MAX_ORTHO_MB:-2048}}
+      ORTHO_CHUNK_MB: ${ORTHO_CHUNK_MB:-32}
       MAX_XLSX_MB: ${MAX_XLSX_MB:-20}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro

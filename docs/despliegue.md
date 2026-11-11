@@ -9,6 +9,32 @@
 
 Ubuntu 22.04 o 24.04 LTS limpio. Las ortofotos (COG) y los respaldos son lo que más disco ocupa.
 
+### Ortofotos grandes (cientos de MB a 2 GB)
+
+Medido con `make test-ortho-grande` (GeoTIFF de 816 MB, 8 CPU; detalle en
+[validation/ortofoto-grande.md](validation/ortofoto-grande.md)): subida por partes en ~7 s en red local,
+procesamiento en ~22 s, memoria de procesos del worker ~670 MB (GDAL con `ORTHO_GDAL_CACHEMAX_MB=256` y
+`ORTHO_WARP_MEM_MB=256`; crece algo con la cantidad de CPU porque GDAL usa todos los núcleos) y de la API ~150 MB
+(recibe partes de 16 MB). Las teselas se sirven en 20–60 ms.
+
+| Ortofotos que se subirán | RAM de la instancia | Límite del worker (`WORKER_MEMORY`) | Disco libre para ortofotos |
+|---|---|---|---|
+| Hasta 500 MB cada una | 4 GB | 1 GB | 3 × el archivo más grande + lo ocupado |
+| Hasta 1 GB (caso típico de vuelo de dron de una localidad) | 8 GB | 1,5 GB | ≥ 20 GB |
+| Hasta 2 GB (`ORTHO_MAX_MB=2048`) | 8–16 GB | 2 GB | ≥ 40 GB |
+
+- **Disco**: antes de recibir una ortofoto la API exige ~3 veces su tamaño libre (`ORTHO_DISK_FACTOR`): el
+  original, archivos intermedios y el COG final. El COG (WEBP calidad 85, con overviews) suele pesar entre 5 y
+  20 % del GeoTIFF sin comprimir, pero **el original se conserva** (para reprocesar y para el `.trazo` con
+  ortofotos): cuente original + COG por cada ortofoto, y lo mismo de nuevo en los respaldos. Use un volumen EBS
+  aparte para `/var/lib/docker` si piensa guardar muchas.
+- **Memoria**: la caché de disco de Linux se ve alta durante el proceso pero se libera sola; lo que importa es la
+  memoria de procesos de la tabla. Con poca RAM baje `ORTHO_GDAL_CACHEMAX_MB` y `ORTHO_WARP_MEM_MB` (más lento,
+  menos memoria) y use «reducir resolución» al subir fotos muy finas.
+- **Límites**: `ORTHO_MAX_MB` (total, lo aplica la API, por defecto 2048) y `ORTHO_CHUNK_MB` (por parte, lo aplica
+  Caddy, 32). La aplicación sube partes de `ORTHO_PART_MB` (16): debe ser menor que `ORTHO_CHUNK_MB`.
+- Una subida interrumpida se retoma eligiendo el mismo archivo; las abandonadas se borran solas a las 48 h.
+
 ## Red y DNS
 
 - Puertos de entrada: **22** (SSH, idealmente solo desde su IP), **80** (emisión del certificado y redirección a

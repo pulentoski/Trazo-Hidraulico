@@ -5,6 +5,7 @@ agrega Caddy (único punto de entrada; descarta el encabezado enviado por client
 Si Redis no responde, la solicitud pasa: el límite es una defensa, no un requisito de funcionamiento.
 """
 import logging
+import re
 import time
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -17,6 +18,8 @@ from app.core.config import get_settings
 log = logging.getLogger(__name__)
 WINDOW_S = 60
 EXEMPT = {"/api/health"}
+# Partes de una subida de ortofoto: muchas solicitudes seguidas por diseño (cada una pasa por la autenticación).
+EXEMPT_RE = re.compile(r"^/api/projects/[^/]+/orthophotos/[^/]+/upload$")
 
 
 def client_ip(request: Request) -> str:
@@ -30,7 +33,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         limit = get_settings().rate_limit_per_minute
         path = request.url.path
-        if limit <= 0 or not path.startswith("/api/") or path in EXEMPT:
+        if limit <= 0 or not path.startswith("/api/") or path in EXEMPT or EXEMPT_RE.match(path):
             return await call_next(request)
         now = int(time.time())
         window = now // WINDOW_S

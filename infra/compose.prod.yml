@@ -22,7 +22,8 @@ services:
   worker:
     restart: always
     logging: *logging
-    deploy: { resources: { limits: { cpus: "1.0", memory: 1G } } }
+    # Ortofotos grandes: ver docs/despliegue.md («Ortofotos grandes») para elegir WORKER_MEMORY.
+    deploy: { resources: { limits: { cpus: "${WORKER_CPUS:-1.0}", memory: "${WORKER_MEMORY:-1536M}" } } }
   tiler:
     restart: always
     logging: *logging

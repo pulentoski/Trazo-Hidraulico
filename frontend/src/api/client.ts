@@ -285,7 +285,7 @@ export const api = {
       params: { path: { project_id: id } }, body: { scenario },
     })),
   demandXlsxUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/demand/projection.xlsx`,
-  trazoUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/export.trazo`,
+  trazoUrl: (id: string, orthos = false) => `/api/projects/${encodeURIComponent(id)}/export.trazo${orthos ? "?ortofotos=true" : ""}`,
   importTrazo: (file: File, name?: string) => form<TrazoImportResult>("/api/projects/import-trazo", file, { name }),
   // ── SIG ──
   templateUrl: "/api/sig/template.xlsx",
@@ -346,9 +346,9 @@ export const api = {
     if (!response.ok) fail(response.status, error);
   },
   orthoOriginalUrl: (id: string, oid: string) => `/api/projects/${encodeURIComponent(id)}/orthophotos/${encodeURIComponent(oid)}/original`,
-  gcps: (id: string, oid: string, gcps: Gcp[], apply: boolean) =>
+  gcps: (id: string, oid: string, gcps: Gcp[], apply: boolean, save = false) =>
     unwrap<GcpFit>(client.POST("/api/projects/{project_id}/orthophotos/{ortho_id}/gcps", {
-      params: { path: { project_id: id, ortho_id: oid } }, body: { gcps, apply },
+      params: { path: { project_id: id, ortho_id: oid } }, body: { gcps, apply, save },
     })),
   exportUrl: (id: string, version?: number) =>
     `/api/projects/${encodeURIComponent(id)}/export.inp${version ? `?version=${version}` : ""}`,

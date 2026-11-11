@@ -33,6 +33,12 @@ class Orthophoto(Base):
     opacity: Mapped[float] = mapped_column(Float, default=1.0)
     visible: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Subida por partes: bytes recibidos mientras status = «uploading» (size_bytes = tamaño total esperado).
+    upload_offset: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Reducción de resolución pedida (m por píxel de terreno); None = resolución original.
+    target_res_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(),
+                                                        onupdate=func.now(), nullable=True)
 
 
 class Measurement(Base):

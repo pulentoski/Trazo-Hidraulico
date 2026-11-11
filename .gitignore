@@ -16,3 +16,4 @@ __pycache__/
 
 # Captura de diagnóstico del recorrido e2e
 e2e/fallo.png
+e2e/tmp/

@@ -88,6 +88,7 @@ function SigMenu({ dirty }: { dirty: boolean }) {
           {item(api.templateUrl, "Descargar plantilla vacía", "Una hoja por tipo de elemento, con instrucciones y listas")}
           {item(api.reportUrl(pid), "Informe técnico (HTML imprimible)", "Proyecto, criterios, resultados, gráficos y diagnóstico")}
           {item(api.trazoUrl(pid), "Exportar proyecto .trazo", "Zip con el .inp y todos los datos propios (clientes, llaves, escenarios, atributos…)")}
+          {item(api.trazoUrl(pid, true), "Exportar .trazo con ortofotos", "Igual que el .trazo, más los archivos de las ortofotos (puede pesar mucho)")}
           {item(api.dxfUrl(pid), "Exportar DXF (UTM, por capas)", "Red por diámetro, válvulas, clientes, estanques…")}
           {item(api.gpkgUrl(pid), "Exportar GeoPackage (QGIS)", "Una capa por tipo de elemento, más los cuarteles de corta")}
           {dirty && <p className="muted small pad">Esperando el guardado de los cambios…</p>}

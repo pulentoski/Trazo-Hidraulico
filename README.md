@@ -90,7 +90,8 @@ Detalle en [docs/sig.md](docs/sig.md). En resumen:
   el inicio. Ejemplo: `examples/apr-demo.xlsx` (proyecto «APR Demo», La Serena).
 - **Ortofotos** (pestaña Capas): GeoTIFF, JPG/PNG con archivo world o con puntos de control (error residual).
   El servicio `worker` (GDAL 3.10.3) genera un Cloud Optimized GeoTIFF y `tiler` (TiTiler 2.3.0, fijado por
-  digest) sirve las teselas en `/tiles/…`; funcionan sin key de Google. Límite `MAX_ORTHO_MB` (500 MB).
+  digest) sirve las teselas en `/tiles/…`; funcionan sin key de Google. Subida por partes reanudable con progreso (límite `ORTHO_MAX_MB`, 2048 MB), reducción de resolución y
+  asistente para ubicar fotos sin coordenadas con puntos de control; ortofotos grandes en [docs/despliegue.md](docs/despliegue.md).
 - **Gestión**: estado, año y tipo de red en tramos; tipo, condición, diámetro y profundidad en válvulas;
   grifos (escenario de incendio) y pozos; datos comerciales de clientes.
 - **Cuarteles de corta** (pestaña Cuarteles): válvulas a cerrar, metros de red y clientes sin agua (incluidos

@@ -3093,14 +3093,57 @@
         "type": "object"
       },
       "Gcp": {
+        "description": "Punto de control: posición en la imagen y en el terreno (lat/lon WGS84, o UTM E/N con huso).",
         "properties": {
+          "e": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTM Este (m)",
+            "title": "E"
+          },
           "lat": {
-            "title": "Lat",
-            "type": "number"
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat"
           },
           "lon": {
-            "title": "Lon",
-            "type": "number"
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lon"
+          },
+          "n": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTM Norte (m)",
+            "title": "N"
           },
           "px": {
             "description": "Columna en la imagen (píxeles, origen arriba a la izquierda)",
@@ -3111,19 +3154,62 @@
             "description": "Fila en la imagen (píxeles)",
             "title": "Py",
             "type": "number"
+          },
+          "south": {
+            "default": true,
+            "description": "Hemisferio sur",
+            "title": "South",
+            "type": "boolean"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Huso UTM",
+            "title": "Zone"
           }
         },
         "required": [
           "px",
-          "py",
-          "lon",
-          "lat"
+          "py"
         ],
         "title": "Gcp",
         "type": "object"
       },
       "GcpFit": {
         "properties": {
+          "corners": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "[lon, lat] de las esquinas de la imagen: superior izquierda, superior derecha, inferior derecha, inferior izquierda (vista previa)",
+            "title": "Corners"
+          },
           "method": {
             "enum": [
               "similitud",
@@ -3131,6 +3217,24 @@
             ],
             "title": "Method",
             "type": "string"
+          },
+          "points": {
+            "description": "[lon, lat] de cada punto",
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Points",
+            "type": "array"
           },
           "residuals_m": {
             "items": {
@@ -3154,6 +3258,18 @@
             },
             "title": "World",
             "type": "array"
+          },
+          "worst": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Índice del punto con mayor error residual (3 o más puntos)",
+            "title": "Worst"
           }
         },
         "required": [
@@ -3182,6 +3298,12 @@
             "minItems": 2,
             "title": "Gcps",
             "type": "array"
+          },
+          "save": {
+            "default": false,
+            "description": "Guardar los puntos (sin procesar) para retomar el ajuste después",
+            "title": "Save",
+            "type": "boolean"
           }
         },
         "required": [
@@ -6368,6 +6490,21 @@
             ],
             "title": "Error"
           },
+          "gcps": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Gcp"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Puntos de control guardados",
+            "title": "Gcps"
+          },
           "georef": {
             "enum": [
               "geotiff",
@@ -6443,6 +6580,7 @@
           },
           "status": {
             "enum": [
+              "uploading",
               "uploaded",
               "pending",
               "processing",
@@ -6451,6 +6589,18 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "target_res_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resolución reducida pedida (m/píxel)",
+            "title": "Target Res M"
           },
           "tile_url": {
             "anyOf": [
@@ -6463,6 +6613,18 @@
             ],
             "description": "Plantilla XYZ de teselas ({z}/{x}/{y})",
             "title": "Tile Url"
+          },
+          "upload_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Bytes recibidos (subida por partes en curso)",
+            "title": "Upload Offset"
           },
           "visible": {
             "title": "Visible",
@@ -9364,6 +9526,139 @@
           "feasible"
         ],
         "title": "UpgradeAttempt",
+        "type": "object"
+      },
+      "UploadInit": {
+        "description": "Inicio de una subida por partes (reanudable).",
+        "properties": {
+          "captured_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured On"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "size": {
+            "description": "Tamaño total del archivo (bytes)",
+            "exclusiveMinimum": 0.0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "src_crs": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "EPSG del archivo world o de los puntos de control",
+            "title": "Src Crs"
+          },
+          "target_res_cm": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reducir a esta resolución (cm/píxel)",
+            "title": "Target Res Cm"
+          },
+          "world": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Contenido del archivo world (.jgw/.pgw/.wld)",
+            "title": "World"
+          }
+        },
+        "required": [
+          "filename",
+          "size"
+        ],
+        "title": "UploadInit",
+        "type": "object"
+      },
+      "UploadState": {
+        "properties": {
+          "chunk_size": {
+            "description": "Tamaño sugerido de cada parte (bytes)",
+            "title": "Chunk Size",
+            "type": "integer"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "offset": {
+            "description": "Bytes ya recibidos: la siguiente parte empieza aquí",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "ortho": {
+            "$ref": "#/components/schemas/OrthophotoOut"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ortho",
+          "offset",
+          "size",
+          "chunk_size",
+          "complete"
+        ],
+        "title": "UploadState",
         "type": "object"
       },
       "Usage": {
@@ -12552,6 +12847,18 @@
               "description": "Número de versión (última si se omite)",
               "title": "Version"
             }
+          },
+          {
+            "description": "Incluir los archivos de las ortofotos",
+            "in": "query",
+            "name": "ortofotos",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Incluir los archivos de las ortofotos",
+              "title": "Ortofotos",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -13656,6 +13963,59 @@
         ]
       }
     },
+    "/api/projects/{project_id}/orthophotos/uploads": {
+      "post": {
+        "operationId": "start_upload_api_projects__project_id__orthophotos_uploads_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadInit"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Iniciar una subida por partes (reanudable): verifica tamaño, cupo y espacio en disco",
+        "tags": [
+          "ortofotos"
+        ]
+      }
+    },
     "/api/projects/{project_id}/orthophotos/{ortho_id}": {
       "delete": {
         "operationId": "delete_orthophoto_api_projects__project_id__orthophotos__ortho_id__delete",
@@ -13867,6 +14227,135 @@
           }
         },
         "summary": "Imagen original (para puntos de control)",
+        "tags": [
+          "ortofotos"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/orthophotos/{ortho_id}/upload": {
+      "get": {
+        "operationId": "upload_status_api_projects__project_id__orthophotos__ortho_id__upload_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ortho_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ortho Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Estado de una subida (para retomarla)",
+        "tags": [
+          "ortofotos"
+        ]
+      },
+      "put": {
+        "operationId": "upload_part_api_projects__project_id__orthophotos__ortho_id__upload_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ortho_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ortho Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Byte inicial de la parte",
+            "in": "query",
+            "name": "offset",
+            "required": true,
+            "schema": {
+              "description": "Byte inicial de la parte",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "La parte no empieza en el byte esperado: retomar desde `offset`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Agregar una parte (cuerpo binario) en `offset`",
         "tags": [
           "ortofotos"
         ]

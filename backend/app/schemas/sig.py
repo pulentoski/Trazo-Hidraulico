@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Scalar = str | int | float | bool | None
 
@@ -185,10 +185,21 @@ class FireResult(BaseModel):
 # ── Ortofotos ──
 
 class Gcp(BaseModel):
+    """Punto de control: posición en la imagen y en el terreno (lat/lon WGS84, o UTM E/N con huso)."""
     px: float = Field(description="Columna en la imagen (píxeles, origen arriba a la izquierda)")
     py: float = Field(description="Fila en la imagen (píxeles)")
-    lon: float
-    lat: float
+    lon: float | None = Field(None, ge=-180, le=180)
+    lat: float | None = Field(None, ge=-90, le=90)
+    e: float | None = Field(None, description="UTM Este (m)")
+    n: float | None = Field(None, description="UTM Norte (m)")
+    zone: int | None = Field(None, ge=1, le=60, description="Huso UTM")
+    south: bool = Field(True, description="Hemisferio sur")
+
+    @model_validator(mode="after")
+    def _coords(self):
+        if (self.lon is None or self.lat is None) and (self.e is None or self.n is None or self.zone is None):
+            raise ValueError("Cada punto necesita latitud y longitud, o Este, Norte y huso UTM")
+        return self
 
 
 class GcpFit(BaseModel):
@@ -197,6 +208,11 @@ class GcpFit(BaseModel):
     srid: int
     residuals_m: list[float]
     rms_m: float
+    worst: int | None = Field(None, description="Índice del punto con mayor error residual (3 o más puntos)")
+    points: list[tuple[float, float]] = Field(default_factory=list, description="[lon, lat] de cada punto")
+    corners: list[tuple[float, float]] | None = Field(
+        None, description="[lon, lat] de las esquinas de la imagen: superior izquierda, superior derecha, "
+                          "inferior derecha, inferior izquierda (vista previa)")
 
 
 class OrthophotoOut(BaseModel):
@@ -205,7 +221,7 @@ class OrthophotoOut(BaseModel):
     source: str | None
     captured_on: date | None
     georef: Literal["geotiff", "worldfile", "gcp"]
-    status: Literal["uploaded", "pending", "processing", "ready", "error"]
+    status: Literal["uploading", "uploaded", "pending", "processing", "ready", "error"]
     error: str | None
     original_name: str
     src_crs: str | None
@@ -218,6 +234,9 @@ class OrthophotoOut(BaseModel):
     visible: bool
     created_at: datetime
     tile_url: str | None = Field(None, description="Plantilla XYZ de teselas ({z}/{x}/{y})")
+    upload_offset: int | None = Field(None, description="Bytes recibidos (subida por partes en curso)")
+    target_res_m: float | None = Field(None, description="Resolución reducida pedida (m/píxel)")
+    gcps: list[Gcp] | None = Field(None, description="Puntos de control guardados")
 
 
 class OrthophotoUpdate(BaseModel):
@@ -231,6 +250,27 @@ class OrthophotoUpdate(BaseModel):
 class GcpRequest(BaseModel):
     gcps: list[Gcp] = Field(min_length=2, max_length=50)
     apply: bool = Field(False, description="Procesar la ortofoto con este ajuste")
+    save: bool = Field(False, description="Guardar los puntos (sin procesar) para retomar el ajuste después")
+
+
+class UploadInit(BaseModel):
+    """Inicio de una subida por partes (reanudable)."""
+    filename: str = Field(min_length=1, max_length=255)
+    size: int = Field(gt=0, description="Tamaño total del archivo (bytes)")
+    name: str | None = Field(None, max_length=200)
+    source: str | None = Field(None, max_length=200)
+    captured_on: date | None = None
+    src_crs: str | None = Field(None, max_length=20, description="EPSG del archivo world o de los puntos de control")
+    world: str | None = Field(None, max_length=4096, description="Contenido del archivo world (.jgw/.pgw/.wld)")
+    target_res_cm: float | None = Field(None, gt=0, le=1000, description="Reducir a esta resolución (cm/píxel)")
+
+
+class UploadState(BaseModel):
+    ortho: OrthophotoOut
+    offset: int = Field(description="Bytes ya recibidos: la siguiente parte empieza aquí")
+    size: int
+    chunk_size: int = Field(description="Tamaño sugerido de cada parte (bytes)")
+    complete: bool
 
 
 ConditionGroup.model_rebuild()

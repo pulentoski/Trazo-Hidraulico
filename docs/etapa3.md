@@ -11,10 +11,16 @@ Referencia: [docs/referencias/analisis-planillas.md](referencias/analisis-planil
 - `trazo.json` (`format: "trazo"`, `format_version: 1`): proyecto (nombre, SRID, perfil, parámetros de diseño,
   proyección de demanda), opciones y secciones del modelo, escenarios de llaves, red completa en GeoJSON
   (clientes, llaves, grifos, pozos, atributos de gestión y libres, origen de las cotas, vértices), consultas
-  guardadas, cuarteles de corta (informativo) y referencias a las ortofotos (las imágenes no se incluyen).
+  guardadas, cuarteles de corta (informativo), eventos de pérdidas, configuración del Resumen (rangos de presión,
+  margen del área operacional, vida útil, precios, sectores y medidores) y las ortofotos (nombre, fecha, fuente,
+  georreferencia, archivo world, puntos de control, opacidad, visibilidad y resolución pedida).
+- Con `?ortofotos=true` (menú «Exportar .trazo con ortofotos») también los archivos originales en
+  `ortofotos/<id>/` (sin recomprimir); el zip se arma en disco y puede pesar lo mismo que las imágenes.
 
-`POST /api/projects/import-trazo` crea un proyecto desde el JSON (sin pérdida: la prueba exporta, importa y
-vuelve a exportar con el mismo contenido y el mismo .inp). Si falta el JSON, importa el .inp.
+`POST /api/projects/import-trazo` crea un proyecto desde el JSON (sin pérdida: las pruebas exportan, importan y
+vuelven a exportar con el mismo contenido, el mismo .inp, los mismos eventos y configuración, y las ortofotos con
+los mismos datos y archivos idénticos, que se vuelven a procesar). Las ortofotos sin archivo en el .trazo quedan
+informadas en las notas. Admite hasta `ORTHO_MAX_MB`. Si falta el JSON, importa el .inp.
 
 ## Importación .inp
 

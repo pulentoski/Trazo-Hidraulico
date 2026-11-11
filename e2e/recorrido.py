@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import hmac
 import os
 import struct
@@ -30,6 +31,8 @@ SHOTS = ROOT / os.environ.get("E2E_SHOTS", "docs/capturas")
 INSECURE = BASE.startswith("https://")  # instancia con certificado interno de Caddy
 DEMO = ROOT / "examples" / "apr-demo.xlsx"
 ORTHO = ROOT / "e2e" / "fixtures" / "ortofoto.tif"
+PLANO = ROOT / "e2e" / "fixtures" / "plano-referencia.png"  # foto sin coordenadas (make_plano_referencia.py)
+PLANO_REF = ROOT / "e2e" / "fixtures" / "plano-referencia.json"
 TOOLS = ["V", "B", "N", "T", "E", "R", "M", "X", "D", "C", "L", "G", "W", "F"]
 IGNORED = [
     re.compile(r"/tiles/.+\.png"),  # teselas fuera de los límites de la ortofoto: 404 esperado
@@ -187,6 +190,55 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         page.locator(".layers-tab").get_by_role("button", name="Ver").first.click()
         page.wait_for_timeout(1200)
         shot(page, "ortofoto", theme, width)
+
+        log("asistente de ubicación de una foto sin coordenadas")
+        ref = json.loads(PLANO_REF.read_text())
+        layers = page.locator(".layers-tab")
+        layers.locator("input[type=file]").first.set_input_files(str(PLANO))
+        layers.get_by_placeholder("Nombre", exact=True).fill("Plano e2e")
+        layers.get_by_role("button", name="Subir").click()
+        wiz = page.get_by_role("dialog", name="Asistente de ubicación de la foto")
+        expect(wiz).to_be_visible(timeout=30000)
+        expect(wiz).to_contain_text("Elija puntos fáciles de reconocer")
+        shot(page, "georref-guia", theme, width)
+        wiz.get_by_role("button", name="Comenzar").click()
+        img = wiz.locator(".photo-box img")
+        expect(img).to_be_visible()
+        for i, pt in enumerate(ref["points"]):
+            img.scroll_into_view_if_needed()
+            b = img.bounding_box()
+            img.click(position={"x": pt["px"] / ref["width"] * b["width"], "y": pt["py"] / ref["height"] * b["height"]})
+            expect(wiz.locator(".wizard-hint")).to_contain_text(f"Punto {i + 1}")
+            wiz.get_by_label("Latitud").fill(str(pt["lat"]).replace(".", ","))
+            wiz.get_by_label("Longitud").fill(str(pt["lon"]).replace(".", ","))
+            wiz.get_by_role("button", name="Usar coordenadas").click()
+        expect(wiz.locator(".fit-summary")).to_contain_text("Ajuste con 3 o más puntos")
+        rms = float(re.search(r"\(RMS\) ([\d,]+) m", wiz.locator(".fit-summary").inner_text()).group(1).replace(",", "."))
+        assert rms < 1.5, f"error medio {rms} m"
+        expect(wiz.locator(".fit-summary")).to_contain_text("pasa exacta")  # 3 puntos: ajuste afín exacto
+        # Un 4.º punto con unos 6 m de error al este: queda marcado como el de mayor error.
+        (tl, tr_, _br, bl) = ref["corners"]
+        u, v = 150.5 / ref["width"], 300.5 / ref["height"]
+        lon4 = tl[0] + u * (tr_[0] - tl[0]) + v * (bl[0] - tl[0]) + 6 / 96_500
+        lat4 = tl[1] + u * (tr_[1] - tl[1]) + v * (bl[1] - tl[1])
+        img.click(position={"x": 150.5 / ref["width"] * b["width"], "y": 300.5 / ref["height"] * b["height"]})
+        wiz.get_by_label("Latitud").fill(str(round(lat4, 8)).replace(".", ","))
+        wiz.get_by_label("Longitud").fill(str(round(lon4, 8)).replace(".", ","))
+        wiz.get_by_role("button", name="Usar coordenadas").click()
+        expect(wiz.locator(".worst-row")).to_have_count(1)
+        expect(wiz.locator(".worst-row")).to_contain_text("mayor error")
+        wiz.locator(".worst-row").get_by_role("button", name="Borrar punto 4").click()
+        expect(wiz.locator(".worst-row")).to_have_count(0)
+        expect(page.locator(".gcp-preview img")).to_be_attached()
+        wiz.get_by_label("Opacidad de la vista previa").fill("0.5")
+        shot(page, "georref-asistente", theme, width)
+        wiz.get_by_role("button", name="Guardar puntos").click()
+        wiz.get_by_role("button", name="Aplicar").click()
+        expect(wiz).to_be_hidden()
+        expect(layers.locator("tbody tr", has_text="Plano e2e")).to_contain_text("lista", timeout=60000)
+        layers.locator("tbody tr", has_text="Plano e2e").get_by_role("button", name="Ver").click()
+        page.wait_for_timeout(1200)
+        shot(page, "georref-aplicada", theme, width)
 
     log("consultas")
     tab(page, "Consultas")

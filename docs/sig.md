@@ -26,10 +26,30 @@ con `base_version` desactualizada responde 409. Proyecto nuevo: `POST /api/proje
 
 ## Ortofotos
 
-`POST /api/projects/{id}/orthophotos` (GeoTIFF, o JPG/PNG + world opcional). Se valida extensión, firma del
-archivo y tamaño (`MAX_ORTHO_MB`). El worker (`python -m app.workers.ortho`, GDAL de Debian 3.10.3) reproyecta a
-EPSG:3857 y genera `cog.tif` en el volumen `ortho`. Imágenes sin referencia: `POST …/gcps` con ≥ 2 puntos
-(similitud) o ≥ 3 (afín); devuelve residuos y RMS en metros y, con `apply`, encola el proceso.
+Subida por partes reanudable (la que usa el editor): `POST /api/projects/{id}/orthophotos/uploads` (nombre,
+tamaño y metadatos; verifica el límite `ORTHO_MAX_MB`, el cupo de la organización y ~3 veces el tamaño libre en
+disco, si no responde 507 con un mensaje claro) y `PUT …/orthophotos/{oid}/upload?offset=N` con cada parte
+(binaria, 16 MB). Si la parte no empieza donde terminó la anterior responde 409 con el `offset` desde el que
+seguir; `GET …/upload` dice cuánto se recibió. Al completar se valida la firma del archivo y se encola. Estados:
+`uploading` (subiendo, con `upload_offset`), `uploaded` (falta ubicarla con puntos de control), `pending`,
+`processing`, `ready` o `error` con su motivo. La subida directa `POST /api/projects/{id}/orthophotos` sigue
+disponible para archivos chicos.
+
+El worker (`python -m app.workers.ortho`, GDAL de Debian 3.10.3) reproyecta a EPSG:3857 con memoria acotada
+(`GDAL_CACHEMAX`, `gdalwarp -wm`) y genera `cog.tif` (WEBP calidad 85 para color de 8 bits, DEFLATE en otros
+casos; con overviews) en el volumen `ortho`. «Reducir resolución» (`target_res_cm`: 10, 20 o 50 cm/píxel) remuestrea
+al procesar. Antes de procesar verifica de nuevo el espacio libre.
+
+Imágenes sin referencia: **asistente de ubicación** (pestaña Capas → «Ubicar en el mapa»): la foto a la
+izquierda y el mapa a la derecha (o la ortofoto existente, o el lienzo); cada punto se marca con un clic en la
+foto y otro en el mapa, o escribiendo latitud/longitud o UTM Este/Norte con huso. API: `POST …/gcps` con ≥ 2 puntos
+(similitud: escala, giro y posición) o ≥ 3 (afín); devuelve el error de cada punto y el RMS en metros, el punto de
+mayor error y las esquinas de la imagen (vista previa con opacidad ajustable). Con `save` guarda los puntos sin
+procesar (para retomar después) y con `apply` los guarda y encola el proceso. Con 2 puntos (o 3 en el ajuste
+afín) la ubicación pasa exacta por ellos: el error se puede medir desde el punto siguiente.
+
+Prueba de una ortofoto de ~800 MB (subida, procesamiento, teselas, tiempos y memoria): `make test-ortho-grande`
+→ [validation/ortofoto-grande.md](validation/ortofoto-grande.md).
 
 Teselas: Caddy reescribe `/tiles/<uuid>/<z>/<x>/<y>.png` a TiTiler fijando el archivo
 (`url=/data/ortho/<uuid>/cog.tif`); el cliente nunca controla la ruta. TiTiler corre sin privilegios, sistema de

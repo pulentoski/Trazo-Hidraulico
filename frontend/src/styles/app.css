@@ -627,3 +627,45 @@ button.on-toggle { background: var(--accent-soft); border-color: var(--accent); 
 .topbar { min-width: 0; overflow: hidden; }
 @media (max-width: 1600px) { .user-menu .user-org { display: none; } }
 @media (max-width: 1280px) { .topbar .summary-btn span { display: none; } }
+
+/* ── Ortofotos grandes: subida por partes ─────────────────────────────── */
+.upload-job { margin: 6px 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }
+.upload-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
+.progress { position: relative; height: 18px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+.progress i { position: absolute; inset: 0 auto 0 0; background: var(--accent); opacity: 0.75; transition: width 0.25s linear; }
+.progress span { position: relative; display: block; text-align: center; font-size: 0.8rem; line-height: 16px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.pad-x { padding: 0 10px; margin: 4px 0; }
+.busy-text { color: var(--accent); }
+
+/* ── Asistente de georreferenciación: foto a la izquierda, mapa a la derecha ── */
+.georef-wizard { position: fixed; left: 0; top: 52px; bottom: 0; width: min(50vw, 760px); z-index: 45; display: flex; flex-direction: column;
+  background: var(--panel); border-right: 2px solid var(--accent); box-shadow: var(--shadow); }
+.georef-wizard > header { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.georef-wizard h3 { margin: 0; font-size: 1rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.steps { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 0.846rem; }
+.steps li { padding: 2px 8px; border-radius: 10px; color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.steps li.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.steps li.done { color: var(--ok); border-color: var(--ok); }
+.wizard-guide { padding: 14px 16px; line-height: 1.5; }
+.wizard-guide ul { padding-left: 20px; }
+.wizard-hint { padding: 8px 12px; background: var(--accent-soft); color: var(--text); font-size: 0.962rem; }
+.wizard-photo { flex: 1; min-height: 180px; display: flex; flex-direction: column; border-bottom: 1px solid var(--line); }
+.photo-tools { display: flex; gap: 4px; padding: 4px 8px; }
+.photo-scroll { flex: 1; overflow: auto; background: var(--canvas); }
+.photo-box { position: relative; min-width: 100%; }
+.photo-box img { display: block; width: 100%; cursor: crosshair; user-select: none; }
+.gcp-mark.active { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.gcp-mark.worst { background: var(--warn); }
+.typed-coords { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); align-items: center; }
+.typed-coords input, .typed-coords select { height: 28px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); padding: 0 6px; min-width: 0; flex: 1; }
+.typed-coords input.zone { flex: 0 0 52px; }
+.gcp-table { max-height: 190px; overflow: auto; flex: none; }
+.gcp-table tr.worst-row td { background: var(--warn-soft); }
+.gcp-table .badge { margin-left: 6px; }
+.wizard-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border-top: 1px solid var(--line); }
+.fit-summary { flex-basis: 100%; }
+.gcp-preview { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+.gcp-preview img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; }
+.gcp-preview svg { position: absolute; inset: 0; }
+.gcp-preview polygon { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; }
+@media (max-width: 1100px) { .georef-wizard { width: 56vw; } .steps { display: none; } }

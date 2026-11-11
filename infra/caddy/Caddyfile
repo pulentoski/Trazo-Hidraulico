@@ -56,15 +56,28 @@ http://:8099 {
 	request_body @importar {
 		max_size {$MAX_INP_MB:20}MB
 	}
-	# Ortofotos: límite propio (MAX_ORTHO_MB). Planillas y el resto de /api: 50 MB.
-	@ortofotos path_regexp ^/api/projects/[^/]+/orthophotos$
-	request_body @ortofotos {
-		max_size {$MAX_ORTHO_MB:500}MB
+	# Ortofotos: la subida por partes limita cada parte (ORTHO_CHUNK_MB); el total (ORTHO_MAX_MB) lo controla la
+	# API. La subida directa (un solo envío) y la importación .trazo (puede incluir ortofotos) usan ORTHO_MAX_MB.
+	@ortofotos_parte path_regexp ^/api/projects/[^/]+/orthophotos/[^/]+/upload$
+	request_body @ortofotos_parte {
+		max_size {$ORTHO_CHUNK_MB:32}MB
 	}
+	@ortofotos {
+		path_regexp ortofoto ^/api/projects/[^/]+/orthophotos$
+	}
+	request_body @ortofotos {
+		max_size {$ORTHO_MAX_MB:2048}MB
+	}
+	@trazo path /api/projects/import-trazo
+	request_body @trazo {
+		max_size {$ORTHO_MAX_MB:2048}MB
+	}
+	# Planillas y el resto de /api: 50 MB.
 	@api_general {
 		path /api/*
 		not path /api/projects/import
-		not path_regexp ^/api/projects/[^/]+/orthophotos$
+		not path /api/projects/import-trazo
+		not path_regexp ^/api/projects/[^/]+/orthophotos(/[^/]+/upload)?$
 	}
 	request_body @api_general {
 		max_size 50MB

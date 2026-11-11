@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import subprocess
 import time
@@ -18,13 +19,15 @@ import redis
 from app.core.config import get_settings
 from app.core.db import get_sessionmaker
 from app.models import Orthophoto
-from app.services.orthophotos import QUEUE, ortho_dir
+from app.services.orthophotos import QUEUE, DiskFull, check_disk, ortho_dir, purge_stale_uploads
 
 log = logging.getLogger("trazo.ortho")
 # Sin acceso a red desde GDAL (los .jgw/.pgw se leen del mismo directorio que la imagen).
+# Memoria acotada: caché de bloques (GDAL_CACHEMAX) y memoria de trabajo de gdalwarp (-wm) configurables.
 GDAL_ENV = {**os.environ, "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".none", "GDAL_HTTP_TIMEOUT": "1",
-            "GDAL_NUM_THREADS": "ALL_CPUS"}
-TIMEOUT_S = 1800
+            "GDAL_NUM_THREADS": "ALL_CPUS", "GDAL_CACHEMAX": str(get_settings().ortho_gdal_cachemax_mb)}
+TIMEOUT_S = 4 * 3600
+QUALITY = "85"
 
 
 class ProcessError(RuntimeError):
@@ -65,12 +68,23 @@ def build_cog(o: Orthophoto) -> tuple[list[float], int, int]:
         if "geoTransform" not in info(tmp):
             raise ProcessError("No se encontró el archivo world de la imagen.")
         warp_src = tmp
-    bands = len(meta.get("bands", []))
-    has_alpha = any(b.get("colorInterpretation") == "Alpha" for b in meta.get("bands", []))
+    bands = meta.get("bands", [])
+    byte = bool(bands) and all(b.get("type") == "Byte" for b in bands)
+    has_alpha = any(b.get("colorInterpretation") == "Alpha" for b in bands)
+    color = len(bands) - (1 if has_alpha else 0)
     args = ["gdalwarp", "-q", "-overwrite", "-t_srs", "EPSG:3857", "-r", "bilinear", "-of", "COG",
-            "-co", "COMPRESS=DEFLATE", "-co", "PREDICTOR=2", "-co", "BIGTIFF=IF_SAFER", "-co", "OVERVIEWS=AUTO"]
-    if not has_alpha and bands in (1, 3):
+            "-wm", str(get_settings().ortho_warp_mem_mb), "-wo", "NUM_THREADS=ALL_CPUS",
+            "-co", "BIGTIFF=IF_SAFER", "-co", "OVERVIEWS=AUTO", "-co", "NUM_THREADS=ALL_CPUS"]
+    if byte and color == 3:
+        # Color de 8 bits: WEBP calidad 85 (con transparencia fuera de la imagen) y overviews.
+        args += ["-co", "COMPRESS=WEBP", "-co", f"QUALITY={QUALITY}"]
+    else:
+        args += ["-co", "COMPRESS=DEFLATE", "-co", "PREDICTOR=2"]
+    if not has_alpha and len(bands) in (1, 3):
         args.append("-dstalpha")
+    tr = target_res(o, info(warp_src) if warp_src != src else meta)
+    if tr:
+        args += ["-tr", str(tr), str(tr)]
     _run(args + [warp_src, part])
     os.replace(part, cog)
     if os.path.exists(tmp):
@@ -81,6 +95,25 @@ def build_cog(o: Orthophoto) -> tuple[list[float], int, int]:
     return [min(lons), min(lats), max(lons), max(lats)], width, height
 
 
+def target_res(o: Orthophoto, meta: dict) -> float | None:
+    """Tamaño de celda en EPSG:3857 para la resolución reducida pedida (m de terreno / cos(latitud)).
+    None si no se pidió o si la imagen ya es más gruesa que eso."""
+    if not o.target_res_m:
+        return None
+    try:
+        ring = meta["wgs84Extent"]["coordinates"][0]
+        lat = sum(p[1] for p in ring) / len(ring)
+    except (KeyError, IndexError, ZeroDivisionError):
+        return None
+    wkt = meta.get("coordinateSystem", {}).get("wkt", "")
+    gt = meta.get("geoTransform")
+    if gt and "PROJCRS" in wkt and "metre" in wkt:
+        native = (abs(gt[1]) * abs(gt[5])) ** 0.5
+        if native >= o.target_res_m * 0.98:
+            return None
+    return o.target_res_m / max(math.cos(math.radians(lat)), 1e-6)
+
+
 def process(session, oid: uuid.UUID) -> Orthophoto | None:
     o = session.get(Orthophoto, oid)
     if o is None or o.status not in ("pending", "processing"):
@@ -88,6 +121,10 @@ def process(session, oid: uuid.UUID) -> Orthophoto | None:
     o.status, o.error = "processing", None
     session.commit()
     try:
+        try:
+            check_disk(o.size_bytes, factor=2.0, path=ortho_dir(o.id))  # el original ya está en disco
+        except DiskFull as exc:
+            raise ProcessError(str(exc)) from exc
         bounds, w, h = build_cog(o)
         o.bounds, o.width, o.height, o.status = bounds, w, h, "ready"
     except (ProcessError, subprocess.TimeoutExpired, KeyError, ValueError, OSError) as exc:
@@ -115,6 +152,10 @@ def main() -> None:  # pragma: no cover - bucle del servicio
             ids = [oid] if oid else []
             if time.time() - last_scan > 30:
                 last_scan = time.time()
+                try:
+                    purge_stale_uploads(session)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("limpieza de subidas abandonadas: %s", exc)
                 ids += list(session.scalars(select(Orthophoto.id).where(Orthophoto.status.in_(("pending",
                                                                                                 "processing")))))
             for x in dict.fromkeys(ids):

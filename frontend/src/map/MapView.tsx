@@ -6,7 +6,7 @@ import { Legend } from "../components/Legend";
 import { ScaleBar } from "../components/ScaleBar";
 import { GOOGLE_MAPS_API_KEY as API_KEY } from "../lib/mapConfig";
 import type { Camera, LngLat, Size } from "../lib/geo";
-import { fitBounds, zoomAt } from "../lib/geo";
+import { fitBounds, unproject, zoomAt } from "../lib/geo";
 import type { MapType } from "../state/store";
 import { useEditor, writePref } from "../state/store";
 import { BlankBase, GoogleBase, useGeocoder } from "./GoogleBase";
@@ -14,6 +14,7 @@ import { QuickSearch } from "../components/QuickSearch";
 import { useOrthos } from "../components/LayersTab";
 import { hourLabel } from "../lib/patterns";
 import { NetworkLayer } from "./NetworkLayer";
+import { GcpPreviewLayer } from "./GcpPreviewLayer";
 import { OrthoLayer } from "./OrthoLayer";
 
 const DEFAULT_CENTER: LngLat = [
@@ -85,8 +86,13 @@ export function MapView() {
 
   useEffect(() => {
     if (!cameraRequest || !cameraRequest.points.length) return;
-    const c = fitBounds(cameraRequest.points, size, 80);
-    if (c) setCamera({ ...c, zoom: Math.min(c.zoom, 19) });
+    // Si un panel tapa el mapa por la izquierda, se encuadra en la parte visible.
+    const left = ref.current?.getBoundingClientRect().left ?? 0;
+    const hidden = Math.max(0, Math.min(size.width - 200, (cameraRequest.coverLeft ?? 0) - left));
+    const c = fitBounds(cameraRequest.points, { width: size.width - hidden, height: size.height }, 80);
+    if (!c) return;
+    const cam = { ...c, zoom: Math.min(c.zoom, 19) };
+    setCamera(hidden ? { ...cam, center: unproject([size.width / 2 - hidden / 2, size.height / 2], cam, size) } : cam);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraRequest]);
 
@@ -96,6 +102,7 @@ export function MapView() {
     <div className="map" ref={ref}>
       {useGoogle ? <GoogleBase camera={camera} mapType={mapType} theme={theme} /> : <BlankBase camera={camera} />}
       <OrthoLayer camera={camera} size={size} />
+      <GcpPreviewLayer camera={camera} size={size} />
       <NetworkLayer camera={camera} size={size} setCamera={setCamera} />
       <div className="map-controls top-left">
         {useGoogle && <AddressSearch onLocate={setCamera} />}

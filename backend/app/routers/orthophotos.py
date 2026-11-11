@@ -4,12 +4,14 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_session
-from app.schemas.sig import GcpFit, GcpRequest, OrthophotoOut, OrthophotoUpdate
+from app.core.config import get_settings
+from app.schemas.sig import GcpFit, GcpRequest, OrthophotoOut, OrthophotoUpdate, UploadInit, UploadState
 from app.services import orthophotos as svc
 from app.services.network import get_project_or_404
 
@@ -38,9 +40,57 @@ def upload_orthophoto(project_id: uuid.UUID, session: SessionDep,
         o = svc.upload(session, project, file, world, name=name, source=source, captured_on=captured_on,
                        src_crs=src_crs)
     except svc.OrthoError as exc:
-        code = 413 if "límite" in str(exc) else 422
-        raise HTTPException(status_code=code, detail=str(exc)) from exc
+        raise _ortho_error(exc) from exc
     return svc.out(o)
+
+
+def _ortho_error(exc: svc.OrthoError) -> HTTPException:
+    if isinstance(exc, svc.DiskFull):
+        return HTTPException(status_code=507, detail=str(exc))
+    return HTTPException(status_code=413 if "límite" in str(exc) else 422, detail=str(exc))
+
+
+@router.post("/uploads", response_model=UploadState, status_code=status.HTTP_201_CREATED,
+             summary="Iniciar una subida por partes (reanudable): verifica tamaño, cupo y espacio en disco")
+def start_upload(project_id: uuid.UUID, body: UploadInit, session: SessionDep) -> UploadState:
+    project = get_project_or_404(session, project_id)
+    try:
+        return svc.init_upload(session, project, body)
+    except svc.OrthoError as exc:
+        raise _ortho_error(exc) from exc
+
+
+@router.get("/{ortho_id}/upload", response_model=UploadState, summary="Estado de una subida (para retomarla)")
+def upload_status(project_id: uuid.UUID, ortho_id: uuid.UUID, session: SessionDep) -> UploadState:
+    project = get_project_or_404(session, project_id)
+    return svc.upload_state(svc.get(session, project, ortho_id))
+
+
+@router.put("/{ortho_id}/upload", response_model=UploadState, summary="Agregar una parte (cuerpo binario) en `offset`",
+            responses={409: {"description": "La parte no empieza en el byte esperado: retomar desde `offset`"}},
+            openapi_extra={"requestBody": {"content": {"application/octet-stream": {"schema": {"type": "string",
+                                                                                                "format": "binary"}}}}})
+async def upload_part(project_id: uuid.UUID, ortho_id: uuid.UUID, request: Request, session: SessionDep,
+                      offset: Annotated[int, Query(ge=0, description="Byte inicial de la parte")]):
+    limit = 2 * get_settings().ortho_part_mb * 1024 * 1024
+    declared = int(request.headers.get("content-length") or 0)
+    if declared > limit:
+        raise HTTPException(status_code=413, detail="La parte supera el tamaño máximo por parte.")
+    buf = bytearray()
+    async for piece in request.stream():
+        buf += piece
+        if len(buf) > limit:
+            raise HTTPException(status_code=413, detail="La parte supera el tamaño máximo por parte.")
+
+    def work():
+        project = get_project_or_404(session, project_id)
+        return svc.append_chunk(session, project, svc.get(session, project, ortho_id), offset, bytes(buf))
+    try:
+        return await run_in_threadpool(work)
+    except svc.OffsetMismatch as exc:
+        return JSONResponse(status_code=409, content={"detail": str(exc), "offset": exc.offset})
+    except svc.OrthoError as exc:
+        raise _ortho_error(exc) from exc
 
 
 @router.patch("/{ortho_id}", response_model=OrthophotoOut, summary="Editar nombre, fecha, fuente, opacidad o visibilidad")
@@ -76,6 +126,8 @@ def gcps(project_id: uuid.UUID, ortho_id: uuid.UUID, body: GcpRequest, session: 
     try:
         if body.apply:
             return svc.apply_gcps(session, project, o, body.gcps)
-        return svc.fit_gcps(body.gcps, project.length_srid)
+        if body.save:
+            return svc.save_gcps(session, project, o, body.gcps)
+        return svc.fit_gcps(body.gcps, project.length_srid, (o.width, o.height) if o.width and o.height else None)
     except svc.OrthoError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
