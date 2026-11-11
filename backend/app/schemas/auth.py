@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.summary import PriceRow
+
 Role = Literal["admin", "proyectista", "revisor", "lector"]
 
 
@@ -228,3 +230,33 @@ class ReviewOut(BaseModel):
     status: str
     comment: str
     created_at: datetime
+
+
+class ProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=200, description="Nombre visible")
+
+
+class OrgSettings(BaseModel):
+    """Ajustes de la organización: se aplican a los proyectos nuevos y a los que no tienen valores propios."""
+    model_config = ConfigDict(extra="forbid")
+    default_profile_id: int | None = Field(None, description="Perfil de criterios de diseño para proyectos nuevos")
+    service_life: dict[str, int] | None = Field(None, description="Vida útil por material (años); vacío = sugerida")
+    default_life: int | None = Field(None, ge=1, le=200)
+    life_verified: bool = False
+    prices: list[PriceRow] | None = Field(None, description="Precios de renovación por metro (material, DN máximo, CLP/m)")
+    prices_verified: bool = False
+
+
+class ServiceStatus(BaseModel):
+    name: str
+    status: Literal["ok", "error", "sin datos"]
+    detail: str | None = None
+
+
+class SystemInfo(BaseModel):
+    api_version: str
+    engine: dict
+    services: list[ServiceStatus]
+    last_backup: dict | None = Field(None, description="Último respaldo automático (fecha, carpeta, tamaño)")
+    plans: dict[str, dict]

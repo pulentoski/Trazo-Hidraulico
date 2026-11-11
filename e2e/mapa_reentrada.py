@@ -4,7 +4,7 @@ Regresión del mapa que, al volver a abrir un proyecto, dejaba la capa de la red
 arrastre no movía el mapa, los botones +/− hacían desaparecer la red e «ir al elemento» no llevaba a ningún lado.
 
 Se ejecuta con cada mapa base:
-  · Google Maps con la key guardada en Configuración (se omite si la plataforma no tiene una), verificando que el
+  · Google Maps con la key guardada en Ajustes (se omite si la plataforma no tiene una), verificando que el
     mapa de Google recibe los gestos (gestureHandling «greedy») y que ninguna capa transparente los intercepta;
   · OpenStreetMap elegido como proveedor (aunque haya key): MapLibre recibe los gestos, atribución de OSM y de Esri
     (satélite) y búsqueda de direcciones con Nominatim (respuesta simulada: no depende del servicio externo);
@@ -220,7 +220,8 @@ def run(browser, state: dict, mode: str) -> None:
     """mode: google | osm (proveedor elegido) | sin-key (automático sin key → OSM) | sin-webgl (lienzo neutro)."""
     base = {"google": "google", "osm": "osm", "sin-key": "osm", "sin-webgl": "blank"}[mode]
     ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="es-CL", storage_state=state,
-                              ignore_https_errors=INSECURE)
+                              ignore_https_errors=INSECURE, reduced_motion="reduce")
+    ctx.add_init_script("try { localStorage.setItem('trazo.animations', 'false') } catch (e) {}")  # pruebas estables
     page = ctx.new_page()
     watch(page)
 
@@ -286,7 +287,7 @@ def main() -> int:
         pid = r.json()["project_id"]
         try:
             if has_key:
-                log("== mapa de Google (key de Configuración) ==")
+                log("== mapa de Google (key de Ajustes) ==")
                 run(browser, state, "google")
             else:
                 log("== mapa de Google: omitido (la plataforma no tiene key guardada) ==")

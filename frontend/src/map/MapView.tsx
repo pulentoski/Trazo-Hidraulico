@@ -12,7 +12,7 @@ import { CoordBar } from "../components/Coordinates";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { fitBounds, unproject, zoomAt } from "../lib/geo";
 import type { MapType } from "../state/store";
-import { useEditor, writePref } from "../state/store";
+import { animationsOn, useEditor, writePref } from "../state/store";
 import { BlankBase, GoogleBase, useGeocoder } from "./GoogleBase";
 import { QuickSearch } from "../components/QuickSearch";
 import { useOrthos } from "../components/LayersTab";
@@ -279,7 +279,7 @@ function MapLayers({ wanted, googleFailed, size, host }: { wanted: BaseKind; goo
           </> : <>
             <strong>Se usa OpenStreetMap.</strong>{" "}
             {quotaDenied ? "Se alcanzó el límite mensual de cargas de Google Maps del plan de su organización."
-              : "No se pudo cargar Google Maps (revise la key y sus restricciones en Configuración → Mapa base)."}
+              : "No se pudo cargar Google Maps (revise la key y sus restricciones en Ajustes → Plataforma → Mapa base)."}
           </>}
         </div>
       )}
@@ -309,10 +309,28 @@ function HourSlider() {
   const result = useEditor((s) => s.result);
   const period = useEditor((s) => s.period);
   const set = useEditor((s) => s.set);
+  const [playing, setPlaying] = useState(false);
+  const last = result ? result.times.length - 1 : 0;
+  // «Reproducir día»: avanza hora a hora (los colores de la red cambian con transición suave) y se detiene al final.
+  useEffect(() => {
+    if (!playing) return;
+    const t = window.setInterval(() => {
+      const p = useEditor.getState().period;
+      if (p >= last) { setPlaying(false); return; }
+      set({ period: p + 1 });
+    }, animationsOn() ? 700 : 400);
+    return () => window.clearInterval(t);
+  }, [playing, last, set]);
+  useEffect(() => { if (!result) setPlaying(false); }, [result]);
   if (!result || result.times.length < 2) return null;
-  const last = result.times.length - 1;
+  const toggle = () => {
+    if (!playing && period >= last) set({ period: 0 });
+    setPlaying(!playing);
+  };
   return (
     <div className="hour-slider" role="group" aria-label="Hora de la simulación">
+      <button className="small ghost" onClick={toggle} aria-label={playing ? "Pausar" : "Reproducir día"} title={playing ? "Pausar" : "Reproducir día"}
+        aria-pressed={playing}>{playing ? "❚❚" : "▶▶"}</button>
       <button className="small ghost" onClick={() => set({ period: Math.max(0, period - 1) })} aria-label="Hora anterior">◀</button>
       <input type="range" min={0} max={last} value={period} onChange={(e) => set({ period: Number(e.target.value) })} aria-label="Hora" />
       <button className="small ghost" onClick={() => set({ period: Math.min(last, period + 1) })} aria-label="Hora siguiente">▶</button>

@@ -10,7 +10,7 @@ import { defaultNodeProps, defaultPipeProps, estimatedLength, linkCoords, neares
   roughnessFor, uid } from "../lib/network";
 import type { LabelItem } from "../lib/labels";
 import { placeLabels } from "../lib/labels";
-import { criteriaOf, useEditor } from "../state/store";
+import { animationsOn, criteriaOf, useEditor } from "../state/store";
 
 type Pt = [number, number];
 type Gesture =
@@ -27,6 +27,9 @@ const isEl = (t: Target): t is { type: ElType; uid: string } => EL_TYPES.include
 const PICK_PIPE_PX = 16;
 
 const CLICK_TOLERANCE = 4;
+/** Topes de animación por cuadro (redes grandes): el resto se dibuja quieto. */
+const MAX_FLOW_ANIM = 1500;
+const MAX_PULSE = 200;
 const SNAP_PX = 12;
 
 export function defaultCatalogItem(catalog: CatalogPipe[]): CatalogPipe | undefined {
@@ -418,6 +421,16 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
   const lbl = (uid: string, x: number, y: number, text: string, cls: string, prio: number, anchor: "start" | "middle" = "start") =>
     labelItems.push({ key: `${uid}-lbl`, uid, x, y, text, cls, prio: selected.has(uid) ? 100 : prio, anchor });
   const handleEls: React.ReactNode[] = [];
+  // Animaciones del mapa (solo lo visible): flujo en tuberías y pulso en nudos con alerta.
+  const anim = animationsOn() && !s.dragging && gesture.kind !== "pan";
+  const flowEls: React.ReactNode[] = [];
+  const pulseEls: React.ReactNode[] = [];
+  let flowCount = 0;
+  const onScreen = (pts: Pt[]) => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    return x1 >= 0 && y1 >= 0 && x0 <= size.width && y0 <= size.height;
+  };
 
   for (const l of Object.values(net.links)) {
     const coords = linkCoords(net, l);
@@ -432,7 +445,7 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
     linkEls.push(
       <g key={l.uid}>
         {isSel && <polyline points={pstr} className="link-sel" strokeWidth={width + 7} />}
-        <polyline points={pstr} className={`link link-${l.kind}`} stroke={color} strokeWidth={width} />
+        <polyline points={pstr} className={`link link-${l.kind}`} style={{ stroke: color }} strokeWidth={width} />
         <polyline points={pstr} className="hit" data-t="link" data-uid={l.uid} />
       </g>,
     );
@@ -446,6 +459,15 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
       );
     }
     const q = linkRes?.[l.id]?.flow[period];
+    if (anim && q !== undefined && Math.abs(q) > 1e-3 && l.kind === "pipe" && flowCount < MAX_FLOW_ANIM && onScreen(pts)) {
+      flowCount++;
+      const vel = Math.abs(linkRes?.[l.id]?.velocity[period] ?? 0.3);
+      const dur = Math.max(0.35, Math.min(6, 0.9 / Math.max(vel, 0.02)));
+      const ordered = q < 0 ? [...pts].reverse() : pts;
+      flowEls.push(<polyline key={`${l.uid}-flow`} className="flow-anim" data-flow={l.id}
+        points={ordered.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")}
+        style={{ strokeWidth: Math.max(1.2, width * 0.45), animationDuration: `${dur.toFixed(2)}s` }} />);
+    }
     if (q !== undefined && Math.abs(q) > 1e-6 && mid.length > 28) {
       const deg = (mid.angle * 180) / Math.PI + (q < 0 ? 180 : 0);
       arrowEls.push(
@@ -480,10 +502,13 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
     const fill = n.kind === "junction" && pr !== undefined ? pscale.colors[classify(pr, pscale.breaks)] : "var(--node-fill)";
     const isSel = selected.has(n.uid);
     const r = 4.5 * zoomScale;
+    if (anim && n.kind === "junction" && pr !== undefined && pr < criteria.pressureMin && pulseEls.length < MAX_PULSE) {
+      pulseEls.push(<circle key={`${n.uid}-pulse`} className="alert-pulse" cx={x} cy={y} r={6} data-alert={n.id} />);
+    }
     nodeEls.push(
       <g key={n.uid} transform={`translate(${x},${y})`} className={`node node-${n.kind}${isSel ? " sel" : ""}`} data-t="node" data-uid={n.uid}>
         {isSel && <circle r={r + 6} className="node-sel" />}
-        {n.kind === "junction" && <circle r={r} fill={fill} />}
+        {n.kind === "junction" && <circle r={r} style={{ fill }} />}
         {n.kind === "reservoir" && <path d={`M ${-9 * zoomScale} ${-6 * zoomScale} L ${9 * zoomScale} ${-6 * zoomScale} L ${6 * zoomScale} ${6 * zoomScale} L ${-6 * zoomScale} ${6 * zoomScale} Z`} />}
         {n.kind === "tank" && <rect x={-7 * zoomScale} y={-8 * zoomScale} width={14 * zoomScale} height={16 * zoomScale} rx={2} />}
         <circle r={Math.max(9, r + 4)} className="hit-node" />
@@ -756,8 +781,10 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
       <g>{dryEls}</g>
       <g>{sectorEls}</g>
       <g className="heat">{heatEls}</g>
+      <g className="pulses">{pulseEls}</g>
       <g>{hlEls}</g>
       <g>{linkEls}</g>
+      <g className="flows">{flowEls}</g>
       <g>{arrowEls}</g>
       <g>{clientEls}</g>
       <g>{shutoffEls}</g>

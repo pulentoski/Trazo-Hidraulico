@@ -83,6 +83,8 @@ export interface EditorState {
   mapType: MapType;
   theme: Theme;
   themePref: ThemePref;
+  /** Animaciones de la interfaz y del mapa (Ajustes → Preferencias); se respetan además prefers-reduced-motion. */
+  animations: boolean;
   defaultProfileId: number | null;
   pendingDelete: string[] | null;
   /** Encuadre pedido; `coverLeft`: borde derecho (px de la ventana) de un panel que tapa el mapa por la izquierda. */
@@ -260,6 +262,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   overlay: EMPTY_OVERLAY,
   gcpPreview: null,
   themePref: readPref<ThemePref>("theme", "system"),
+  animations: readPref<boolean>("animations", true),
   theme: resolveTheme(readPref<ThemePref>("theme", "system")),
   defaultProfileId: readPref<number | null>("defaultProfileId", null),
   pendingDelete: null,
@@ -354,6 +357,9 @@ export const useEditor = create<EditorState>()((set, get) => ({
     });
   },
   select: (uids, additive = false) => {
+    // Resaltado breve del elemento recién seleccionado (anillo animado).
+    const fresh = uids.filter((u) => !get().selection.includes(u));
+    if (fresh.length && fresh.length <= 20) set({ flash: { uids: fresh, nonce: Date.now() } });
     if (!additive) return set({ selection: uids });
     const cur = new Set(get().selection);
     for (const u of uids) {
@@ -394,3 +400,9 @@ export const useEditor = create<EditorState>()((set, get) => ({
   setScenarios: (list) => set({ scenarios: list, revision: get().revision + 1 }),
   setAux: (aux) => set({ aux, revision: get().revision + 1 }),
 }));
+
+/** Animaciones activas: preferencia del usuario y sin «reducir movimiento» en el sistema. */
+export function animationsOn(): boolean {
+  if (!useEditor.getState().animations) return false;
+  try { return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches; } catch { return true; }
+}

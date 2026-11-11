@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from app.core.db import get_session
 from app.models import AuditLog, Membership, Organization, Project, ProjectVersion, User, VersionReview
 from app.schemas.auth import (AuditOut, InviteIn, LinkOut, MapLoadOut, MemberOut, MemberUpdate, OrgAdminOut, OrgCreate,
-                              OrgCreated, OrgOut, OrgRef, OrgUpdate, ReviewIn, ReviewOut, Usage, UserAdminOut,
-                              UserAdminUpdate)
+                              OrgCreated, OrgOut, OrgRef, OrgSettings, OrgUpdate, ReviewIn, ReviewOut, ServiceStatus,
+                              SystemInfo, Usage, UserAdminOut, UserAdminUpdate)
 from app.services import auth
 from app.services.network import get_project_or_404, get_version_or_404
 
@@ -162,7 +162,81 @@ def add_review(project_id: uuid.UUID, number: int, body: ReviewIn, session: Sess
                      created_at=r.created_at)
 
 
+@router.get("/orgs/{org_id}/settings", response_model=OrgSettings, summary="Ajustes de la organización")
+def org_settings(org_id: uuid.UUID, session: SessionDep) -> OrgSettings:
+    auth.require_org_perm(org_id, "view")
+    return settings_of(_org(session, org_id))
+
+
+@router.put("/orgs/{org_id}/settings", response_model=OrgSettings,
+            summary="Editar perfil de diseño por defecto, vida útil y precios (administrador)")
+def put_org_settings(org_id: uuid.UUID, body: OrgSettings, session: SessionDep) -> OrgSettings:
+    from app.repositories import catalog as catalog_repo
+
+    auth.require_org_perm(org_id, "manage")
+    org = _org(session, org_id)
+    if body.default_profile_id is not None and catalog_repo.get_profile(session, body.default_profile_id) is None:
+        raise auth.AuthError(422, "Perfil de diseño inexistente.")
+    org.settings = body.model_dump(mode="json")
+    auth.audit(session, "organizacion.ajustes", org_id=org_id,
+               detail={"perfil": body.default_profile_id, "vida_util": bool(body.service_life), "precios": bool(body.prices)})
+    session.commit()
+    return settings_of(org)
+
+
+def settings_of(org: Organization) -> OrgSettings:
+    try:
+        return OrgSettings.model_validate(org.settings or {})
+    except ValueError:
+        return OrgSettings()
+
+
 # ── Superadministrador de plataforma ──
+
+@router.get("/admin/system", response_model=SystemInfo, summary="Versión, motor, estado de servicios y último respaldo")
+def admin_system(session: SessionDep) -> SystemInfo:
+    import json
+    import time
+
+    from sqlalchemy import text
+
+    from app.core.cache import get_redis
+    from app.hydraulic.version import engine_info
+    from app.models import PlatformSetting
+
+    auth.require_superadmin()
+    services = [ServiceStatus(name="API", status="ok")]
+    try:
+        session.execute(text("SELECT 1"))
+        services.append(ServiceStatus(name="Base de datos", status="ok"))
+    except Exception as exc:  # noqa: BLE001
+        services.append(ServiceStatus(name="Base de datos", status="error", detail=str(exc)[:120]))
+    try:
+        r = get_redis()
+        r.ping()
+        services.append(ServiceStatus(name="Caché", status="ok"))
+        beat = r.get("trazo:worker:heartbeat")
+        if beat is None:
+            services.append(ServiceStatus(name="Worker de ortofotos", status="sin datos", detail="sin latido registrado"))
+        else:
+            age = time.time() - float(beat)
+            services.append(ServiceStatus(name="Worker de ortofotos", status="ok" if age < 120 else "error",
+                                          detail=f"último latido hace {int(age)} s"))
+    except Exception as exc:  # noqa: BLE001
+        services.append(ServiceStatus(name="Caché", status="error", detail=str(exc)[:120]))
+    row = session.get(PlatformSetting, "ultimo_respaldo")
+    backup = None
+    if row is not None:
+        try:
+            backup = json.loads(row.value)
+        except ValueError:
+            backup = {"detalle": row.value}
+    from app.main import app as fastapi_app
+
+    return SystemInfo(api_version=fastapi_app.version, engine=engine_info(), services=services, last_backup=backup,
+                      plans={k: dict(v) for k, v in auth.PLANS.items()})
+
+
 
 @router.get("/admin/orgs", response_model=list[OrgAdminOut], summary="Organizaciones con su uso")
 def admin_orgs(session: SessionDep) -> list[OrgAdminOut]:

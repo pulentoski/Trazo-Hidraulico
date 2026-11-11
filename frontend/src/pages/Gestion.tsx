@@ -13,7 +13,7 @@ import { fmt } from "../lib/format";
 import { PATHS } from "../paths";
 import { canEdit, useAuth } from "../state/auth";
 import { errorText } from "../state/projects";
-import { useEditor } from "../state/store";
+import { animationsOn, useEditor } from "../state/store";
 
 export const GESTION_TABS: { id: GTab; label: string; records: RecordKind[] }[] = [
   { id: "operacion", label: "Operación", records: ["energia"] },
@@ -79,11 +79,87 @@ function TableView({ t, pid, tab, q }: { t: GTable; pid: string; tab: GTab; q: G
   );
 }
 
-function IndicatorCard({ i, res, pid, q, onLoad }: { i: GIndicator; res: TabResult; pid: string; q: GQuery; onLoad: (k: RecordKind) => void }) {
+/** Conteo corto (≈ 450 ms) hasta el valor al cargar; inmediato sin animaciones. */
+function useCountUp(target: number | null | undefined): number | null {
+  const [v, setV] = useState<number | null>(target ?? null);
+  useEffect(() => {
+    if (target === null || target === undefined) { setV(null); return; }
+    if (!animationsOn()) { setV(target); return; }
+    let raf = 0;
+    const t0 = performance.now();
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / 450);
+      const e = 1 - (1 - k) ** 3;
+      setV(k >= 1 ? target : target * e);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target]);
+  return v;
+}
+
+/** Tendencia mensual (primera serie del gráfico si el eje es de meses). */
+function trendOf(i: GIndicator): number[] | null {
+  const c = i.chart;
+  if (!c || c.x.length < 3 || !/^\d{4}-\d{2}$/.test(c.x[0]) || !c.series.length) return null;
+  const vals = c.series[0].values.map((v) => (v === null || v === undefined ? NaN : v));
+  return vals.filter((v) => Number.isFinite(v)).length >= 2 ? vals : null;
+}
+
+function Sparkline({ values, tone }: { values: number[]; tone: string }) {
+  const ok = values.filter((v) => Number.isFinite(v));
+  const lo = Math.min(...ok);
+  const hi = Math.max(...ok);
+  const W = 120, H = 30;
+  const x = (k: number) => (k / Math.max(1, values.length - 1)) * (W - 4) + 2;
+  const y = (v: number) => H - 3 - ((v - lo) / (hi - lo || 1)) * (H - 6);
+  let d = "";
+  let pen = false;
+  values.forEach((v, k) => { if (!Number.isFinite(v)) { pen = false; return; } d += `${pen ? "L" : "M"}${x(k).toFixed(1)},${y(v).toFixed(1)}`; pen = true; });
+  const lastK = values.map((v, k) => (Number.isFinite(v) ? k : -1)).filter((k) => k >= 0).pop() ?? 0;
+  return (
+    <svg className={`sparkline ${tone}`} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+      <path d={d} className="series-line" style={{ ["--len" as string]: 400 }} />
+      <circle cx={x(lastK)} cy={y(values[lastK])} r={2.4} />
+    </svg>
+  );
+}
+
+/** Tono semántico de la variación: verde si va en el sentido deseado de la meta, rojo si no, neutro sin meta. */
+function deltaTone(i: GIndicator): string {
+  if (!i.delta_pct || i.higher_is_better === null || i.higher_is_better === undefined) return "neutral";
+  return (i.delta_pct > 0) === i.higher_is_better ? "good" : "bad";
+}
+
+function KpiTile({ i }: { i: GIndicator }) {
+  const v = useCountUp(i.value);
+  const trend = trendOf(i);
+  const tone = deltaTone(i);
+  const up = (i.delta_pct ?? 0) > 0;
+  return (
+    <article className={`kpi-tile ${i.status ?? "none"}`} aria-label={i.label} data-kpi={i.key}>
+      <h3 title={i.label}>{i.label}</h3>
+      <div className="kpi-value">
+        <b>{v === null ? "—" : num(i.value !== null && Number.isInteger(i.value) ? Math.round(v) : v, "", i.value !== null && Number.isInteger(i.value) ? 0 : undefined)}</b>
+        <span className="unit">{i.unit}</span>
+      </div>
+      <div className="kpi-foot">
+        {i.delta_pct !== null && i.delta_pct !== undefined ? (
+          <span className={`delta ${tone}`} title={`Período anterior: ${num(i.previous, i.unit)}`}>
+            {up ? "▲" : i.delta_pct < 0 ? "▼" : "="} {fmt(Math.abs(i.delta_pct), 1)} %</span>
+        ) : <span className="muted small">{i.empty ? "sin datos" : "sin período anterior"}</span>}
+        {trend && <Sparkline values={trend} tone={i.status ?? "none"} />}
+      </div>
+      {i.status && <span className={`status-dot ${i.status}`} title={`${STATUS_LABEL[i.status]}${i.target_verified ? "" : " · meta no verificada"}`} />}
+    </article>
+  );
+}
+
+function IndicatorCard({ i, res, pid, q, onLoad }: { i: GIndicator; res: TabResult; pid: string; q: GQuery; onLoad: (k: RecordKind, action: "import" | "add") => void }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const table = i.table ? res.tables.find((t) => t.key === i.table) : undefined;
-  const up = (i.delta_pct ?? 0) > 0;
   return (
     <article className={`kpi-card ${i.status ?? ""}`} aria-label={i.label} data-indicator={i.key}>
       <header>
@@ -91,23 +167,21 @@ function IndicatorCard({ i, res, pid, q, onLoad }: { i: GIndicator; res: TabResu
         {i.status && <span className={`status-chip ${i.status}`}>{STATUS_LABEL[i.status]}</span>}
         {i.status && !i.target_verified && <span className="badge warn" title="Meta sugerida: revísela en «Metas»">no verificado</span>}
       </header>
-      <div className="kpi-value">
-        <b>{num(i.value)}</b> <span className="unit">{i.unit}</span>
-        {i.delta_pct !== null && i.delta_pct !== undefined && (
-          <span className={`delta ${up ? "up" : i.delta_pct < 0 ? "down" : ""}`} title={`Período anterior: ${num(i.previous, i.unit)}`}>
-            {up ? "▲" : i.delta_pct < 0 ? "▼" : "="} {fmt(Math.abs(i.delta_pct), 1)} %
-          </span>)}
-        {i.previous !== null && i.previous !== undefined && <span className="muted small"> antes: {num(i.previous, i.unit)}</span>}
-      </div>
-      {i.note && <p className="muted small kpi-note">{i.note}</p>}
-      {i.empty && (
+      <p className="muted small kpi-note">{i.note ?? (i.value !== null ? `${num(i.value)} ${i.unit}` : " ")}</p>
+      {i.empty ? (
         <div className="empty-hint" role="note">
-          <p><b>Falta:</b> {i.empty.missing}.</p>
-          <p className="small"><b>Cómo cargarlo:</b> {i.empty.how}.</p>
-          {i.empty.record && <button className="small" onClick={() => onLoad(i.empty!.record!)}>Cargar datos</button>}
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="empty-icon"><path d="M4 19h16M6 16V9m6 7V5m6 11v-4" /></svg>
+          <div>
+            <p><b>Falta:</b> {i.empty.missing}.</p>
+            <p className="small"><b>Cómo cargarlo:</b> {i.empty.how}.</p>
+            {i.empty.record && (
+              <div className="inline">
+                <button className="small primary" onClick={() => onLoad(i.empty!.record!, "import")}>Cargar planilla</button>
+                <button className="small" onClick={() => onLoad(i.empty!.record!, "add")}>Agregar registro</button>
+              </div>)}
+          </div>
         </div>
-      )}
-      {i.chart && <GChart chart={i.chart} />}
+      ) : i.chart ? <div className="chart-box"><GChart chart={i.chart} /></div> : <div className="chart-box" />}
       <footer>
         {table && <button className="ghost small" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Ocultar detalle" : "Detalle"}</button>}
         {table && <a className="btn small ghost" href={api.gestionTableUrl(pid, res.tab, table.key, "xlsx", q)}>Excel</a>}
@@ -225,7 +299,7 @@ export function GestionPage() {
   const [res, setRes] = useState<TabResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [targets, setTargets] = useState(false);
-  const [openRecord, setOpenRecord] = useState<{ kind: RecordKind; n: number } | null>(null);
+  const [openRecord, setOpenRecord] = useState<{ kind: RecordKind; n: number; action: "import" | "add" } | null>(null);
   const tab = (GESTION_TABS.find((t) => t.id === params.get("pestana"))?.id ?? "operacion") as GTab;
   const preset = (params.get("periodo") as Preset) || "anio";
   const sector = params.get("sector") ?? "";
@@ -260,10 +334,10 @@ export function GestionPage() {
   const readOnly = project ? !canEdit(roleIn(project.org_id)) : true;
   const tabDef = GESTION_TABS.find((t) => t.id === tab)!;
   const recordSpecs = tabDef.records.map((k) => specs.find((s) => s.kind === k)).filter((s): s is RecordSpec => !!s);
-  const loadRecord = (k: RecordKind) => {
+  const loadRecord = (k: RecordKind, action: "import" | "add" = "add") => {
     const owner = GESTION_TABS.find((t) => t.records.includes(k));
     if (owner && owner.id !== tab) update({ pestana: owner.id });
-    setOpenRecord({ kind: k, n: Date.now() });
+    setOpenRecord({ kind: k, n: Date.now(), action });
   };
   const usedTables = new Set(res?.indicators.map((i) => i.table).filter(Boolean));
   const calendar = (res?.extra as { calendar?: { date: string; kind: string; element?: string | null; status: string; assignee?: string | null }[] } | undefined)?.calendar;
@@ -272,12 +346,14 @@ export function GestionPage() {
     <div className="page gestion-page">
       <PageHeader />
       <main className="page-body gestion">
+        {filters?.model_version != null && <p className="muted small gestion-meta">Versión del modelo {filters.model_version}
+          {filters.data_start ? ` · datos desde ${filters.data_start} hasta ${filters.data_end}` : " · sin registros de operación todavía"}</p>}
+        <div className="gestion-sticky">
         <div className="gestion-head">
-          <div>
-            <button className="ghost small" onClick={() => navigate(PATHS.project(id))}>← Editor</button>
+          <div className="gh-title">
+            <button className="ghost small" onClick={() => navigate(PATHS.project(id))} aria-label="Volver al editor">← Editor</button>
             <h1 className="page-title">Gestión <span className="muted">· {project?.name ?? "…"}</span></h1>
-            {filters?.model_version != null && <p className="muted small">Versión del modelo {filters.model_version}
-              {filters.data_start ? ` · datos desde ${filters.data_start} hasta ${filters.data_end}` : " · sin registros de operación todavía"}</p>}
+            <p className="gestion-period"><b>{desde}</b> a <b>{hasta}</b>{sector ? ` · sector ${sector}` : ""}{ruta ? ` · ruta ${ruta}` : ""}</p>
           </div>
           <div className="inline">
             <button onClick={() => setTargets(true)}>Metas</button>
@@ -309,9 +385,13 @@ export function GestionPage() {
             <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? "on" : ""} onClick={() => update({ pestana: t.id === "operacion" ? null : t.id })}>{t.label}</button>
           ))}
         </nav>
+        </div>
         <div className="gestion-body" role="tabpanel" aria-label={tabDef.label} aria-busy={loading}>
           {!res ? <p className="muted">Cargando…</p> : (<>
             {(res.notes ?? []).map((n) => <p key={n} className="notice small">{n}</p>)}
+            <section className="kpi-strip" aria-label="Indicadores clave">
+              {res.indicators.map((i) => <KpiTile key={i.key} i={i} />)}
+            </section>
             <div className="kpi-grid">
               {res.indicators.map((i) => <IndicatorCard key={i.key} i={i} res={res} pid={id} q={q} onLoad={loadRecord} />)}
             </div>
@@ -336,7 +416,8 @@ export function GestionPage() {
               <section className="records" aria-label="Registros">
                 <h2>Registros</h2>
                 {recordSpecs.map((s) => <RecordsPanel key={s.kind} pid={id} spec={s} readOnly={readOnly} onChanged={load}
-                  openNonce={openRecord?.kind === s.kind ? openRecord.n : undefined} />)}
+                  openNonce={openRecord?.kind === s.kind ? openRecord.n : undefined}
+                  openAction={openRecord?.kind === s.kind ? openRecord.action : undefined} />)}
               </section>
             )}
           </>)}

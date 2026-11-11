@@ -66,7 +66,7 @@ export function Login() {
           + "(no use bloqueo de cookies propias) y vuelva a intentarlo.");
       return false;
     }
-    navigate(me.mfa_setup_required ? `${PATHS.profile}?mfa=1` : safeNext(params.get("volver")), { replace: true });
+    navigate(me.mfa_setup_required ? `${PATHS.ajustes("seguridad")}?mfa=1` : safeNext(params.get("volver")), { replace: true });
     return true;
   };
   const submit = async (e: React.FormEvent) => {
@@ -169,7 +169,7 @@ export function Invitation() {
     try {
       await api.acceptInvitation(token, name, pw);
       const me = await refresh();
-      navigate(me?.mfa_setup_required ? `${PATHS.profile}?mfa=1` : PATHS.home, { replace: true });
+      navigate(me?.mfa_setup_required ? `${PATHS.ajustes("seguridad")}?mfa=1` : PATHS.home, { replace: true });
     } catch (err) { setError(errorText(err)); }
   };
   return (

@@ -24,7 +24,11 @@ backup_now() {
 	tar -C /data/ortho -czf "$dir.tmp/ortofotos.tar.gz" .
 	(cd "$dir.tmp" && sha256sum trazo.dump ortofotos.tar.gz > SHA256SUMS)
 	mv "$dir.tmp" "$dir"
-	log "listo $dir ($(du -sh "$dir" | cut -f1))"
+	size=$(du -sh "$dir" | cut -f1)
+	log "listo $dir ($size)"
+	# Último respaldo visible en Ajustes → Plataforma → Sistema (no detiene el respaldo si falla).
+	psql -d "$POSTGRES_DB" -qc "INSERT INTO platform_setting (key, value, encrypted, updated_by) VALUES ('ultimo_respaldo', '{\"fecha\": \"$(date -Iseconds)\", \"carpeta\": \"$stamp\", \"tamano\": \"$size\"}', false, 'respaldo') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now(), updated_by = 'respaldo'" \
+		|| log "aviso: no se pudo registrar el respaldo en la base"
 	find "$DEST_ROOT" -mindepth 1 -maxdepth 1 -type d -name '20*' -mtime "+${BACKUP_RETENTION_DAYS:-14}" -print -exec rm -rf {} + \
 		| sed 's/^/  eliminado por retención: /'
 }

@@ -11,7 +11,7 @@ from app.core.db import get_session
 from app.core.ratelimit import client_ip
 from app.models import Membership, OneTimeToken, Organization, Orthophoto, Project, User, UserSession
 from app.schemas.auth import (AuthStatus, CodeIn, InvitationAccept, InvitationInfo, LoginIn, LoginOut, Me, MfaDisable,
-                              MfaSetup, OrgRef, OrgSwitch, PasswordChange, RecoverIn, RecoverOut, ResetIn, SessionOut)
+                              MfaSetup, OrgRef, OrgSwitch, PasswordChange, RecoverIn, RecoverOut, ResetIn, SessionOut, ProfileUpdate)
 from app.services import auth
 
 router = APIRouter(prefix="/auth", tags=["autenticación"])
@@ -87,6 +87,18 @@ def me(request: Request, session: SessionDep) -> Me:
     return Me(id=user.id, email=user.email, name=user.name, is_superadmin=user.is_superadmin, mfa_enabled=user.mfa_enabled,
               mfa_pending=s.mfa_pending, mfa_setup_required=auth.mfa_setup_required(user, roles), current_org=current,
               orgs=sorted([OrgRef(id=o, name=names.get(o, "?"), role=r) for o, r in roles.items()], key=lambda x: x.name))
+
+
+@router.patch("/me", response_model=Me, summary="Editar el perfil (nombre visible)")
+def update_me(body: ProfileUpdate, request: Request, session: SessionDep) -> Me:
+    s = session.get(UserSession, security.token_hash(_token(request) or ""))
+    if s is None or s.mfa_pending:
+        raise auth.AuthError(401, "Complete el ingreso para editar su perfil.", "mfa_pending")
+    user = _me_user(session)
+    user.name = body.name.strip()
+    auth.audit(session, "cuenta.perfil", detail={"nombre": user.name})
+    session.commit()
+    return me(request, session)
 
 
 @router.post("/org", status_code=204, summary="Cambiar la organización activa")

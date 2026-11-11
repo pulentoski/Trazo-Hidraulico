@@ -139,7 +139,7 @@ export function BottomPanel() {
           </div>
         )} />
       {!collapsed && (
-        <div className="tab-body">
+        <div className="tab-body" key={tab}>
           {tab === "summary" && <SummaryTab />}
           {tab === "alerts" && (
             alerts.length === 0 ? <p className="muted pad">{simError ?? (result ? "Sin alertas: la red cumple los criterios configurados." : "Sin resultados todavía.")}</p> : (

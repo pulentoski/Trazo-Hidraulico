@@ -79,6 +79,8 @@ class Chart(BaseModel):
     unit: str = ""
     reference: float | None = Field(None, description="Línea de referencia (p. ej. caudal autorizado)")
     reference_label: str | None = None
+    goal: float | None = Field(None, description="Línea de meta (umbral «bueno» del indicador)")
+    goal_label: str | None = None
     stacked: bool = False
 
 
@@ -111,6 +113,7 @@ class Indicator(BaseModel):
     delta_pct: float | None = None
     status: Status | None = None
     target_verified: bool = False
+    higher_is_better: bool | None = Field(None, description="Sentido deseado (None = sin meta)")
     note: str | None = None
     chart: Chart | None = None
     table: str | None = Field(None, description="Clave de la tabla de detalle")

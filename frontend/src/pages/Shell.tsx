@@ -18,9 +18,13 @@ export function Shell() {
     return () => mq?.removeEventListener("change", on);
   }, [themePref, set]);
 
+  const animations = useEditor((s) => s.animations);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+  useEffect(() => {
+    document.documentElement.dataset.anim = animations ? "on" : "off";
+  }, [animations]);
 
   return (
     <>

@@ -157,10 +157,14 @@ def ind(g: G, key: str, value: float | None, previous: float | None = None, *, l
     t = g.target(key)
     v = None if value is None or (isinstance(value, float) and math.isnan(value)) else round(value, nd)
     p = None if previous is None else round(previous, nd)
-    return Indicator(key=key, label=label or (t.label if t else key), unit=unit if unit is not None else (t.unit if t else ""),
+    u = unit if unit is not None else (t.unit if t else "")
+    chart = kw.get("chart")
+    if t and chart is not None and chart.reference is None and chart.unit == u:
+        chart.goal, chart.goal_label = t.good, f"Meta {t.good:g} {u}".replace(".", ",")
+    return Indicator(key=key, label=label or (t.label if t else key), unit=u,
                      value=v, previous=p, delta_pct=calc.variation_pct(v, p),
                      status=calc.status_of(v, t.good, t.bad, t.higher_is_better) if t else None,
-                     target_verified=bool(t and t.verified), **kw)
+                     target_verified=bool(t and t.verified), higher_is_better=t.higher_is_better if t else None, **kw)
 
 
 def _r(x: float | None, nd: int = 2) -> float | None:

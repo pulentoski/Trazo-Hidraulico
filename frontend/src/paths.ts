@@ -4,11 +4,7 @@ export const PATHS = {
   login: "/login",
   recover: "/recuperar",
   invitation: "/invitacion",
-  profile: "/perfil",
-  organization: "/organizacion",
-  admin: "/plataforma",
-  settings: "/configuracion",
-  about: "/acerca-de",
+  ajustes: (seccion?: string) => `/ajustes${seccion ? `/${seccion}` : ""}`,
   project: (id: string) => `/proyecto/${encodeURIComponent(id)}`,
   gestion: (id: string) => `/proyecto/${encodeURIComponent(id)}/gestion`,
 } as const;

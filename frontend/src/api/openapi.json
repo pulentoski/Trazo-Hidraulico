@@ -901,6 +901,29 @@
       },
       "Chart": {
         "properties": {
+          "goal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Línea de meta (umbral «bueno» del indicador)",
+            "title": "Goal"
+          },
+          "goal_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal Label"
+          },
           "reference": {
             "anyOf": [
               {
@@ -4482,6 +4505,18 @@
               }
             ]
           },
+          "higher_is_better": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sentido deseado (None = sin meta)",
+            "title": "Higher Is Better"
+          },
           "key": {
             "title": "Key",
             "type": "string"
@@ -7315,6 +7350,79 @@
         "title": "OrgRef",
         "type": "object"
       },
+      "OrgSettings": {
+        "additionalProperties": false,
+        "description": "Ajustes de la organización: se aplican a los proyectos nuevos y a los que no tienen valores propios.",
+        "properties": {
+          "default_life": {
+            "anyOf": [
+              {
+                "maximum": 200.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Life"
+          },
+          "default_profile_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Perfil de criterios de diseño para proyectos nuevos",
+            "title": "Default Profile Id"
+          },
+          "life_verified": {
+            "default": false,
+            "title": "Life Verified",
+            "type": "boolean"
+          },
+          "prices": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PriceRow"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Precios de renovación por metro (material, DN máximo, CLP/m)",
+            "title": "Prices"
+          },
+          "prices_verified": {
+            "default": false,
+            "title": "Prices Verified",
+            "type": "boolean"
+          },
+          "service_life": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vida útil por material (años); vacío = sugerida",
+            "title": "Service Life"
+          }
+        },
+        "title": "OrgSettings",
+        "type": "object"
+      },
       "OrgSwitch": {
         "additionalProperties": false,
         "properties": {
@@ -8168,6 +8276,23 @@
           "element_id"
         ],
         "title": "ProductionMeter",
+        "type": "object"
+      },
+      "ProfileUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "Nombre visible",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ProfileUpdate",
         "type": "object"
       },
       "ProjectCreate": {
@@ -9713,6 +9838,40 @@
         "title": "Series",
         "type": "object"
       },
+      "ServiceStatus": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error",
+              "sin datos"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "status"
+        ],
+        "title": "ServiceStatus",
+        "type": "object"
+      },
       "SessionOut": {
         "properties": {
           "created_at": {
@@ -10502,6 +10661,55 @@
           }
         },
         "title": "SummarySettings",
+        "type": "object"
+      },
+      "SystemInfo": {
+        "properties": {
+          "api_version": {
+            "title": "Api Version",
+            "type": "string"
+          },
+          "engine": {
+            "additionalProperties": true,
+            "title": "Engine",
+            "type": "object"
+          },
+          "last_backup": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Último respaldo automático (fecha, carpeta, tamaño)",
+            "title": "Last Backup"
+          },
+          "plans": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Plans",
+            "type": "object"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/ServiceStatus"
+            },
+            "title": "Services",
+            "type": "array"
+          }
+        },
+        "required": [
+          "api_version",
+          "engine",
+          "services",
+          "plans"
+        ],
+        "title": "SystemInfo",
         "type": "object"
       },
       "TabResult": {
@@ -12244,6 +12452,27 @@
         ]
       }
     },
+    "/api/admin/system": {
+      "get": {
+        "operationId": "admin_system_api_admin_system_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Versión, motor, estado de servicios y último respaldo",
+        "tags": [
+          "organizaciones"
+        ]
+      }
+    },
     "/api/admin/users": {
       "get": {
         "operationId": "admin_users_api_admin_users_get",
@@ -12535,6 +12764,45 @@
           }
         },
         "summary": "Usuario de la sesión",
+        "tags": [
+          "autenticación"
+        ]
+      },
+      "patch": {
+        "operationId": "update_me_api_auth_me_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar el perfil (nombre visible)",
         "tags": [
           "autenticación"
         ]
@@ -13291,6 +13559,100 @@
           }
         },
         "summary": "Enlace de un solo uso para crear una contraseña nueva (sin correo saliente)",
+        "tags": [
+          "organizaciones"
+        ]
+      }
+    },
+    "/api/orgs/{org_id}/settings": {
+      "get": {
+        "operationId": "org_settings_api_orgs__org_id__settings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ajustes de la organización",
+        "tags": [
+          "organizaciones"
+        ]
+      },
+      "put": {
+        "operationId": "put_org_settings_api_orgs__org_id__settings_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar perfil de diseño por defecto, vida útil y precios (administrador)",
         "tags": [
           "organizaciones"
         ]

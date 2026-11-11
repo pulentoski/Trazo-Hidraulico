@@ -137,10 +137,13 @@ def create_from_excel(session: Session, filename: str, content: bytes, *, name: 
     srid_default = get_settings().length_srid
     srid = utm_srid(zone, hemisphere, srid_default)
     _check_srid(srid)
+    from app.services.projects import org_default_profile
+
     default = catalog_repo.default_profile(session)
     stem = re.sub(r"\.(xlsx|csv)$", "", filename or "planilla", flags=re.I)
-    project = Project(id=uuid.uuid4(), org_id=new_project_org(session), name=(name or stem)[:200], description="Creado desde planilla Excel",
-                      length_srid=srid, design_profile_id=default.id if default else None)
+    org_id = new_project_org(session)
+    project = Project(id=uuid.uuid4(), org_id=org_id, name=(name or stem)[:200], description="Creado desde planilla Excel",
+                      length_srid=srid, design_profile_id=org_default_profile(session, org_id) or (default.id if default else None))
     session.add(project)
     session.flush()
     sheets, model_sheet, notes = read_upload(filename, content, None)

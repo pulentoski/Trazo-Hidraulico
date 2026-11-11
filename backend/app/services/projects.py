@@ -36,14 +36,26 @@ def _check_srid(srid: int) -> None:
         raise ValueError(f"SRID {srid} no reconocido") from exc
 
 
+def org_default_profile(session: Session, org_id) -> int | None:
+    """Perfil de diseño por defecto de la organización (Ajustes → Organización → Criterios)."""
+    from app.models import Organization
+
+    org = session.get(Organization, org_id) if org_id else None
+    pid = (org.settings or {}).get("default_profile_id") if org else None
+    return pid if isinstance(pid, int) and catalog_repo.get_profile(session, pid) is not None else None
+
+
 def create_project(session: Session, body: ProjectCreate) -> Project:
     srid = body.length_srid or get_settings().length_srid
     _check_srid(srid)
     profile_id = body.design_profile_id
+    org_id = new_project_org(session)
+    if profile_id is None:
+        profile_id = org_default_profile(session, org_id)
     if profile_id is None:
         default = catalog_repo.default_profile(session)
         profile_id = default.id if default else None
-    project = Project(id=uuid.uuid4(), org_id=new_project_org(session), name=body.name, description=body.description,
+    project = Project(id=uuid.uuid4(), org_id=org_id, name=body.name, description=body.description,
                       length_srid=srid, design_profile_id=profile_id)
     session.add(project)
     session.flush()
@@ -81,7 +93,11 @@ def import_inp(session: Session, filename: str, content: bytes, *, name: str | N
     recompute_lengths(model.network, srid)
     default = catalog_repo.default_profile(session)
     stem = Path(filename or "red.inp").stem
-    project = Project(id=uuid.uuid4(), org_id=new_project_org(session), name=name or stem, description=model.title or "",
+    org_id = new_project_org(session)
+    profile = org_default_profile(session, org_id)
+    if profile is not None:
+        default = catalog_repo.get_profile(session, profile)
+    project = Project(id=uuid.uuid4(), org_id=org_id, name=name or stem, description=model.title or "",
                       length_srid=srid, design_profile_id=default.id if default else None)
     session.add(project)
     session.flush()

@@ -39,7 +39,7 @@ def card(page: Page, label: str):
 
 
 def value_of(page: Page, label: str) -> float:
-    txt = card(page, label).locator(".kpi-value b").inner_text().strip().replace(".", "").replace(",", ".")
+    txt = page.locator(f'article.kpi-tile[aria-label="{label}"] .kpi-value b').inner_text().strip().replace(".", "").replace(",", ".")
     return float(txt)
 
 
@@ -101,7 +101,7 @@ def tour_gestion(page: Page, pid: str, theme: str, width: int, full: bool) -> No
     open_tab(page, "Operación")
     page.get_by_label("Sector").select_option("Alto")
     wait_tab(page)
-    expect(card(page, "Presión mínima medida").locator(".kpi-value b")).not_to_have_text("—")
+    expect(page.locator('article.kpi-tile[aria-label="Presión mínima medida"] .kpi-value b')).not_to_have_text("—")
     page.get_by_label("Sector").select_option("")
     wait_tab(page)
 
@@ -255,6 +255,13 @@ def main() -> int:
                     page.screenshot(path=str(ROOT / "e2e" / "fallo.png"))
                     print("Problemas hasta el fallo:", *dict.fromkeys(problems), sep="\n  - ")
                     raise
+                ctx.close()
+            for width in (1280, 1024):  # legible en pantallas medianas
+                ctx = browser.new_context(viewport={"width": width, "height": 860}, locale="es-CL", reduced_motion="reduce",
+                                          storage_state=state, ignore_https_errors=INSECURE)
+                page = ctx.new_page()
+                watch(page)
+                tour_gestion(page, pid, "light", width, full=False)
                 ctx.close()
         finally:
             api.delete(f"/api/projects/{pid}")

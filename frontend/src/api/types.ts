@@ -113,3 +113,7 @@ export type RecordFieldSpec = S["FieldSpec"];
 export type RecordImportPreview = S["RecordImportPreview"];
 export type MaintenanceLogOut = S["MaintenanceLogOut"];
 export type CapacityResult = S["CapacityResult"];
+
+// Ajustes
+export type OrgSettings = S["OrgSettings"];
+export type SystemInfo = S["SystemInfo"];

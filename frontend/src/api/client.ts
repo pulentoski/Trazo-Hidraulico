@@ -8,7 +8,7 @@ import type {
   NetworkDocument, NetworkSave, NetworkSaveResult, OrthophotoOut, ProjectOut, QueryDef, QueryElement, QueryResult,
   SavedQueryOut, ScenarioResult, SearchHit, SectorsResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
   LeakEventIn, LeakEventOut, LeakImportResult, MapsStatus, SummaryResult, SummarySettings,
-  GFilters, GTab, GestionSettings, RecordKind, RecordSpec, RecordImportPreview, TabResult, MaintenanceLogOut,
+  GFilters, GTab, GestionSettings, OrgSettings, SystemInfo, RecordKind, RecordSpec, RecordImportPreview, TabResult, MaintenanceLogOut,
 } from "./types";
 
 const client = createClient<paths>({ baseUrl: "" });
@@ -36,8 +36,8 @@ function redirectAuth(status: number, body: unknown): void {
   const here = window.location.pathname;
   if (status === 401 && (code === "login_required" || code === "mfa_pending") && !/^\/(login|recuperar|invitacion)/.test(here)) {
     window.location.assign(`/login?volver=${encodeURIComponent(here + window.location.search)}`);
-  } else if (status === 403 && code === "mfa_setup_required" && here !== "/perfil") {
-    window.location.assign("/perfil?mfa=1");
+  } else if (status === 403 && code === "mfa_setup_required" && here !== "/ajustes/seguridad") {
+    window.location.assign("/ajustes/seguridad?mfa=1");
   }
 }
 
@@ -162,6 +162,11 @@ export const api = {
   // ── Sesión, perfil, organizaciones y plataforma ──
   authStatus: () => unwrap<AuthStatus>(client.GET("/api/auth/status")),
   me: () => unwrap<Me>(client.GET("/api/auth/me")),
+  updateMe: (name: string) => unwrap<Me>(client.PATCH("/api/auth/me", { body: { name } })),
+  orgSettings: (org: string) => unwrap<OrgSettings>(client.GET("/api/orgs/{org_id}/settings", { params: { path: { org_id: org } } })),
+  saveOrgSettings: (org: string, body: OrgSettings) =>
+    unwrap<OrgSettings>(client.PUT("/api/orgs/{org_id}/settings", { params: { path: { org_id: org } }, body })),
+  adminSystem: () => unwrap<SystemInfo>(client.GET("/api/admin/system")),
   login: (email: string, password: string) =>
     unwrap<{ mfa_required: boolean }>(client.POST("/api/auth/login", { body: { email, password } })),
   mfa: (code: string) => unwrap<unknown>(client.POST("/api/auth/mfa", { body: { code } })),

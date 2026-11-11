@@ -48,7 +48,32 @@ def settings_of(project: Project) -> SummarySettings:
             return SummarySettings.model_validate(project.summary_settings)
         except ValueError:
             pass
-    return SummarySettings()
+    return org_defaults(project)
+
+
+def org_defaults(project: Project) -> SummarySettings:
+    """Sin valores propios del proyecto: vida útil y precios de la organización (Ajustes → Catálogos)."""
+    from app.models import Organization
+    from sqlalchemy.orm import object_session
+
+    st = SummarySettings()
+    session = object_session(project)
+    org = session.get(Organization, project.org_id) if session is not None and project.org_id else None
+    o = (org.settings or {}) if org is not None else {}
+    try:
+        if o.get("service_life"):
+            st.service_life = {str(k): int(v) for k, v in o["service_life"].items()}
+            st.life_verified = bool(o.get("life_verified"))
+        if o.get("default_life"):
+            st.default_life = int(o["default_life"])
+        if o.get("prices"):
+            from app.schemas.summary import PriceRow
+
+            st.prices = [PriceRow.model_validate(x) for x in o["prices"]]
+            st.prices_verified = bool(o.get("prices_verified"))
+    except (ValueError, TypeError):
+        return SummarySettings()
+    return st
 
 
 def save_settings(session: Session, project: Project, body: SummarySettings) -> SummarySettings:

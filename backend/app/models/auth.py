@@ -17,6 +17,8 @@ class Organization(Base):
     plan: Mapped[str] = mapped_column(String(20), default="basico")
     limits: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     suspended: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Ajustes de la organización: perfil de criterios de diseño por defecto, vida útil y precios por metro.
+    settings: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

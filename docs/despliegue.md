@@ -95,8 +95,8 @@ certificado interno para la IP nueva). Manual: `make actualizar-ip`. Registro: `
 Tras un cambio de IP el navegador vuelve a pedir que acepte el certificado. Para una dirección estable, asocie una
 IP elástica o use un dominio.
 
-Al primer ingreso, el superadministrador debe configurar el segundo factor (TOTP) en **/perfil** si
-`MFA_REQUIRED_FOR_ADMINS=true` (por defecto). Después crea las organizaciones en **/plataforma** e invita a
+Al primer ingreso, el superadministrador debe configurar el segundo factor (TOTP) en **Ajustes → Seguridad** si
+`MFA_REQUIRED_FOR_ADMINS=true` (por defecto). Después crea las organizaciones en **Ajustes → Plataforma → Organizaciones** e invita a
 sus administradores.
 
 ## Producción (`infra/compose.prod.yml`)
@@ -113,9 +113,9 @@ Sin key, el mapa base es OpenStreetMap con MapLibre: teselas de `tile.openstreet
 `server.arcgisonline.com` (Esri World Imagery) y búsqueda de direcciones con `nominatim.openstreetmap.org`, cada uno
 con su atribución en el mapa. Son servicios públicos con políticas de uso justo (sin uso masivo; Nominatim, una
 consulta por búsqueda): para mucho tráfico conviene un servidor de teselas propio o contratado. El proveedor se
-elige en **Configuración → Mapa base** (automático, Google Maps u OpenStreetMap) y se aplica sin reconstruir.
+elige en **Ajustes → Plataforma → Mapa base** (automático, Google Maps u OpenStreetMap) y se aplica sin reconstruir.
 
-La key de Google se ingresa en **Configuración → Mapa base** con el superadministrador y queda cifrada en la base
+La key de Google se ingresa en **Ajustes → Plataforma → Mapa base** con el superadministrador y queda cifrada en la base
 (Fernet) con `SETTINGS_SECRET_KEY` del `.env` (`make env` la agrega si falta). Respalde el `.env`: sin esa clave
 la key guardada no se puede leer y hay que volver a ingresarla. El frontend la pide en tiempo de ejecución
 (`/api/maps/config`), así que guardarla no requiere reconstruir contenedores.
@@ -146,7 +146,7 @@ la key guardada no se puede leer y hay que volver a ingresarla. El frontend la p
   `make restore-test` (mensual como mínimo).
 - **Seguridad**: el registro de auditoría de cada organización (Organización → Auditoría) muestra ingresos,
   ingresos fallidos y bloqueos, cambios de red, importaciones, exportaciones y cambios de permisos.
-- **Uso**: el superadministrador ve en **/plataforma** simulaciones, cargas de mapa y ortofotos por
+- **Uso**: el superadministrador ve en **Ajustes → Plataforma → Planes y límites** simulaciones, cargas de mapa y ortofotos por
   organización, con los límites del plan.
 
 ## Cuentas desde la consola del servidor

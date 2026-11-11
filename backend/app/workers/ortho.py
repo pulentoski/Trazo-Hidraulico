@@ -143,6 +143,7 @@ def main() -> None:  # pragma: no cover - bucle del servicio
     while True:
         oid = None
         try:
+            queue.set("trazo:worker:heartbeat", str(time.time()), ex=600)  # latido (Ajustes → Sistema)
             item = queue.brpop(QUEUE, timeout=10)
             oid = uuid.UUID(item[1].decode() if isinstance(item[1], bytes) else item[1]) if item else None
         except Exception as exc:  # noqa: BLE001

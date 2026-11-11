@@ -21,8 +21,8 @@ function show(v: unknown): string {
 
 const STATUS_CLS: Record<string, string> = { atrasada: "bad", pendiente: "ok", hecha: "muted" };
 
-export function RecordsPanel({ pid, spec, readOnly, onChanged, openNonce }: {
-  pid: string; spec: RecordSpec; readOnly: boolean; onChanged: () => void; openNonce?: number;
+export function RecordsPanel({ pid, spec, readOnly, onChanged, openNonce, openAction }: {
+  pid: string; spec: RecordSpec; readOnly: boolean; onChanged: () => void; openNonce?: number; openAction?: "import" | "add";
 }) {
   const toast = useEditor((s) => s.toast);
   const [rows, setRows] = useState<Record<string, unknown>[] | null>(null);
@@ -38,7 +38,14 @@ export function RecordsPanel({ pid, spec, readOnly, onChanged, openNonce }: {
 
   const load = () => api.records(pid, spec.kind).then((r) => setRows(r.rows)).catch((e) => toast(errorText(e), "error"));
   useEffect(() => { void load(); }, [pid, spec.kind]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (openNonce && ref.current) { ref.current.open = true; ref.current.scrollIntoView({ block: "start" }); } }, [openNonce]);
+  useEffect(() => {
+    if (!openNonce || !ref.current) return;
+    ref.current.open = true;
+    ref.current.scrollIntoView({ block: "center" });
+    if (readOnly) return;
+    if (openAction === "import") fileRef.current?.click();
+    else setAdding(true);
+  }, [openNonce]); // eslint-disable-line react-hooks/exhaustive-deps
   const changed = async () => { await load(); onChanged(); };
 
   const submit = async (e: React.FormEvent) => {

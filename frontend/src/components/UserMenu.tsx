@@ -42,9 +42,9 @@ export function UserMenu() {
                 {me.orgs.map((o) => <option key={o.id} value={o.id}>{o.name} ({ROLE_LABEL[o.role]})</option>)}
               </select></label>
           )}
-          <Link className="menu-item" role="menuitem" to={PATHS.profile} onClick={() => setOpen(false)}><Icon.user /> Perfil y seguridad</Link>
-          {isAdmin && <Link className="menu-item" role="menuitem" to={PATHS.organization} onClick={() => setOpen(false)}><Icon.org /> Organización</Link>}
-          {me.is_superadmin && <Link className="menu-item" role="menuitem" to={PATHS.admin} onClick={() => setOpen(false)}><Icon.gear /> Plataforma</Link>}
+          <Link className="menu-item" role="menuitem" to={PATHS.ajustes("perfil")} onClick={() => setOpen(false)}><Icon.user /> Mi cuenta</Link>
+          {isAdmin && <Link className="menu-item" role="menuitem" to={PATHS.ajustes("miembros")} onClick={() => setOpen(false)}><Icon.org /> Organización</Link>}
+          {me.is_superadmin && <Link className="menu-item" role="menuitem" to={PATHS.ajustes("organizaciones")} onClick={() => setOpen(false)}><Icon.gear /> Plataforma</Link>}
           <div className="menu-sep" />
           <button className="menu-item" role="menuitem" onClick={async () => { await api.logout().catch(() => undefined); window.location.assign(PATHS.login); }}>
             <Icon.back /> Cerrar sesión</button>

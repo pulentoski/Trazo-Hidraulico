@@ -1,4 +1,4 @@
-// Configuración → Mapa base: proveedor (automático, Google Maps u OpenStreetMap) y estado de la key de Google Maps
+// Ajustes → Plataforma → Mapa base: proveedor (automático, Google Maps u OpenStreetMap) y estado de la key de Google Maps
 // para todos; el superadministrador elige el proveedor y gestiona la key (cifrada en la base). El editor lo aplica
 // sin reconstruir contenedores. Sin key de Google, el mapa base es OpenStreetMap.
 import { useEffect, useState } from "react";
@@ -76,8 +76,7 @@ export function MapBaseSection() {
   const providerText = { auto: "Automático", google: "Google Maps", osm: "OpenStreetMap" }[cfg.provider];
 
   return (
-    <section className="card" aria-label="Mapa base">
-      <h2>Mapa base</h2>
+    <section className="mapbase" aria-label="Proveedor y key del mapa base">
       <dl className="kv">
         <dt>Mapa del editor</dt><dd>{cfg.loaded ? <span className="ok-text">● {effective === "google" ? "Google Maps" : "OpenStreetMap (sin key)"}</span> : "…"}
           {cfg.loaded && <span className="muted small"> · proveedor: {providerText}</span>}</dd>

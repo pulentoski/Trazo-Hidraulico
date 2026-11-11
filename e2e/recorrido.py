@@ -76,7 +76,9 @@ def shot(page: Page, name: str, theme: str, width: int) -> None:
 
 
 def set_theme(page: Page, theme: str) -> None:
-    page.context.add_init_script(f"try {{ localStorage.setItem('trazo.theme', JSON.stringify('{theme}')) }} catch (e) {{}}")
+    """Tema y, para pruebas estables, animaciones desactivadas (además de prefers-reduced-motion en el contexto)."""
+    page.context.add_init_script(f"try {{ localStorage.setItem('trazo.theme', JSON.stringify('{theme}')); "
+                                 f"localStorage.setItem('trazo.animations', 'false') }} catch (e) {{}}")
 
 
 def tab(page: Page, label: str) -> None:
@@ -375,11 +377,14 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         expect(page.locator(".props")).to_contain_text("H manométrica", timeout=30000)
         shot(page, "pozo", theme, width)
 
-        log("perfil y organización")
+        log("ajustes: seguridad y auditoría (rutas antiguas redirigen)")
         page.goto(f"{BASE}/perfil")
+        expect(page).to_have_url(re.compile(r"/ajustes/seguridad"))
         expect(page.get_by_role("heading", name="Sesiones activas")).to_be_visible()
         shot(page, "perfil", theme, width)
         page.goto(f"{BASE}/organizacion")
+        expect(page).to_have_url(re.compile(r"/ajustes/miembros"))
+        page.goto(f"{BASE}/ajustes/auditoria")
         expect(page.get_by_role("heading", name="Auditoría")).to_be_visible()
         expect(page.locator("table").last).to_contain_text("login.ok")
         shot(page, "organizacion", theme, width)
@@ -403,14 +408,16 @@ def totp(secret: str) -> str:
 
 
 def config_tour(browser, state: dict, theme: str, width: int) -> None:
-    """Configuración → Mapa base con el superadministrador: guardar una key de prueba (cifrada), ver su estado y borrarla."""
+    """Ajustes → Plataforma → Mapa base con el superadministrador: guardar una key de prueba (cifrada), ver su estado y borrarla."""
     ctx = browser.new_context(viewport={"width": width, "height": 900}, locale="es-CL", storage_state=state,
                               ignore_https_errors=INSECURE, reduced_motion="reduce")
     page = ctx.new_page()
     watch(page)
     set_theme(page, theme)
     page.goto(f"{BASE}/configuracion")
-    sec = page.get_by_label("Mapa base")
+    expect(page).to_have_url(re.compile(r"/ajustes/preferencias"))
+    page.goto(f"{BASE}/ajustes/mapa-base")
+    sec = page.get_by_label("Proveedor y key del mapa base")
     expect(sec.get_by_text("Administración de la plataforma")).to_be_visible()
     had = sec.get_by_text("Key guardada").count() and sec.locator(".kv.compact dd").first.inner_text().strip() not in ("—", "")
     if not had:  # solo si la plataforma no tiene una key real: se guarda una de prueba y se borra al final
@@ -430,14 +437,14 @@ def login(browser, email: str = EMAIL) -> dict:
     ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="es-CL", ignore_https_errors=INSECURE)
     page = ctx.new_page()
     watch(page)
-    page.goto(f"{BASE}/acerca-de")
+    page.goto(f"{BASE}/ajustes/perfil")
     expect(page).to_have_url(re.compile(r"/login\?volver="))
     shot(page, "login", "light", 1440)
     page.get_by_label("Correo").fill(email)
     page.get_by_label("Contraseña").fill(PASSWORD)
     page.get_by_role("button", name="Ingresar").click()
-    page.wait_for_url(re.compile(r"/(acerca-de|perfil)"), timeout=15000)
-    if "/perfil" in page.url:  # el rol exige segundo factor: configurarlo
+    page.wait_for_url(re.compile(r"/ajustes/(perfil|seguridad)"), timeout=15000)
+    if "/ajustes/seguridad" in page.url:  # el rol exige segundo factor: configurarlo
         log("configurando TOTP del usuario e2e")
         page.get_by_role("button", name="Configurar").click()
         secret = page.locator(".mono.small").first.inner_text().strip()

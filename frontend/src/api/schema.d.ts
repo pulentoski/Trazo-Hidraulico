@@ -58,6 +58,23 @@ export interface paths {
         patch: operations["admin_update_org_api_admin_orgs__org_id__patch"];
         trace?: never;
     };
+    "/api/admin/system": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Versión, motor, estado de servicios y último respaldo */
+        get: operations["admin_system_api_admin_system_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -192,7 +209,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Editar el perfil (nombre visible) */
+        patch: operations["update_me_api_auth_me_patch"];
         trace?: never;
     };
     "/api/auth/mfa": {
@@ -546,6 +564,24 @@ export interface paths {
         put?: never;
         /** Enlace de un solo uso para crear una contraseña nueva (sin correo saliente) */
         post: operations["reset_link_api_orgs__org_id__members__user_id__reset_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{org_id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ajustes de la organización */
+        get: operations["org_settings_api_orgs__org_id__settings_get"];
+        /** Editar perfil de diseño por defecto, vida útil y precios (administrador) */
+        put: operations["put_org_settings_api_orgs__org_id__settings_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2359,6 +2395,13 @@ export interface components {
         /** Chart */
         Chart: {
             /**
+             * Goal
+             * @description Línea de meta (umbral «bueno» del indicador)
+             */
+            goal?: number | null;
+            /** Goal Label */
+            goal_label?: string | null;
+            /**
              * Reference
              * @description Línea de referencia (p. ej. caudal autorizado)
              */
@@ -3767,6 +3810,11 @@ export interface components {
             /** Delta Pct */
             delta_pct?: number | null;
             empty?: components["schemas"]["EmptyState"] | null;
+            /**
+             * Higher Is Better
+             * @description Sentido deseado (None = sin meta)
+             */
+            higher_is_better?: boolean | null;
             /** Key */
             key: string;
             /** Label */
@@ -4861,6 +4909,41 @@ export interface components {
              */
             role: "admin" | "proyectista" | "revisor" | "lector";
         };
+        /**
+         * OrgSettings
+         * @description Ajustes de la organización: se aplican a los proyectos nuevos y a los que no tienen valores propios.
+         */
+        OrgSettings: {
+            /** Default Life */
+            default_life?: number | null;
+            /**
+             * Default Profile Id
+             * @description Perfil de criterios de diseño para proyectos nuevos
+             */
+            default_profile_id?: number | null;
+            /**
+             * Life Verified
+             * @default false
+             */
+            life_verified: boolean;
+            /**
+             * Prices
+             * @description Precios de renovación por metro (material, DN máximo, CLP/m)
+             */
+            prices?: components["schemas"]["PriceRow"][] | null;
+            /**
+             * Prices Verified
+             * @default false
+             */
+            prices_verified: boolean;
+            /**
+             * Service Life
+             * @description Vida útil por material (años); vacío = sugerida
+             */
+            service_life?: {
+                [key: string]: number;
+            } | null;
+        };
         /** OrgSwitch */
         OrgSwitch: {
             /**
@@ -5137,6 +5220,14 @@ export interface components {
              * @description Sector abastecido («Total» = todos los clientes)
              */
             sector: string;
+        };
+        /** ProfileUpdate */
+        ProfileUpdate: {
+            /**
+             * Name
+             * @description Nombre visible
+             */
+            name: string;
         };
         /** ProjectCreate */
         ProjectCreate: {
@@ -5756,6 +5847,18 @@ export interface components {
             /** Values */
             values: (number | null)[];
         };
+        /** ServiceStatus */
+        ServiceStatus: {
+            /** Detail */
+            detail?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "error" | "sin datos";
+        };
         /** SessionOut */
         SessionOut: {
             /**
@@ -6106,6 +6209,30 @@ export interface components {
              * @enum {integer}
              */
             top_n: 10 | 20;
+        };
+        /** SystemInfo */
+        SystemInfo: {
+            /** Api Version */
+            api_version: string;
+            /** Engine */
+            engine: {
+                [key: string]: unknown;
+            };
+            /**
+             * Last Backup
+             * @description Último respaldo automático (fecha, carpeta, tamaño)
+             */
+            last_backup?: {
+                [key: string]: unknown;
+            } | null;
+            /** Plans */
+            plans: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Services */
+            services: components["schemas"]["ServiceStatus"][];
         };
         /** TabResult */
         TabResult: {
@@ -6820,6 +6947,26 @@ export interface operations {
             };
         };
     };
+    admin_system_api_admin_system_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemInfo"];
+                };
+            };
+        };
+    };
     admin_users_api_admin_users_get: {
         parameters: {
             query?: never;
@@ -7055,6 +7202,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    update_me_api_auth_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -7624,6 +7804,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    org_settings_api_orgs__org_id__settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_org_settings_api_orgs__org_id__settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgSettings"];
                 };
             };
             /** @description Validation Error */

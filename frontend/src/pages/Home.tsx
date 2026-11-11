@@ -6,6 +6,7 @@ import type { ImportPreview, ProjectOut } from "../api/types";
 import { PreviewView } from "../components/ExcelImport";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Dialogs";
+import { PageFooter } from "../components/PageFooter";
 import { PageHeader } from "../components/PageHeader";
 import { fmt, fmtDate } from "../lib/format";
 import { PATHS } from "../paths";
@@ -26,7 +27,7 @@ export const CRS_OPTIONS = [
 
 function NewProject() {
   const navigate = useNavigate();
-  const { toast, defaultProfileId } = useEditor();
+  const toast = useEditor((s) => s.toast);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [touched, setTouched] = useState(false);
@@ -37,7 +38,7 @@ function NewProject() {
     if (empty) return;
     setBusy(true);
     try {
-      const p = await api.createProject(name.trim(), "", defaultProfileId);
+      const p = await api.createProject(name.trim(), "", null); // perfil por defecto de la organización (Ajustes)
       navigate(PATHS.project(p.id));
     } catch (err) {
       toast(errorText(err), "error");
@@ -274,6 +275,7 @@ export function Home() {
                 : <div className="project-grid">{shown.map((p) => <ProjectCard key={p.id} p={p} onDelete={remove} />)}</div>}
         </section>
       </main>
+      <PageFooter />
       {create === "new" && <Modal title="Nuevo proyecto" onClose={() => setCreate(null)}><NewProject /></Modal>}
       {create === "import" && <Modal title="Importar .inp (EPANET) o .trazo" onClose={() => setCreate(null)}><ImportInp /></Modal>}
       {create === "excel" && <Modal title="Crear desde Excel" onClose={() => setCreate(null)} wide><ImportExcel /></Modal>}

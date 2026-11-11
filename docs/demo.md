@@ -18,7 +18,7 @@ make demo        # crea la organización «Demo APR», un usuario por rol y le a
 Si `make demo` no encuentra un proyecto «APR Demo», lo crea desde `examples/apr-demo.xlsx`.
 
 En el `.env` local se usa `MFA_REQUIRED_FOR_ADMINS=false` para no pedir TOTP al administrador de la demo. Con
-`true` (valor de producción), el administrador debe configurarlo en **/perfil** al ingresar.
+`true` (valor de producción), el administrador debe configurarlo en **Ajustes → Seguridad** (`/ajustes/seguridad`) al ingresar.
 
 El superadministrador de plataforma se crea aparte: `make create-admin` (pide correo y contraseña).
 El recorrido visual (`make test-e2e`) usa su propio usuario `e2e@trazo.local` en la organización «Recorrido e2e».

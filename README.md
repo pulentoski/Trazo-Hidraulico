@@ -18,14 +18,14 @@ make env          # crea .env desde .env.example con claves aleatorias para Post
 
 El mapa base no necesita key: sin key de Google, el editor usa **OpenStreetMap** (MapLibre) con calles de OSM,
 satélite opcional de **Esri World Imagery** (cada uno con su atribución) y búsqueda de direcciones con **Nominatim**.
-En **Configuración → Mapa base** el superadministrador elige el proveedor: *Automático* (Google si hay key; si no,
+En **Ajustes → Plataforma → Mapa base** el superadministrador elige el proveedor: *Automático* (Google si hay key; si no,
 OpenStreetMap), *Google Maps* u *OpenStreetMap*. Si el navegador no tiene WebGL, el editor sigue sobre un lienzo
 neutro. Para usar Google Maps:
 
 1. En Google Cloud, habilite **Maps JavaScript API** (y **Geocoding API** para la búsqueda de dirección).
 2. Cree una API key con **restricción de aplicación «Sitios web»** (el dominio publicado, o
    `http://localhost:8080/*` en local) y restrinja las APIs a las dos anteriores.
-3. Ingrese como **superadministrador** y vaya a **Configuración → Mapa base**: pegue la key (y, opcional, un
+3. Ingrese como **superadministrador** y vaya a **Ajustes → Plataforma → Mapa base**: pegue la key (y, opcional, un
    Map ID vectorial para el tema oscuro), use «Probar» y «Guardar». Se guarda **cifrada** en la base con
    `SETTINGS_SECRET_KEY` (la genera `make env`) y el mapa se activa sin reconstruir contenedores; nunca se muestra
    completa. «Borrar» la quita.
@@ -73,7 +73,7 @@ make up           # construye y levanta todo; espera a que los 7 servicios esté
 ```
 
 Abra http://localhost:8080: la pantalla de inicio lista los proyectos recientes y permite crear,
-importar `.inp`, ir a Configuración y a Acerca de. Cada proyecto se edita en `/proyecto/<id>`.
+importar `.inp`, ir a Ajustes. Cada proyecto se edita en `/proyecto/<id>`.
 Comandos útiles: `make logs`, `make ps`, `make down`, `make reset-db`
 (borra la base de datos) y `make gen-types` (regenera los tipos TypeScript desde OpenAPI).
 `make backup` crea un respaldo local completo (base de datos, ortofotos, imágenes Docker, git bundle y copia del
@@ -125,6 +125,19 @@ proyección, área operacional, pérdidas y agua no contabilizada, mantenimiento
 y alertas; cada número enlaza a su lista y al mapa; exporta a PDF (HTML imprimible) y Excel. El panel derecho se
 organiza en secciones plegables (se recuerda por usuario) y la barra de herramientas y el panel inferior se pliegan
 para dar más espacio al mapa.
+
+## Ajustes y animaciones
+
+Una sola página **Ajustes** (`/ajustes/<sección>`, menú de usuario arriba a la derecha) con menú lateral según el rol:
+**Mi cuenta** (todos: perfil, seguridad con contraseña, segundo factor y sesiones, y preferencias de tema, animaciones y
+mapa), **Organización** (administrador: miembros e invitaciones, criterios de diseño por defecto, catálogos con vida
+útil y precios por metro para los proyectos sin valores propios, uso y plan, auditoría) y **Plataforma**
+(superadministrador: organizaciones y cuentas, mapa base, planes y límites, sistema con versión, motor OWA-EPANET y
+SHA, estado de servicios y último respaldo). Las rutas antiguas (`/perfil`, `/organizacion`, `/plataforma`,
+`/configuracion`, `/acerca-de`) redirigen a su sección. Animaciones sobrias (transiciones de 150–250 ms, conteo de
+indicadores, dibujo de gráficos; en el mapa, flujo animado en el sentido del agua con velocidad según la velocidad del
+tramo, pulso en nudos bajo la presión mínima, resaltado al seleccionar y «Reproducir día»): se desactivan en
+Preferencias y respetan `prefers-reduced-motion`; solo se anima lo visible (≈ 60 cuadros/s con APR Demo y Net3).
 
 ## Gestión del APR y coordenadas
 

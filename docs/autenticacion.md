@@ -14,7 +14,7 @@
   impide el envío de la cookie desde otros sitios (CSRF).
 - **Segundo factor TOTP** (RFC 6238, compatible con Google/Microsoft Authenticator): opcional por usuario y
   obligatorio para administradores de organización y superadministradores (`MFA_REQUIRED_FOR_ADMINS`). Sin
-  configurarlo, la API solo permite `/api/auth/*` y la interfaz lleva a **/perfil**.
+  configurarlo, la API solo permite `/api/auth/*` y la interfaz lleva a **Ajustes → Seguridad** (`/ajustes/seguridad`).
 - **Recuperación**: con SMTP configurado, `/recuperar` envía un enlace de un solo uso (24 h). Sin SMTP, el
   administrador de la organización (o el superadministrador) genera el enlace y lo entrega por otro medio.
 - **Primer superadministrador**: `make create-admin` (pide correo y contraseña; o `EMAIL=… PASSWORD=…`).
@@ -39,7 +39,7 @@ y elige la activa en el menú de usuario. Roles por organización:
   organizaciones.
 - **Invitaciones** por correo o enlace de un solo uso (7 días); cambiar rol y desactivar miembros; la
   organización conserva al menos un administrador.
-- **Superadministrador de plataforma** (**/plataforma**): crea organizaciones (con invitación para su
+- **Superadministrador de plataforma** (**Ajustes → Plataforma**): crea organizaciones (con invitación para su
   administrador), ve su uso, cambia plan y límites, suspende organizaciones y cuentas. No ve proyectos de una
   organización si no es miembro de ella.
 

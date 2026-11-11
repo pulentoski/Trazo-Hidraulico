@@ -1,4 +1,4 @@
-// Encabezado de las páginas del menú (inicio, configuración, acerca de).
+// Encabezado de las páginas del menú (inicio, ajustes, gestión).
 import { NavLink } from "react-router";
 import { PATHS } from "../paths";
 import { Icon } from "./Icons";
@@ -20,8 +20,7 @@ export function PageHeader() {
       <Brand />
       <nav aria-label="Menú principal">
         <NavLink to={PATHS.home} end className={cls}><Icon.home /><span>Inicio</span></NavLink>
-        <NavLink to={PATHS.settings} className={cls}><Icon.gear /><span>Configuración</span></NavLink>
-        <NavLink to={PATHS.about} className={cls}><Icon.info /><span>Acerca de</span></NavLink>
+        <NavLink to={PATHS.ajustes()} className={cls}><Icon.gear /><span>Ajustes</span></NavLink>
       </nav>
       <UserMenu />
     </header>
