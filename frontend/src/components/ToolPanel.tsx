@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { Tool } from "../state/store";
-import { useEditor } from "../state/store";
+import { useEditor, writePref } from "../state/store";
 import { Icon } from "./Icons";
 
 export const TOOLS: { id: Tool; label: string; key: string; icon: () => ReactElement; hint: string }[] = [
@@ -24,16 +24,24 @@ export function ToolPanel() {
   const tool = useEditor((s) => s.tool);
   const setTool = useEditor((s) => s.setTool);
   const current = TOOLS.find((t) => t.id === tool);
+  const collapsed = useEditor((s) => s.toolsCollapsed);
+  const fold = () => { useEditor.getState().set({ toolsCollapsed: !collapsed }); writePref("toolsCollapsed", !collapsed); };
   return (
-    <aside className="tools" aria-label="Herramientas">
+    <aside className={`tools ${collapsed ? "collapsed" : ""}`} aria-label="Herramientas">
+      <button className="tools-fold" onClick={fold} aria-expanded={!collapsed}
+        title={collapsed ? "Mostrar los nombres de las herramientas" : "Reducir la barra a íconos (más espacio para el mapa)"}>
+        <svg viewBox="0 0 10 10" aria-hidden="true"><path d={collapsed ? "M3.5 2 6.5 5 3.5 8" : "M6.5 2 3.5 5 6.5 8"} /></svg>
+        <span>{collapsed ? "" : "Plegar"}</span>
+      </button>
       {TOOLS.map((t) => (
-        <button key={t.id} className={tool === t.id ? "on" : ""} onClick={() => setTool(t.id)} title={`${t.label} (${t.key})`} aria-pressed={tool === t.id}>
+        <button key={t.id} className={tool === t.id ? "on" : ""} onClick={() => setTool(t.id)} title={`${t.label} (${t.key})`} aria-pressed={tool === t.id}
+          aria-label={collapsed ? t.label : undefined}>
           <t.icon />
           <span>{t.label}</span>
           <kbd>{t.key}</kbd>
         </button>
       ))}
-      <div className="tool-hint">{current?.hint}</div>
+      {!collapsed && <div className="tool-hint">{current?.hint}</div>}
     </aside>
   );
 }

@@ -8,6 +8,7 @@ import { flushPending } from "../state/live";
 import { errorText, openProject } from "../state/projects";
 import { useEditor } from "../state/store";
 import { Help, NumField } from "./Fields";
+import { Section } from "./Section";
 
 export const DEFAULT_DESIGN: WellPumpDesign = {
   pump_depth_m: 40, design_flow_lps: 8, minor_loss_pct: 5, pump_efficiency: 0.75, motor_efficiency: 0.9,
@@ -19,8 +20,7 @@ export const DEFAULT_DESIGN: WellPumpDesign = {
 function LineEditor({ title, line, catalog, onChange }: { title: string; line: PumpLine; catalog: CatalogPipe[]; onChange: (l: PumpLine) => void }) {
   const key = line.material && line.dn ? `${line.material}|${line.pipe_class ?? ""}|${line.dn}` : "";
   return (
-    <fieldset>
-      <legend>{title}</legend>
+    <Section id={`pozo.${title.toLowerCase()}`} title={title}>
       <label className="field"><span>Tubería (catálogo)</span>
         <select value={key} onChange={(e) => {
           const c = catalog.find((x) => `${x.material}|${x.pipe_class}|${x.dn}` === e.target.value);
@@ -34,7 +34,7 @@ function LineEditor({ title, line, catalog, onChange }: { title: string; line: P
         <NumField label="D interior" unit="mm" digits={1} value={line.inner_diameter_mm} onCommit={(v) => v && onChange({ ...line, inner_diameter_mm: v })} />
         <NumField label="Largo" unit="m" digits={1} value={line.length_m} onCommit={(v) => v !== null && onChange({ ...line, length_m: v })} />
       </div>
-    </fieldset>
+    </Section>
   );
 }
 
@@ -70,8 +70,7 @@ export function WellPump({ w }: { w: EWell }) {
   if (!d) return <button className="small" onClick={() => set({})}>+ Datos de bombeo del pozo</button>;
   return (
     <>
-      <fieldset>
-        <legend>Bombeo <Help text="Datos de la hoja BombaPozo1: profundidad de la bomba, caudal de diseño, columna e impulsión, cota de llegada y rendimientos. Cálculo con γ = 9.810 N/m³, π exacto y la fórmula de pérdidas del proyecto." /></legend>
+      <Section id="pozo.bombeo" title="Bombeo" primary extra={<Help text="Datos de la hoja BombaPozo1: profundidad de la bomba, caudal de diseño, columna e impulsión, cota de llegada y rendimientos. Cálculo con γ = 9.810 N/m³, π exacto y la fórmula de pérdidas del proyecto." />}>
         <div className="grid2">
           <NumField label="Profundidad de la bomba" unit="m" value={d.pump_depth_m} onCommit={(v) => v !== null && set({ pump_depth_m: v })} />
           <NumField label="Caudal de diseño" unit="L/s" value={d.design_flow_lps} onCommit={(v) => v && set({ design_flow_lps: v })} />
@@ -88,7 +87,7 @@ export function WellPump({ w }: { w: EWell }) {
           <NumField label="Factor de potencia" value={d.power_factor} onCommit={(v) => v && set({ power_factor: Math.min(1, v) })} />
           <NumField label="Tensión trifásica" unit="V" digits={0} value={d.voltage_v} onCommit={(v) => v && set({ voltage_v: v })} />
         </div>
-      </fieldset>
+      </Section>
       <LineEditor title="Columna" line={d.column} catalog={catalog} onChange={(l) => set({ column: l })} />
       <LineEditor title="Impulsión" line={d.impulsion} catalog={catalog} onChange={(l) => set({ impulsion: l })} />
       <div className="toolbar">

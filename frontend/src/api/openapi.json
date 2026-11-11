@@ -83,6 +83,37 @@
         "title": "AffectedClient",
         "type": "object"
       },
+      "AreaBlock": {
+        "properties": {
+          "area_km2": {
+            "title": "Area Km2",
+            "type": "number"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
+          },
+          "margin_m": {
+            "title": "Margin M",
+            "type": "number"
+          }
+        },
+        "required": [
+          "margin_m",
+          "area_km2",
+          "geometry"
+        ],
+        "title": "AreaBlock",
+        "type": "object"
+      },
       "AuditOut": {
         "properties": {
           "action": {
@@ -190,6 +221,70 @@
           "password_min_length"
         ],
         "title": "AuthStatus",
+        "type": "object"
+      },
+      "BalanceRow": {
+        "properties": {
+          "clients": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "consumption_m3_day": {
+            "title": "Consumption M3 Day",
+            "type": "number"
+          },
+          "meters": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Meters",
+            "type": "array"
+          },
+          "nrw_m3_day": {
+            "title": "Nrw M3 Day",
+            "type": "number"
+          },
+          "nrw_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nrw Pct"
+          },
+          "period_from": {
+            "format": "date-time",
+            "title": "Period From",
+            "type": "string"
+          },
+          "period_to": {
+            "format": "date-time",
+            "title": "Period To",
+            "type": "string"
+          },
+          "production_m3_day": {
+            "title": "Production M3 Day",
+            "type": "number"
+          },
+          "sector": {
+            "title": "Sector",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sector",
+          "meters",
+          "period_from",
+          "period_to",
+          "production_m3_day",
+          "consumption_m3_day",
+          "nrw_m3_day",
+          "nrw_pct",
+          "clients"
+        ],
+        "title": "BalanceRow",
         "type": "object"
       },
       "Body_create_from_excel_api_projects_import_excel_post": {
@@ -314,6 +409,20 @@
           "file"
         ],
         "title": "Body_import_clients_api_projects__project_id__clients_import_post",
+        "type": "object"
+      },
+      "Body_import_leaks_api_projects__project_id__leaks_import_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_leaks_api_projects__project_id__leaks_import_post",
         "type": "object"
       },
       "Body_import_measurements_api_projects__project_id__measurements_import_post": {
@@ -1038,6 +1147,52 @@
         "title": "ClientState",
         "type": "object"
       },
+      "ClientsBlock": {
+        "properties": {
+          "active": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "by_route": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "By Route",
+            "type": "array"
+          },
+          "by_sector": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "By Sector",
+            "type": "array"
+          },
+          "connections": {
+            "description": "N° de arranques (puntos de conexión distintos)",
+            "title": "Connections",
+            "type": "integer"
+          },
+          "projected": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "suspended": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "total": {
+            "$ref": "#/components/schemas/ElementList"
+          }
+        },
+        "required": [
+          "total",
+          "active",
+          "projected",
+          "suspended",
+          "connections",
+          "by_route",
+          "by_sector"
+        ],
+        "title": "ClientsBlock",
+        "type": "object"
+      },
       "CodeIn": {
         "additionalProperties": false,
         "properties": {
@@ -1453,6 +1608,110 @@
           }
         },
         "title": "ConditionGroup",
+        "type": "object"
+      },
+      "Consumer": {
+        "properties": {
+          "client": {
+            "title": "Client",
+            "type": "string"
+          },
+          "lps": {
+            "title": "Lps",
+            "type": "number"
+          },
+          "m3_month": {
+            "title": "M3 Month",
+            "type": "number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "pct": {
+            "title": "Pct",
+            "type": "number"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          }
+        },
+        "required": [
+          "client",
+          "name",
+          "route",
+          "lps",
+          "m3_month",
+          "pct"
+        ],
+        "title": "Consumer",
+        "type": "object"
+      },
+      "ConsumptionBlock": {
+        "properties": {
+          "by_route": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "By Route",
+            "type": "array"
+          },
+          "by_sector": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "By Sector",
+            "type": "array"
+          },
+          "lps": {
+            "title": "Lps",
+            "type": "number"
+          },
+          "m3_day": {
+            "title": "M3 Day",
+            "type": "number"
+          },
+          "m3_month": {
+            "title": "M3 Month",
+            "type": "number"
+          },
+          "projection": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectionPoint"
+            },
+            "title": "Projection",
+            "type": "array"
+          },
+          "projection_note": {
+            "title": "Projection Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lps",
+          "m3_day",
+          "m3_month",
+          "by_sector",
+          "by_route",
+          "projection",
+          "projection_note"
+        ],
+        "title": "ConsumptionBlock",
         "type": "object"
       },
       "CriteriaAlert": {
@@ -2286,6 +2545,65 @@
         "title": "DiagnosisResult",
         "type": "object"
       },
+      "DueBlock": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "km": {
+            "title": "Km",
+            "type": "number"
+          },
+          "years": {
+            "title": "Years",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "years",
+          "km",
+          "ids"
+        ],
+        "title": "DueBlock",
+        "type": "object"
+      },
+      "ElementList": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "node",
+              "link",
+              "client",
+              "shutoff",
+              "hydrant",
+              "well"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "count"
+        ],
+        "title": "ElementList",
+        "type": "object"
+      },
       "EngineInfo": {
         "properties": {
           "en_getversion": {
@@ -2870,6 +3188,53 @@
           "gcps"
         ],
         "title": "GcpRequest",
+        "type": "object"
+      },
+      "Group": {
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Km"
+          },
+          "m3_day": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "M3 Day"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "Group",
         "type": "object"
       },
       "GrowthStep": {
@@ -3526,6 +3891,154 @@
         "title": "InviteIn",
         "type": "object"
       },
+      "LeakEventIn": {
+        "additionalProperties": false,
+        "properties": {
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "flow_lps": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Caudal estimado perdido (L/s)",
+            "title": "Flow Lps"
+          },
+          "kind": {
+            "enum": [
+              "fuga",
+              "rotura",
+              "reparacion"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "link_id": {
+            "description": "ID del tramo",
+            "maxLength": 31,
+            "minLength": 1,
+            "title": "Link Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "link_id",
+          "event_date",
+          "kind"
+        ],
+        "title": "LeakEventIn",
+        "type": "object"
+      },
+      "LeakEventOut": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "flow_lps": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Caudal estimado perdido (L/s)",
+            "title": "Flow Lps"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "fuga",
+              "rotura",
+              "reparacion"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "link_id": {
+            "description": "ID del tramo",
+            "maxLength": 31,
+            "minLength": 1,
+            "title": "Link Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "link_id",
+          "event_date",
+          "kind",
+          "id",
+          "created_at"
+        ],
+        "title": "LeakEventOut",
+        "type": "object"
+      },
+      "LeakImportResult": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "created",
+          "errors"
+        ],
+        "title": "LeakImportResult",
+        "type": "object"
+      },
       "LevelControl": {
         "additionalProperties": false,
         "description": "Control por nivel de un estanque: enciende (abre) bajo `on_below` y apaga (cierra) sobre `off_above`.",
@@ -3552,6 +4065,36 @@
           "off_above"
         ],
         "title": "LevelControl",
+        "type": "object"
+      },
+      "LifeRow": {
+        "properties": {
+          "material": {
+            "title": "Material",
+            "type": "string"
+          },
+          "suggested": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested"
+          },
+          "years": {
+            "title": "Years",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "material",
+          "years",
+          "suggested"
+        ],
+        "title": "LifeRow",
         "type": "object"
       },
       "LineStringGeometry": {
@@ -3586,6 +4129,43 @@
           "coordinates"
         ],
         "title": "LineStringGeometry",
+        "type": "object"
+      },
+      "LinkEvents": {
+        "properties": {
+          "events": {
+            "title": "Events",
+            "type": "integer"
+          },
+          "flow_lps": {
+            "title": "Flow Lps",
+            "type": "number"
+          },
+          "kinds": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Kinds",
+            "type": "object"
+          },
+          "last_date": {
+            "format": "date",
+            "title": "Last Date",
+            "type": "string"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          }
+        },
+        "required": [
+          "link",
+          "events",
+          "last_date",
+          "kinds",
+          "flow_lps"
+        ],
+        "title": "LinkEvents",
         "type": "object"
       },
       "LinkFeature": {
@@ -4224,6 +4804,143 @@
         "title": "LoginOut",
         "type": "object"
       },
+      "LossesBlock": {
+        "properties": {
+          "balance": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceRow"
+            },
+            "title": "Balance",
+            "type": "array"
+          },
+          "by_kind": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Kind",
+            "type": "object"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/LeakEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "has_events": {
+            "title": "Has Events",
+            "type": "boolean"
+          },
+          "has_production": {
+            "title": "Has Production",
+            "type": "boolean"
+          },
+          "help": {
+            "title": "Help",
+            "type": "string"
+          },
+          "top_links": {
+            "items": {
+              "$ref": "#/components/schemas/LinkEvents"
+            },
+            "title": "Top Links",
+            "type": "array"
+          },
+          "total_events": {
+            "title": "Total Events",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "events",
+          "total_events",
+          "by_kind",
+          "top_links",
+          "balance",
+          "has_events",
+          "has_production",
+          "help"
+        ],
+        "title": "LossesBlock",
+        "type": "object"
+      },
+      "MaintenanceBlock": {
+        "properties": {
+          "bad_condition": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "bad_condition_km": {
+            "title": "Bad Condition Km",
+            "type": "number"
+          },
+          "current_year": {
+            "title": "Current Year",
+            "type": "integer"
+          },
+          "due": {
+            "items": {
+              "$ref": "#/components/schemas/DueBlock"
+            },
+            "title": "Due",
+            "type": "array"
+          },
+          "expired": {
+            "$ref": "#/components/schemas/DueBlock"
+          },
+          "life": {
+            "items": {
+              "$ref": "#/components/schemas/LifeRow"
+            },
+            "title": "Life",
+            "type": "array"
+          },
+          "life_verified": {
+            "title": "Life Verified",
+            "type": "boolean"
+          },
+          "pipes": {
+            "items": {
+              "$ref": "#/components/schemas/PipeLife"
+            },
+            "title": "Pipes",
+            "type": "array"
+          },
+          "plan": {
+            "items": {
+              "$ref": "#/components/schemas/PlanYear"
+            },
+            "title": "Plan",
+            "type": "array"
+          },
+          "plan_cost": {
+            "title": "Plan Cost",
+            "type": "number"
+          },
+          "prices_verified": {
+            "title": "Prices Verified",
+            "type": "boolean"
+          },
+          "unknown_year": {
+            "$ref": "#/components/schemas/ElementList"
+          }
+        },
+        "required": [
+          "current_year",
+          "life",
+          "life_verified",
+          "prices_verified",
+          "pipes",
+          "expired",
+          "due",
+          "bad_condition",
+          "bad_condition_km",
+          "unknown_year",
+          "plan",
+          "plan_cost"
+        ],
+        "title": "MaintenanceBlock",
+        "type": "object"
+      },
       "MapLoadOut": {
         "properties": {
           "allowed": {
@@ -4655,6 +5372,79 @@
           }
         },
         "title": "MonitoringSettings",
+        "type": "object"
+      },
+      "NetworkBlock": {
+        "properties": {
+          "by_age": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "By Age",
+            "type": "array"
+          },
+          "by_condition": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "By Condition",
+            "type": "array"
+          },
+          "by_dn": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "By Dn",
+            "type": "array"
+          },
+          "by_material": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "title": "By Material",
+            "type": "array"
+          },
+          "control_valves": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "hydrants": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "km_total": {
+            "title": "Km Total",
+            "type": "number"
+          },
+          "pipes": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "pumps": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "tanks": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "valves": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "wells": {
+            "$ref": "#/components/schemas/ElementList"
+          }
+        },
+        "required": [
+          "km_total",
+          "pipes",
+          "by_material",
+          "by_dn",
+          "by_condition",
+          "by_age",
+          "valves",
+          "control_valves",
+          "hydrants",
+          "tanks",
+          "wells",
+          "pumps"
+        ],
+        "title": "NetworkBlock",
         "type": "object"
       },
       "NetworkDocument": {
@@ -5779,6 +6569,57 @@
         "title": "OrthophotoUpdate",
         "type": "object"
       },
+      "OverElevation": {
+        "properties": {
+          "client": {
+            "title": "Client",
+            "type": "string"
+          },
+          "deficit": {
+            "description": "Cota de terreno + presión mínima − cota piezométrica (m)",
+            "title": "Deficit",
+            "type": "number"
+          },
+          "ground": {
+            "title": "Ground",
+            "type": "number"
+          },
+          "head": {
+            "title": "Head",
+            "type": "number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "node": {
+            "title": "Node",
+            "type": "string"
+          },
+          "pmin": {
+            "title": "Pmin",
+            "type": "number"
+          }
+        },
+        "required": [
+          "client",
+          "name",
+          "node",
+          "ground",
+          "head",
+          "pmin",
+          "deficit"
+        ],
+        "title": "OverElevation",
+        "type": "object"
+      },
       "PasswordChange": {
         "additionalProperties": false,
         "properties": {
@@ -5798,6 +6639,153 @@
           "new_password"
         ],
         "title": "PasswordChange",
+        "type": "object"
+      },
+      "PipeClients": {
+        "properties": {
+          "clients": {
+            "title": "Clients",
+            "type": "integer"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          }
+        },
+        "required": [
+          "link",
+          "clients",
+          "ids"
+        ],
+        "title": "PipeClients",
+        "type": "object"
+      },
+      "PipeLife": {
+        "properties": {
+          "condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "dn": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dn"
+          },
+          "expiry_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Year"
+          },
+          "install_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Install Year"
+          },
+          "length_m": {
+            "title": "Length M",
+            "type": "number"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          },
+          "material": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material"
+          }
+        },
+        "required": [
+          "link",
+          "material",
+          "dn",
+          "length_m",
+          "install_year",
+          "expiry_year",
+          "condition",
+          "cost"
+        ],
+        "title": "PipeLife",
+        "type": "object"
+      },
+      "PlanYear": {
+        "properties": {
+          "cost": {
+            "title": "Cost",
+            "type": "number"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "km": {
+            "title": "Km",
+            "type": "number"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "km",
+          "cost",
+          "ids"
+        ],
+        "title": "PlanYear",
         "type": "object"
       },
       "PointGeometry": {
@@ -5828,6 +6816,177 @@
           "coordinates"
         ],
         "title": "PointGeometry",
+        "type": "object"
+      },
+      "PressureBlock": {
+        "properties": {
+          "above_max": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "avg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg"
+          },
+          "below_min": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "clients_below": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "critical_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Critical Node"
+          },
+          "critical_period": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Critical Period"
+          },
+          "critical_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Critical Time"
+          },
+          "critical_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Critical Value"
+          },
+          "max": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValueAt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "min": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValueAt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pmax": {
+            "title": "Pmax",
+            "type": "number"
+          },
+          "pmin": {
+            "title": "Pmin",
+            "type": "number"
+          },
+          "unsupplied": {
+            "$ref": "#/components/schemas/ElementList"
+          }
+        },
+        "required": [
+          "pmin",
+          "pmax",
+          "below_min",
+          "above_max",
+          "clients_below",
+          "unsupplied"
+        ],
+        "title": "PressureBlock",
+        "type": "object"
+      },
+      "PriceRow": {
+        "additionalProperties": false,
+        "properties": {
+          "dn_max": {
+            "description": "Se aplica a tramos con DN ≤ este valor (mm)",
+            "title": "Dn Max",
+            "type": "integer"
+          },
+          "material": {
+            "default": "*",
+            "description": "Material («*» = cualquiera)",
+            "title": "Material",
+            "type": "string"
+          },
+          "price_m": {
+            "description": "Costo de renovación por metro (CLP/m, con excavación y reposición)",
+            "minimum": 0.0,
+            "title": "Price M",
+            "type": "number"
+          }
+        },
+        "required": [
+          "dn_max",
+          "price_m"
+        ],
+        "title": "PriceRow",
+        "type": "object"
+      },
+      "ProductionMeter": {
+        "additionalProperties": false,
+        "properties": {
+          "element_id": {
+            "maxLength": 31,
+            "minLength": 1,
+            "title": "Element Id",
+            "type": "string"
+          },
+          "element_type": {
+            "description": "Medidor del pozo o macromedidor en un tramo",
+            "enum": [
+              "well",
+              "link"
+            ],
+            "title": "Element Type",
+            "type": "string"
+          },
+          "sector": {
+            "description": "Sector abastecido («Total» = todos los clientes)",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Sector",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sector",
+          "element_type",
+          "element_id"
+        ],
+        "title": "ProductionMeter",
         "type": "object"
       },
       "ProjectCreate": {
@@ -6010,6 +7169,39 @@
           }
         },
         "title": "ProjectUpdate",
+        "type": "object"
+      },
+      "ProjectionPoint": {
+        "properties": {
+          "factor": {
+            "title": "Factor",
+            "type": "number"
+          },
+          "m3_day": {
+            "title": "M3 Day",
+            "type": "number"
+          },
+          "m3_month": {
+            "title": "M3 Month",
+            "type": "number"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          },
+          "years": {
+            "title": "Years",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "years",
+          "year",
+          "factor",
+          "m3_day",
+          "m3_month"
+        ],
+        "title": "ProjectionPoint",
         "type": "object"
       },
       "PumpCalc": {
@@ -6803,6 +7995,24 @@
           "scenario"
         ],
         "title": "ScenarioApply",
+        "type": "object"
+      },
+      "ScenarioOption": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ScenarioOption",
         "type": "object"
       },
       "ScenarioRequest": {
@@ -7611,6 +8821,413 @@
         "title": "Suggestion",
         "type": "object"
       },
+      "SummaryAlert": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "severity": {
+            "enum": [
+              "error",
+              "warning"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "topic": {
+            "title": "Topic",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "node",
+                  "link",
+                  "client",
+                  "shutoff",
+                  "hydrant",
+                  "well"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "required": [
+          "severity",
+          "topic",
+          "text"
+        ],
+        "title": "SummaryAlert",
+        "type": "object"
+      },
+      "SummaryResult": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/SummaryAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "area": {
+            "$ref": "#/components/schemas/AreaBlock"
+          },
+          "clients": {
+            "$ref": "#/components/schemas/ClientsBlock"
+          },
+          "clients_per_pipe": {
+            "items": {
+              "$ref": "#/components/schemas/PipeClients"
+            },
+            "title": "Clients Per Pipe",
+            "type": "array"
+          },
+          "consumption": {
+            "$ref": "#/components/schemas/ConsumptionBlock"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "losses": {
+            "$ref": "#/components/schemas/LossesBlock"
+          },
+          "maintenance": {
+            "$ref": "#/components/schemas/MaintenanceBlock"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "integer"
+          },
+          "network": {
+            "$ref": "#/components/schemas/NetworkBlock"
+          },
+          "over_elevation": {
+            "items": {
+              "$ref": "#/components/schemas/OverElevation"
+            },
+            "title": "Over Elevation",
+            "type": "array"
+          },
+          "over_elevation_period": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Over Elevation Period"
+          },
+          "peak_period": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Period"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          },
+          "pressures": {
+            "$ref": "#/components/schemas/PressureBlock"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "scenario": {
+            "title": "Scenario",
+            "type": "string"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioOption"
+            },
+            "title": "Scenarios",
+            "type": "array"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/SummarySettings"
+          },
+          "sim_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sim Note"
+          },
+          "simulated": {
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "tank_well": {
+            "$ref": "#/components/schemas/TankWellBlock"
+          },
+          "times": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Times",
+            "type": "array"
+          },
+          "top_consumers": {
+            "items": {
+              "$ref": "#/components/schemas/Consumer"
+            },
+            "title": "Top Consumers",
+            "type": "array"
+          },
+          "zones": {
+            "$ref": "#/components/schemas/ZonesBlock"
+          }
+        },
+        "required": [
+          "project_id",
+          "model_version",
+          "scenario",
+          "scenarios",
+          "simulated",
+          "sim_note",
+          "times",
+          "period",
+          "peak_period",
+          "generated_at",
+          "settings",
+          "clients",
+          "network",
+          "clients_per_pipe",
+          "pressures",
+          "zones",
+          "over_elevation",
+          "over_elevation_period",
+          "top_consumers",
+          "consumption",
+          "area",
+          "losses",
+          "maintenance",
+          "tank_well",
+          "alerts"
+        ],
+        "title": "SummaryResult",
+        "type": "object"
+      },
+      "SummarySettings": {
+        "additionalProperties": false,
+        "properties": {
+          "area_margin_m": {
+            "default": 50.0,
+            "description": "Margen del área operacional alrededor de red y clientes (m)",
+            "maximum": 2000.0,
+            "minimum": 0.0,
+            "title": "Area Margin M",
+            "type": "number"
+          },
+          "default_life": {
+            "default": 50,
+            "description": "Vida útil de materiales sin valor propio (años)",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Default Life",
+            "type": "integer"
+          },
+          "life_verified": {
+            "default": false,
+            "description": "Vida útil revisada por el usuario",
+            "title": "Life Verified",
+            "type": "boolean"
+          },
+          "pressure_ranges": {
+            "description": "Límites de los rangos de presión (m.c.a., crecientes)",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Pressure Ranges",
+            "type": "array"
+          },
+          "prices": {
+            "items": {
+              "$ref": "#/components/schemas/PriceRow"
+            },
+            "title": "Prices",
+            "type": "array"
+          },
+          "prices_verified": {
+            "default": false,
+            "title": "Prices Verified",
+            "type": "boolean"
+          },
+          "production_meters": {
+            "description": "Medidores de producción por sector. Vacío = automático (pozos → Total; macromedidores → sector del tramo)",
+            "items": {
+              "$ref": "#/components/schemas/ProductionMeter"
+            },
+            "title": "Production Meters",
+            "type": "array"
+          },
+          "sector_attribute": {
+            "default": "Sector",
+            "description": "Atributo libre de clientes (y tramos) que indica el sector",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Sector Attribute",
+            "type": "string"
+          },
+          "service_life": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Vida útil por material (años)",
+            "title": "Service Life",
+            "type": "object"
+          },
+          "top_n": {
+            "default": 10,
+            "enum": [
+              10,
+              20
+            ],
+            "title": "Top N",
+            "type": "integer"
+          }
+        },
+        "title": "SummarySettings",
+        "type": "object"
+      },
+      "TankInfo": {
+        "properties": {
+          "autonomy_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autonomy H"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Max"
+          },
+          "level_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nivel mínimo alcanzado en la simulación (m)",
+            "title": "Level Min"
+          },
+          "outflow_lps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outflow Lps"
+          },
+          "useful_m3": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useful M3"
+          }
+        },
+        "required": [
+          "id",
+          "useful_m3",
+          "outflow_lps",
+          "autonomy_h"
+        ],
+        "title": "TankInfo",
+        "type": "object"
+      },
+      "TankWellBlock": {
+        "properties": {
+          "tanks": {
+            "items": {
+              "$ref": "#/components/schemas/TankInfo"
+            },
+            "title": "Tanks",
+            "type": "array"
+          },
+          "wells": {
+            "items": {
+              "$ref": "#/components/schemas/WellInfo"
+            },
+            "title": "Wells",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tanks",
+          "wells"
+        ],
+        "title": "TankWellBlock",
+        "type": "object"
+      },
       "TrazoImportResult": {
         "properties": {
           "notes": {
@@ -8051,6 +9668,24 @@
         "title": "ValidationReport",
         "type": "object"
       },
+      "ValueAt": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "id"
+        ],
+        "title": "ValueAt",
+        "type": "object"
+      },
       "ValveScenario": {
         "description": "Escenario de operación de llaves: las llaves listadas quedan cerradas; el resto, abiertas.",
         "properties": {
@@ -8180,6 +9815,108 @@
           "properties"
         ],
         "title": "WellFeature",
+        "type": "object"
+      },
+      "WellInfo": {
+        "properties": {
+          "authorized_lps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorized Lps"
+          },
+          "authorized_m3_day": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorized M3 Day"
+          },
+          "flow_running_lps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flow Running Lps"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "m3_day": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "M3 Day"
+          },
+          "over_authorized": {
+            "title": "Over Authorized",
+            "type": "boolean"
+          },
+          "pump": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pump"
+          },
+          "pump_hours_day": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pump Hours Day"
+          },
+          "use_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Pct"
+          }
+        },
+        "required": [
+          "id",
+          "pump",
+          "authorized_lps",
+          "pump_hours_day",
+          "flow_running_lps",
+          "m3_day",
+          "authorized_m3_day",
+          "use_pct",
+          "over_authorized"
+        ],
+        "title": "WellInfo",
         "type": "object"
       },
       "WellProperties": {
@@ -8437,6 +10174,114 @@
           "impulsion"
         ],
         "title": "WellPumpDesign",
+        "type": "object"
+      },
+      "ZoneFeature": {
+        "properties": {
+          "cls": {
+            "title": "Cls",
+            "type": "integer"
+          },
+          "geometry": {
+            "additionalProperties": true,
+            "title": "Geometry",
+            "type": "object"
+          },
+          "node": {
+            "title": "Node",
+            "type": "string"
+          },
+          "pressure": {
+            "title": "Pressure",
+            "type": "number"
+          }
+        },
+        "required": [
+          "node",
+          "pressure",
+          "cls",
+          "geometry"
+        ],
+        "title": "ZoneFeature",
+        "type": "object"
+      },
+      "ZoneRange": {
+        "properties": {
+          "area_km2": {
+            "title": "Area Km2",
+            "type": "number"
+          },
+          "clients": {
+            "$ref": "#/components/schemas/ElementList"
+          },
+          "cls": {
+            "title": "Cls",
+            "type": "integer"
+          },
+          "hi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hi"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "lo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lo"
+          },
+          "nodes": {
+            "$ref": "#/components/schemas/ElementList"
+          }
+        },
+        "required": [
+          "cls",
+          "label",
+          "lo",
+          "hi",
+          "area_km2",
+          "nodes",
+          "clients"
+        ],
+        "title": "ZoneRange",
+        "type": "object"
+      },
+      "ZonesBlock": {
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/ZoneFeature"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "ranges": {
+            "items": {
+              "$ref": "#/components/schemas/ZoneRange"
+            },
+            "title": "Ranges",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ranges",
+          "features"
+        ],
+        "title": "ZonesBlock",
         "type": "object"
       },
       "app__schemas__analysis__Criterion": {
@@ -10914,6 +12759,259 @@
         ]
       }
     },
+    "/api/projects/{project_id}/leaks": {
+      "get": {
+        "operationId": "list_leaks_api_projects__project_id__leaks_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LeakEventOut"
+                  },
+                  "title": "Response List Leaks Api Projects  Project Id  Leaks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Eventos de pérdidas (fugas, roturas, reparaciones)",
+        "tags": [
+          "resumen"
+        ]
+      },
+      "post": {
+        "operationId": "add_leaks_api_projects__project_id__leaks_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/LeakEventIn"
+                },
+                "title": "Body",
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LeakEventOut"
+                  },
+                  "title": "Response Add Leaks Api Projects  Project Id  Leaks Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Registrar eventos de pérdidas",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/leaks/delete": {
+      "post": {
+        "operationId": "delete_leaks_api_projects__project_id__leaks_delete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdList"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Delete Leaks Api Projects  Project Id  Leaks Delete Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Eliminar eventos de pérdidas",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/leaks/import": {
+      "post": {
+        "operationId": "import_leaks_api_projects__project_id__leaks_import_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_leaks_api_projects__project_id__leaks_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeakImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeakImportResult"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Importar eventos desde Excel o CSV (todo o nada)",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/leaks/template.xlsx": {
+      "get": {
+        "operationId": "leaks_template_api_projects__project_id__leaks_template_xlsx_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plantilla de eventos de pérdidas",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
     "/api/projects/{project_id}/measurements": {
       "get": {
         "operationId": "list_measurements_api_projects__project_id__measurements_get",
@@ -12742,6 +14840,554 @@
         "summary": "Simular una versión del modelo (síncrono)",
         "tags": [
           "red y simulación"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/summary": {
+      "get": {
+        "operationId": "get_summary_api_projects__project_id__summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Versión (vacío = la última)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Versión (vacío = la última)",
+              "title": "Version"
+            }
+          },
+          {
+            "description": "«modelo» (última simulación), «normal» o un escenario de llaves",
+            "in": "query",
+            "name": "scenario",
+            "required": false,
+            "schema": {
+              "default": "modelo",
+              "description": "«modelo» (última simulación), «normal» o un escenario de llaves",
+              "title": "Scenario",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Periodo de reporte (vacío = hora punta)",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Periodo de reporte (vacío = hora punta)",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Panel general del proyecto",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/summary.html": {
+      "get": {
+        "operationId": "summary_html_api_projects__project_id__summary_html_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Versión (vacío = la última)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Versión (vacío = la última)",
+              "title": "Version"
+            }
+          },
+          {
+            "description": "«modelo» (última simulación), «normal» o un escenario de llaves",
+            "in": "query",
+            "name": "scenario",
+            "required": false,
+            "schema": {
+              "default": "modelo",
+              "description": "«modelo» (última simulación), «normal» o un escenario de llaves",
+              "title": "Scenario",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Periodo de reporte (vacío = hora punta)",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Periodo de reporte (vacío = hora punta)",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resumen imprimible (HTML; imprimir a PDF desde el navegador)",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/summary.xlsx": {
+      "get": {
+        "operationId": "summary_xlsx_api_projects__project_id__summary_xlsx_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Versión (vacío = la última)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Versión (vacío = la última)",
+              "title": "Version"
+            }
+          },
+          {
+            "description": "«modelo» (última simulación), «normal» o un escenario de llaves",
+            "in": "query",
+            "name": "scenario",
+            "required": false,
+            "schema": {
+              "default": "modelo",
+              "description": "«modelo» (última simulación), «normal» o un escenario de llaves",
+              "title": "Scenario",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Periodo de reporte (vacío = hora punta)",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Periodo de reporte (vacío = hora punta)",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar el resumen a Excel",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/summary/area.geojson": {
+      "get": {
+        "operationId": "area_geojson_api_projects__project_id__summary_area_geojson_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Versión (vacío = la última)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Versión (vacío = la última)",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/geo+json": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Área operacional (GeoJSON, WGS84)",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/summary/settings": {
+      "delete": {
+        "operationId": "reset_settings_api_projects__project_id__summary_settings_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarySettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Volver a los valores sugeridos",
+        "tags": [
+          "resumen"
+        ]
+      },
+      "get": {
+        "operationId": "get_settings_api_projects__project_id__summary_settings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarySettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Configuración del resumen",
+        "tags": [
+          "resumen"
+        ]
+      },
+      "put": {
+        "operationId": "put_settings_api_projects__project_id__summary_settings_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SummarySettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarySettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar la configuración del resumen",
+        "tags": [
+          "resumen"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/summary/zones.geojson": {
+      "get": {
+        "operationId": "zones_geojson_api_projects__project_id__summary_zones_geojson_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Versión (vacío = la última)",
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Versión (vacío = la última)",
+              "title": "Version"
+            }
+          },
+          {
+            "description": "«modelo» (última simulación), «normal» o un escenario de llaves",
+            "in": "query",
+            "name": "scenario",
+            "required": false,
+            "schema": {
+              "default": "modelo",
+              "description": "«modelo» (última simulación), «normal» o un escenario de llaves",
+              "title": "Scenario",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Periodo de reporte (vacío = hora punta)",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Periodo de reporte (vacío = hora punta)",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/geo+json": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Zonas por presión (GeoJSON, WGS84)",
+        "tags": [
+          "resumen"
         ]
       }
     },

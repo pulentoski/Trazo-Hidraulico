@@ -179,7 +179,7 @@ def test_trazo_ida_y_vuelta_sin_perdida(client):
     assert inp_a == inp_b
     net_b = client.get(f"/api/projects/{pid2}/network").json()["network"]["features"]
     c = next(f for f in net_b if f["id"] == "C-001")["properties"]
-    assert c["attributes"] == {"Sector social": "A"} and c["meter_number"] == "MED-2401"
+    assert c["attributes"] == {"Sector social": "A", "Sector": "Bajo"} and c["meter_number"] == "MED-2401"
 
 
 def test_trazo_invalido_se_rechaza(client):

@@ -61,4 +61,17 @@ class SavedQuery(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-__all__ = ["Measurement", "Orthophoto", "SavedQuery"]
+class LeakEvent(Base):
+    """Evento de pérdidas en un tramo: fuga, rotura o reparación (registro del operador)."""
+    __tablename__ = "leak_event"
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("project.id", ondelete="CASCADE"), index=True)
+    link_id: Mapped[str] = mapped_column(String(31))
+    event_date: Mapped[date] = mapped_column(Date)
+    kind: Mapped[str] = mapped_column(String(12))
+    flow_lps: Mapped[float | None] = mapped_column(Float, nullable=True)
+    note: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+__all__ = ["LeakEvent", "Measurement", "Orthophoto", "SavedQuery"]

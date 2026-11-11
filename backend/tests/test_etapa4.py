@@ -85,6 +85,10 @@ def test_lecturas_de_bombapozo1_dan_15_49_lps():
 
 def test_registro_importacion_y_comparacion(client):
     pid = create_demo(client, "APR mediciones")
+    # La demostración trae lecturas de producción de octubre (hoja «Mediciones»): se parte de un registro vacío.
+    ids = [m["id"] for m in client.get(f"/api/projects/{pid}/measurements").json()]
+    assert len(ids) == 62
+    client.post(f"/api/projects/{pid}/measurements/delete", json={"ids": ids})
     t0 = datetime(2026, 11, 9, 8, 0, tzinfo=timezone.utc)
     body = [{"element_type": "well", "element_id": "PZ-1", "kind": "meter", "value": v,
              "measured_at": (t0 + timedelta(minutes=m)).isoformat()} for m, v in zip(MINUTOS, LECTURAS)]

@@ -7,6 +7,7 @@ import type {
   FeasibilityRequest, FeasibilityResult, FireResult, Gcp, GcpFit, ImportApplyResult, ImportPreview, ImportResult,
   NetworkDocument, NetworkSave, NetworkSaveResult, OrthophotoOut, ProjectOut, QueryDef, QueryElement, QueryResult,
   SavedQueryOut, ScenarioResult, SearchHit, SectorsResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
+  LeakEventIn, LeakEventOut, LeakImportResult, SummaryResult, SummarySettings,
 } from "./types";
 
 const client = createClient<paths>({ baseUrl: "" });
@@ -226,6 +227,40 @@ export const api = {
     if (!res.ok) fail(res.status, body);
     return body;
   },
+  summary: (id: string, q: { version?: number; scenario?: string; period?: number | null }) =>
+    unwrap<SummaryResult>(client.GET("/api/projects/{project_id}/summary", {
+      params: { path: { project_id: id }, query: { version: q.version, scenario: q.scenario, period: q.period ?? undefined } },
+    })),
+  summarySettings: (id: string) =>
+    unwrap<SummarySettings>(client.GET("/api/projects/{project_id}/summary/settings", { params: { path: { project_id: id } } })),
+  saveSummarySettings: (id: string, body: SummarySettings) =>
+    unwrap<SummarySettings>(client.PUT("/api/projects/{project_id}/summary/settings", { params: { path: { project_id: id } }, body })),
+  resetSummarySettings: (id: string) =>
+    unwrap<SummarySettings>(client.DELETE("/api/projects/{project_id}/summary/settings", { params: { path: { project_id: id } } })),
+  summaryUrl: (id: string, fmt: "xlsx" | "html", q: { scenario?: string; period?: number | null } = {}) => {
+    const qs = new URLSearchParams();
+    if (q.scenario) qs.set("scenario", q.scenario);
+    if (q.period !== undefined && q.period !== null) qs.set("period", String(q.period));
+    const t = qs.toString();
+    return `/api/projects/${encodeURIComponent(id)}/summary.${fmt}${t ? `?${t}` : ""}`;
+  },
+  areaGeojsonUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/summary/area.geojson`,
+  zonesGeojsonUrl: (id: string, q: { scenario?: string; period?: number | null } = {}) =>
+    `/api/projects/${encodeURIComponent(id)}/summary/zones.geojson?scenario=${encodeURIComponent(q.scenario ?? "modelo")}${q.period != null ? `&period=${q.period}` : ""}`,
+  addLeaks: (id: string, body: LeakEventIn[]) =>
+    unwrap<LeakEventOut[]>(client.POST("/api/projects/{project_id}/leaks", { params: { path: { project_id: id } }, body })),
+  deleteLeaks: (id: string, ids: number[]) =>
+    unwrap<unknown>(client.POST("/api/projects/{project_id}/leaks/delete", { params: { path: { project_id: id } }, body: { ids } })),
+  importLeaks: async (id: string, file: File): Promise<LeakImportResult> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/leaks/import`, { method: "POST", body: fd });
+    const body = await res.json().catch(() => null);
+    if (res.status === 422 && body && "errors" in body) return body;
+    if (!res.ok) fail(res.status, body);
+    return body;
+  },
+  leaksTemplateUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/leaks/template.xlsx`,
   measurementsTemplateUrl: (id: string) => `/api/projects/${encodeURIComponent(id)}/measurements/template.xlsx`,
   monitoring: (id: string) =>
     unwrap<MonitoringSettings>(client.GET("/api/projects/{project_id}/monitoring", { params: { path: { project_id: id } } })),

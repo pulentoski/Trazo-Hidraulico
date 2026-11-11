@@ -115,6 +115,15 @@ trifásica, velocidades; reproduce BombaPozo1) con ficha imprimible y curva de b
 comparación contra el modelo, diagnóstico automático con sugerencias verificadas por simulación e informe
 técnico imprimible. `make test-e2e` hace el recorrido visual con Playwright (capturas en [docs/capturas/](docs/capturas/)).
 
+## Panel general («Resumen») y paneles plegables
+
+Detalle en [docs/resumen.md](docs/resumen.md): pestaña **Resumen** (primera al abrir un proyecto y botón en la barra
+superior) con clientes, red, presiones, zonas por presión, clientes sobre cota, mayores consumidores, consumo y su
+proyección, área operacional, pérdidas y agua no contabilizada, mantenimiento y plan de renovación, estanque y pozo,
+y alertas; cada número enlaza a su lista y al mapa; exporta a PDF (HTML imprimible) y Excel. El panel derecho se
+organiza en secciones plegables (se recuerda por usuario) y la barra de herramientas y el panel inferior se pliegan
+para dar más espacio al mapa.
+
 ## Publicar en un dominio con HTTPS
 
 Lo más simple es el instalador para Ubuntu 22.04/24.04 (`deploy/instalar.sh`); la guía completa (instancia

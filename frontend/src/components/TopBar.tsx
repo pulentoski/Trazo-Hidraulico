@@ -133,6 +133,10 @@ export function TopBar() {
         <button onClick={s.redo} disabled={!s.future.length} title="Rehacer (Ctrl+Y)"><Icon.redo /></button>
       </div>
       <div className="tb-group">
+        <button onClick={() => s.set({ bottomTab: "summary", bottomCollapsed: false })} disabled={!s.project} title="Panel general del proyecto (Resumen)"
+          aria-label="Resumen" className="summary-btn"><Icon.summary /><span>Resumen</span></button>
+      </div>
+      <div className="tb-group">
         <button className="primary" onClick={simulateNow} disabled={!s.project} title="Simular ahora (F5)"><Icon.play /><span>Simular</span></button>
         <a className={`btn ${!s.project || dirty ? "disabled" : ""}`} href={s.project ? api.exportUrl(s.project.id, s.serverVersion ?? undefined) : undefined}
           aria-disabled={!s.project || dirty} title={dirty ? "Esperando guardado" : "Exportar la versión actual como .inp"}><Icon.download /><span>Exportar .inp</span></a>

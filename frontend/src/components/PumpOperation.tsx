@@ -3,6 +3,7 @@ import type { ELink, LinkProps } from "../lib/network";
 import { fmt } from "../lib/format";
 import { useEditor } from "../state/store";
 import { Help, NumField } from "./Fields";
+import { Section } from "./Section";
 
 function upd(uid: string, patch: Partial<LinkProps>) {
   useEditor.getState().commit((n) => ({ ...n, links: { ...n.links, [uid]: { ...n.links[uid], props: { ...n.links[uid].props, ...patch } } } }));
@@ -24,8 +25,7 @@ export function PumpOperation({ link }: { link: ELink }) {
   const hours = sched ? sched.reduce((a, b) => a + b, 0) : 24;
   return (
     <>
-      <fieldset>
-        <legend>Horario <Help text="Encendida (1) o apagada (0) en cada hora, como la columna F de SimulaEST1. Se repite cada día. En válvulas, «encendida» es su consigna." /></legend>
+      <Section id="bomba.horario" title="Horario" extra={<Help text="Encendida (1) o apagada (0) en cada hora, como la columna F de SimulaEST1. Se repite cada día. En válvulas, «encendida» es su consigna." />}>
         <div className="sched">
           {Array.from({ length: 24 }, (_, h) => (
             <button key={h} className={`small ${!sched || sched[h] ? "on" : ""}`} onClick={() => toggle(h)} title={`${h}:00–${h + 1}:00`}>{h}</button>
@@ -35,9 +35,8 @@ export function PumpOperation({ link }: { link: ELink }) {
           <span className="muted small">{sched ? `${hours} h encendida` : "Sin horario (siempre según su estado)"}</span>
           {sched && <button className="small ghost" onClick={() => upd(link.uid, { schedule: null })}>Quitar horario</button>}
         </div>
-      </fieldset>
-      <fieldset>
-        <legend>Control por nivel</legend>
+      </Section>
+      <Section id="bomba.control" title="Control por nivel">
         <label className="field"><span>Estanque</span>
           <select value={lc?.tank ?? ""} onChange={(e) => {
             const t = tanks.find((x) => x.id === e.target.value);
@@ -51,10 +50,9 @@ export function PumpOperation({ link }: { link: ELink }) {
           <NumField label="Apaga sobre" unit="m" value={lc.off_above} onCommit={(v) => upd(link.uid, { level_control: { ...lc, off_above: v ?? lc.off_above } })} />
           {sched && <p className="muted small">Con horario: fuera de las horas encendidas queda apagada; dentro, el nivel la enciende y apaga.</p>}
         </>)}
-      </fieldset>
+      </Section>
       {link.kind === "pump" && (
-        <fieldset>
-          <legend>Curva de la bomba <Help text="Caudal (L/s) y altura (m): 1 punto de diseño o 3 puntos (caudal creciente, altura decreciente). Reemplaza a la potencia constante." /></legend>
+        <Section id="bomba.curva" title="Curva de la bomba" extra={<Help text="Caudal (L/s) y altura (m): 1 punto de diseño o 3 puntos (caudal creciente, altura decreciente). Reemplaza a la potencia constante." />}>
           {pts.map(([q, h], i) => (
             <div className="grid2" key={i}>
               <NumField label={`Q${i + 1}`} unit="L/s" value={q} onCommit={(v) => setPts(pts.map((x, k) => (k === i ? [v ?? q, x[1]] : x)))} />
@@ -70,7 +68,7 @@ export function PumpOperation({ link }: { link: ELink }) {
             {pts.length > 0 && <button className="small ghost" onClick={() => setPts(null)}>Quitar curva</button>}
             {!pts.length && p.pump_power ? <span className="muted small">Potencia constante {fmt(p.pump_power, 1)} kW</span> : null}
           </div>
-        </fieldset>
+        </Section>
       )}
     </>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fmt, fmtTime } from "../lib/format";
-import { useEditor } from "../state/store";
+import { useEditor, writePref } from "../state/store";
+import { SummaryTab } from "./SummaryTab";
 import { ChartsTab } from "./ChartsTab";
 import { ClientsTab } from "./ClientsTab";
 import { DemandTab } from "./DemandTab";
@@ -13,16 +14,16 @@ import { QueryTab } from "./QueryTab";
 import { ScenariosTab } from "./ScenariosTab";
 import { SectorsTab } from "./SectorsTab";
 
-type Tab = "alerts" | "nodes" | "links" | "clients" | "scenarios" | "sectors" | "query" | "hydrants" | "layers" | "engine"
+type Tab = "summary" | "alerts" | "nodes" | "links" | "clients" | "scenarios" | "sectors" | "query" | "hydrants" | "layers" | "engine"
   | "simulation" | "demand" | "charts" | "diagnosis" | "measurements";
 type SortKey = { col: string; dir: 1 | -1 };
 
 interface AlertRow { sev: "error" | "warning"; origin: string; text: string; type?: string | null; id?: string | null }
 
 export function BottomPanel() {
-  const { result, validation, period, set, net, simError, focus, bottomTab } = useEditor();
-  const [tab, setTabState] = useState<Tab>("alerts");
-  const [collapsed, setCollapsed] = useState(false);
+  const { result, validation, period, set, net, simError, focus, bottomTab, bottomCollapsed: collapsed } = useEditor();
+  const [tab, setTabState] = useState<Tab>("summary");
+  const setCollapsed = (v: boolean) => { set({ bottomCollapsed: v }); writePref("bottomCollapsed", v); };
   const setTab = (t: Tab) => { setTabState(t); set({ bottomTab: t }); };
   useEffect(() => {
     if (bottomTab && bottomTab !== tab) { setTabState(bottomTab as Tab); setCollapsed(false); }
@@ -87,8 +88,9 @@ export function BottomPanel() {
   const kindTxt: Record<string, string> = { junction: "nudo", reservoir: "reservorio", tank: "estanque", pipe: "tubería", pump: "bomba", valve: "válvula" };
 
   return (
-    <section className={`bottom ${collapsed ? "collapsed" : ""}`}>
+    <section className={`bottom ${collapsed ? "collapsed" : tab === "summary" ? "tall" : ""}`} aria-label="Panel inferior">
       <div className="tabs">
+        <button className={tab === "summary" ? "on" : ""} onClick={() => setTab("summary")}>Resumen</button>
         <button className={tab === "alerts" ? "on" : ""} onClick={() => setTab("alerts")}>Alertas <span className={`count ${errors ? "bad" : alerts.length ? "warn" : ""}`}>{alerts.length}</span></button>
         <button className={tab === "nodes" ? "on" : ""} onClick={() => setTab("nodes")}>Nudos <span className="count">{nodeRows.length}</span></button>
         <button className={tab === "links" ? "on" : ""} onClick={() => setTab("links")}>Tramos <span className="count">{linkRows.length}</span></button>
@@ -111,10 +113,15 @@ export function BottomPanel() {
             <input type="range" min={0} max={result.times.length - 1} value={period} onChange={(e) => set({ period: Number(e.target.value) })} />
           </label>
         )}
-        <button className="ghost small" onClick={() => setCollapsed(!collapsed)}>{collapsed ? "▴" : "▾"}</button>
+        <button className="ghost small panel-fold" onClick={() => setCollapsed(!collapsed)} aria-expanded={!collapsed}
+          title={collapsed ? "Desplegar el panel inferior" : "Plegar el panel inferior (más espacio para el mapa)"}>
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path d={collapsed ? "M2 6.5 5 3.5 8 6.5" : "M2 3.5 5 6.5 8 3.5"} /></svg>
+          <span>{collapsed ? "Desplegar" : "Plegar"}</span>
+        </button>
       </div>
       {!collapsed && (
         <div className="tab-body">
+          {tab === "summary" && <SummaryTab />}
           {tab === "alerts" && (
             alerts.length === 0 ? <p className="muted pad">{simError ?? (result ? "Sin alertas: la red cumple los criterios configurados." : "Sin resultados todavía.")}</p> : (
               <table className="tbl">

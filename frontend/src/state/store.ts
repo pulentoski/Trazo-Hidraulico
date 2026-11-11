@@ -21,6 +21,11 @@ export const DEFAULT_LABELS: Labels = { nodeIds: true, linkIds: false, pressure:
 
 interface Snapshot { net: Network; options: HydraulicOptions }
 
+/** Capas del Resumen: zonas por presión (polígonos coloreados por rango) y área operacional. */
+export interface OverlayPolygon { key: string; coords: LngLat[][]; color: string; label?: string }
+export interface Overlay { zones: OverlayPolygon[]; area: OverlayPolygon[] }
+export const EMPTY_OVERLAY: Overlay = { zones: [], area: [] };
+
 export interface Toast { id: number; text: string; kind: "info" | "error" }
 
 const DEFAULT_OPTIONS: HydraulicOptions = {
@@ -102,6 +107,11 @@ export interface EditorState {
   importOpen: boolean;
   /** El rol del usuario en la organización del proyecto no permite editar (lector o revisor). */
   readOnly: boolean;
+  /** Barra de herramientas reducida a íconos y panel inferior plegado (se recuerdan). */
+  toolsCollapsed: boolean;
+  bottomCollapsed: boolean;
+  /** Capas del panel general (Resumen) dibujadas sobre el mapa. */
+  overlay: Overlay;
 
   loadDocument: (project: ProjectOut, doc: NetworkDocument) => void;
   closeProject: () => void;
@@ -225,6 +235,9 @@ export const useEditor = create<EditorState>()((set, get) => ({
   linkMode: readPref<LinkColorMode>("linkMode", "headloss"),
   labels: { ...DEFAULT_LABELS, ...readPref<Partial<Labels>>("labels", {}) },
   mapType: readPref<MapType>("mapType", "roadmap"),
+  toolsCollapsed: readPref<boolean>("toolsCollapsed", false),
+  bottomCollapsed: readPref<boolean>("bottomCollapsed", false),
+  overlay: EMPTY_OVERLAY,
   themePref: readPref<ThemePref>("theme", "system"),
   theme: resolveTheme(readPref<ThemePref>("theme", "system")),
   defaultProfileId: readPref<number | null>("defaultProfileId", null),
@@ -253,7 +266,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
       aux: doc.aux, options: doc.options, net, revision: 0, savedRevision: 0, past: [], future: [],
       dragging: false, dragOrigin: null, selection: [], result: null, resultRevision: null, validation: null,
       simStatus: "idle", simError: null, period: 0, pendingDelete: null, scenarios: doc.scenarios ?? [],
-      scenarioView: null, clientDraft: null, feasibilityDraft: null, sectors: null, sectorFocus: null, highlight: [],
+      scenarioView: null, clientDraft: null, feasibilityDraft: null, sectors: null, sectorFocus: null, highlight: [], overlay: EMPTY_OVERLAY,
       cameraRequest: { points: allPoints(net), nonce: Date.now() },
     });
     writePref("lastProject", project.id);
@@ -262,7 +275,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     project: null, net: EMPTY, result: null, validation: null, serverVersion: null, revision: 0, savedRevision: 0,
     past: [], future: [], selection: [], simStatus: "idle", simError: null, versionsOpen: false, pendingDelete: null,
     scenarios: [], designParams: null, scenarioView: null, clientDraft: null, feasibilityDraft: null,
-    orthos: [], sectors: null, sectorFocus: null, highlight: [], mapPick: null,
+    orthos: [], sectors: null, sectorFocus: null, highlight: [], mapPick: null, overlay: EMPTY_OVERLAY,
   }),
 
   commit: (fn, options) => {

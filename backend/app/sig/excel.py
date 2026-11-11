@@ -272,6 +272,10 @@ def parse_table(sheet: Sheet, table: list[list[Any]], *, first_row: int = 1) -> 
     return out
 
 
+# Hojas de registros del proyecto (no son elementos del modelo): mediciones y eventos de pérdidas.
+AUX_SHEETS = {norm("Mediciones"), norm("Pérdidas")}
+
+
 def read_workbook(content: bytes) -> tuple[dict[str, RawSheet], list[tuple[str, str]] | None, list[str]]:
     """Lee un .xlsx: hojas reconocidas, hoja «Modelo» (si está) y avisos (hojas ignoradas)."""
     try:
@@ -294,6 +298,8 @@ def read_workbook(content: bytes) -> tuple[dict[str, RawSheet], list[tuple[str, 
                     model.append((str(row[0]).strip(), "" if len(row) < 2 or row[1] is None else str(row[1])))
                 continue
             sheet = SHEET_BY_NAME.get(norm(title))
+            if sheet is None and norm(title) in AUX_SHEETS:
+                continue  # registros del proyecto: se importan al crear un proyecto desde la planilla
             if sheet is None:
                 notes.append(f"Hoja «{title}» ignorada (no corresponde a un tipo de elemento).")
                 continue

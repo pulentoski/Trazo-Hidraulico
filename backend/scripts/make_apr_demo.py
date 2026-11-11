@@ -50,14 +50,14 @@ PIPES = {
     "P-03": ("J-1", "J-2", "PVC", 110, "C10", 2001, "bueno", "matriz", []),
     "P-04": ("J-2", "J-3", "PVC", 110, "C10", 2001, "regular", "matriz", []),
     "P-05": ("J-3", "J-4", "PVC", 90, "C10", 1996, "regular", "distribucion", []),
-    "P-06": ("J-4", "J-5", "PVC", 75, "C10", 1996, "malo", "distribucion", []),
+    "P-06": ("J-4", "J-5", "PVC", 75, "C10", 1985, "malo", "distribucion", []),
     "P-07": ("J-3", "J-6", "PVC", 75, "C10", 1994, "regular", "distribucion", []),
-    "P-08": ("J-6", "J-7", "PVC", 63, "C10", 1994, "malo", "distribucion", []),
+    "P-08": ("J-6", "J-7", "PVC", 63, "C10", 1972, "malo", "distribucion", []),
     "P-09": ("J-5", "J-8", "PVC", 63, "C10", 1998, "regular", "distribucion", []),
     "P-10": ("J-8", "J-9", "PVC", 63, "C10", 2005, "bueno", "distribucion", []),
     "P-11": ("J-7", "J-9", "PVC", 63, "C10", 2005, "bueno", "distribucion", []),
     "P-12": ("J-2", "J-10", "PVC", 75, "C10", 2010, "bueno", "distribucion", []),
-    "P-13": ("J-10", "J-11", "PVC", 63, "C10", 1999, "malo", "distribucion", []),
+    "P-13": ("J-10", "J-11", "PVC", 63, "C10", 1979, "malo", "distribucion", []),
     "P-14": ("J-4", "J-12", "PVC", 75, "C10", 2012, "bueno", "distribucion", []),
     "P-15": ("J-12", "J-13", "PVC", 63, "C10", 2012, "bueno", "distribucion", []),
 }
@@ -73,6 +73,22 @@ CLIENT_NODES = ["J-1", "J-1", "J-2", "J-2", "J-2", "J-3", "J-3", "J-4", "J-4", "
 STREETS = {"J-1": "Los Aromos", "J-2": "Los Aromos", "J-3": "Los Aromos", "J-4": "Los Aromos", "J-5": "Los Aromos",
            "J-6": "El Molle", "J-7": "El Molle", "J-8": "Los Pimientos", "J-9": "Camino Interior",
            "J-10": "La Higuera", "J-11": "La Higuera", "J-12": "Las Palmas", "J-13": "Las Palmas"}
+# Sector (atributo libre «Sector»): la zona alta (calle La Higuera) tiene macromedidor en P-12.
+ALTO_NODES = {"J-10", "J-11"}
+MACRO_PIPE = "P-12"  # macromedidor de la zona alta: su atributo «Sector» asigna la producción
+PROJECTED = {27, 30}  # loteo en Las Palmas
+CLIENT_ELEVATION = {24: 244.0, 25: 257.0}  # C-025 está en la loma: queda sobre la cota piezométrica disponible
+# Registro de pérdidas por tramo: fecha, tramo, tipo, caudal estimado (L/s), observación.
+LEAKS = [
+    ("2025-11-03", "P-06", "fuga", 0.05, "Filtración en unión, calle Los Aromos"),
+    ("2025-11-04", "P-06", "reparacion", None, "Cambio de copla"),
+    ("2026-02-18", "P-06", "rotura", 0.4, "Rotura por tránsito de camión"),
+    ("2026-02-19", "P-06", "reparacion", None, "Reparación con abrazadera"),
+    ("2026-05-10", "P-08", "fuga", 0.08, "Afloramiento en vereda"),
+    ("2026-08-22", "P-08", "fuga", 0.06, None),
+    ("2026-09-30", "P-13", "rotura", 0.3, "Rotura en cruce de calle"),
+    ("2026-10-12", "P-04", "fuga", 0.03, "Filtración en arranque"),
+]
 NAMES = ["Rojas", "Araya", "Castillo", "Cortés", "González", "Muñoz", "Pizarro", "Alfaro", "Rivera", "Olivares",
          "Tapia", "Contreras", "Díaz", "Vega", "Carvajal"]
 
@@ -105,7 +121,7 @@ def rows() -> dict[str, list[Row]]:
                               "material": mat, "pipe_class": cls, "roughness": None, "minor_loss": 0.0,
                               "initial_status": "open", "length_choice": "slope", "_length_manual": None,
                               "condition": cond, "install_year": year, "network_type": ntype,
-                              "description": None}))
+                              "description": None}, {"Sector": "Alto"} if i == MACRO_PIPE else {}))
     out["tramos"] = tramos
     pos = {i: (x, y) for i, (x, y, _z) in JUNCTIONS.items()}
     valves = []
@@ -124,15 +140,52 @@ def rows() -> dict[str, list[Row]]:
         x, y = pos[node]
         dx, dy = (-18 + 12 * n, 14 if k % 2 else -14)
         route = 1 if node in ("J-1", "J-2", "J-10", "J-11") else 2 if node in ("J-3", "J-4", "J-5", "J-12", "J-13") else 3
-        ctype = "comercial" if k in (5, 17) else "publico" if k == 11 else "residencial"
+        ctype = "comercial" if k == 5 else "industrial" if k == 17 else "publico" if k == 11 else "residencial"
+        volume = 120.0 if ctype == "industrial" else 18.0 if ctype == "residencial" else 45.0
+        status = "suspendido" if k == 29 else "proyectado" if k in PROJECTED else "activo"
         clients.append(Row(f"C-{k:03d}", {
             **geo(x + dx, y + dy), "client_number": f"{1000 + k}", "name": f"Familia {NAMES[k % len(NAMES)]}",
             "address": f"{STREETS[node]} {100 + 10 * k}", "route": str(route), "meter_number": f"MED-{2400 + k}",
-            "client_type": ctype, "status": "suspendido" if k == 29 else "activo",
-            "consumption_value": 18.0 if ctype == "residencial" else 45.0, "consumption_unit": "m3/mes",
-            "node": node, "link": None, "elevation": None}, {"Sector social": "A" if k <= 15 else "B"}))
+            "client_type": ctype, "status": status, "consumption_value": volume, "consumption_unit": "m3/mes",
+            "node": node, "link": None, "elevation": CLIENT_ELEVATION.get(k)},
+            {"Sector social": "A" if k <= 15 else "B", "Sector": "Alto" if node in ALTO_NODES else "Bajo"}))
     out["clientes"] = clients
     return out
+
+
+def records(data: bytes) -> bytes:
+    """Agrega las hojas de registros del proyecto: lecturas de producción (pozo y macromedidor) y pérdidas."""
+    import io
+    from datetime import datetime, timedelta
+
+    from openpyxl import load_workbook
+    from openpyxl.styles import Font
+
+    wb = load_workbook(io.BytesIO(data))
+    ws = wb.create_sheet("Mediciones")
+    ws.append(["Elemento", "ID", "Medición", "Fecha y hora", "Valor", "Nota"])
+    ws.append(["nudo, tramo, cliente o pozo", "ID del elemento", "medidor (m³), presión (m) o nivel (m)",
+               "AAAA-MM-DD HH:MM", "lectura", "opcional"])
+    t0 = datetime(2026, 10, 1, 8, 0)
+    well, macro = 1373232.8, 48211.0
+    for d in range(31):  # lecturas diarias de octubre: producción ≈ 26,9 m³/día (pozo) y 3,1 m³/día (zona alta)
+        t = (t0 + timedelta(days=d)).strftime("%Y-%m-%d %H:%M")
+        ws.append(["pozo", "PZ-1", "medidor", t, round(well, 1), "lectura inicial" if d == 0 else None])
+        ws.append(["tramo", "P-12", "medidor", t, round(macro, 2), "macromedidor zona alta" if d == 0 else None])
+        well += 26.9 + (1.4 if d % 7 in (5, 6) else -0.6)
+        macro += 3.1 + (0.2 if d % 7 in (5, 6) else -0.08)
+    lk = wb.create_sheet("Pérdidas")
+    lk.append(["Tramo", "Fecha", "Tipo", "Caudal estimado", "Observación"])
+    lk.append(["ID del tramo", "AAAA-MM-DD", "fuga, rotura o reparación", "L/s (opcional)", "texto libre"])
+    for day, link, kind, q, note in LEAKS:
+        lk.append([link, day, kind, q, note])
+    for sh in (ws, lk):
+        for c in range(1, sh.max_column + 1):
+            sh.cell(1, c).font = Font(bold=True)
+            sh.cell(2, c).font = Font(italic=True, color="666666")
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
 
 
 def main(path: str) -> None:
@@ -144,7 +197,7 @@ def main(path: str) -> None:
                    + "\t".join(str(v) for v in MOD[12:]))]
     data = excel.write_workbook(rows(), zone_label="UTM 19S (EPSG:32719)", model_rows=model_rows)
     with open(path, "wb") as fh:
-        fh.write(data)
+        fh.write(records(data))
     print(f"Planilla escrita en {path}")
 
 

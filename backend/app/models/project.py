@@ -27,6 +27,8 @@ class Project(Base):
     demand_projection: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Registro de funcionamiento: tolerancias de comparación modelo/medición.
     monitoring: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Panel general (resumen): rangos de presión, margen del área operacional, vida útil y precios.
+    summary_settings: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

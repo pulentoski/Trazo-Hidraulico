@@ -558,6 +558,14 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     if (labels.nodeIds) labelEls.push(<text key={`${w.uid}-lbl`} x={x + 10} y={y + 4} className="lbl">{w.id}</text>);
   }
 
+  // Capas del Resumen: zonas por presión y área operacional (bajo la red, sin capturar clics)
+  const overlayEls: React.ReactNode[] = [];
+  const ringPath = (rings: LngLat[][]) => rings.map((r) => r.map((c, i) => `${i ? "L" : "M"}${proj(c).join(" ")}`).join(" ") + " Z").join(" ");
+  for (const z of s.overlay.zones) {
+    overlayEls.push(<path key={z.key} className="ov-zone" d={ringPath(z.coords)} style={{ fill: z.color, stroke: z.color }}><title>{z.label}</title></path>);
+  }
+  for (const a of s.overlay.area) overlayEls.push(<path key={a.key} className="ov-area" d={ringPath(a.coords)} />);
+
   // Resultado de consulta destacado
   const hl = new Set(s.highlight);
   const hlEls: React.ReactNode[] = [];
@@ -650,6 +658,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     <svg ref={svgRef} className={`net-layer ${cursorClass}`} width={size.width} height={size.height}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
       onPointerLeave={() => setCursor(null)} onDoubleClick={onDoubleClick} onWheel={onWheel} onContextMenu={onContextMenu}>
+      <g className="overlay">{overlayEls}</g>
       <g>{dryEls}</g>
       <g>{sectorEls}</g>
       <g>{hlEls}</g>

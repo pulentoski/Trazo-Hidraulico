@@ -10,6 +10,7 @@ from app.core.config import get_settings
 from app.core.ratelimit import RateLimitMiddleware
 from app.routers import (analysis, auth as auth_router, catalog, demand, diagnosis, health, measurements, network,
                          orgs, orthophotos, projects, sig, trazo, wells)
+from app.routers import summary as summary_router
 from app.services import auth
 from app.schemas.simulation import SimulationBlocked
 from app.services.errors import Conflict, InvalidNetwork, NotFound, SimulationBlockedError
@@ -83,7 +84,7 @@ def _auth_error(_: Request, exc: auth.AuthError) -> JSONResponse:
 
 for r in (health.router, auth_router.router, orgs.router, catalog.router, sig.router, trazo.router, projects.router,
           network.router, analysis.router, orthophotos.router, demand.router, wells.router, measurements.router,
-          diagnosis.router):
+          diagnosis.router, summary_router.router):
     app.include_router(r, prefix="/api")
 
 

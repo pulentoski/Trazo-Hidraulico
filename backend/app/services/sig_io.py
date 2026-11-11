@@ -1,6 +1,7 @@
 """Planillas: plantilla, exportación (Excel/CSV) e importación en dos pasos (vista previa → aplicar)."""
 from __future__ import annotations
 
+import io
 import re
 import uuid
 
@@ -151,7 +152,41 @@ def create_from_excel(session: Session, filename: str, content: bytes, *, name: 
     prepare_network(out.model.network, srid)
     v = create_version(session, project, out.model, kind="import", label=f"Creado desde {filename}"[:200], parent=None)
     session.commit()
+    if content.startswith(b"PK"):
+        out.preview.notes.extend(_import_records(session, project, content, {lk.id for lk in out.model.network.links()}))
     return ImportApplyResult(version=v.number, created=True, project_id=str(project.id), preview=out.preview)
+
+
+def _import_records(session: Session, project: Project, content: bytes, links: set[str]) -> list[str]:
+    """Hojas «Mediciones» y «Pérdidas» de la planilla: registros del proyecto nuevo (si están y son válidas)."""
+    from openpyxl import load_workbook
+
+    from app.services import measurements, summary
+
+    wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    tables = {norm(ws.title): [list(r) for r in ws.iter_rows(values_only=True)] for ws in wb.worksheets
+              if norm(ws.title) in (norm("Mediciones"), norm("Pérdidas"))}
+    wb.close()
+    notes: list[str] = []
+    meas = tables.get(norm("Mediciones"))
+    if meas:
+        if len(meas) > 1 and meas[1] and isinstance(meas[1][0], str) and meas[1][0].startswith("nudo, tramo"):
+            meas = [meas[0], *meas[2:]]
+        items, errors = measurements.parse_table(meas)
+        if errors:
+            notes.append(f"Hoja «Mediciones» no importada: {errors[0]}")
+        elif items:
+            measurements.add(session, project, items)
+            notes.append(f"Hoja «Mediciones»: {len(items)} mediciones registradas.")
+    leaks = tables.get(norm("Pérdidas"))
+    if leaks:
+        items, errors = summary.parse_leak_table(leaks, links)
+        if errors:
+            notes.append(f"Hoja «Pérdidas» no importada: {errors[0]}")
+        elif items:
+            summary.add_leaks(session, project, items)
+            notes.append(f"Hoja «Pérdidas»: {len(items)} eventos registrados.")
+    return notes
 
 
 def rows_for(session: Session, project: Project, number: int | None, sheet_key: str) -> list[Row]:

@@ -17,6 +17,7 @@ export const Icon = {
   play: () => <svg viewBox="0 0 24 24" {...P}><path d="M7 4.5v15l12-7.5z" /></svg>,
   download: () => <svg viewBox="0 0 24 24" {...P}><path d="M12 3v12M7 10l5 5 5-5M4 20h16" /></svg>,
   folder: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 6.5h6l2 2h10V19H3z" /></svg>,
+  summary: () => <svg viewBox="0 0 24 24" {...P}><rect x="3.5" y="3.5" width="7" height="7" rx="1" /><rect x="13.5" y="3.5" width="7" height="4" rx="1" /><rect x="13.5" y="10.5" width="7" height="10" rx="1" /><rect x="3.5" y="13.5" width="7" height="7" rx="1" /></svg>,
   history: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3.5 2" /></svg>,
   sun: () => <svg viewBox="0 0 24 24" {...P}><circle cx="12" cy="12" r="4" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" /></svg>,
   back: () => <svg viewBox="0 0 24 24" {...P}><path d="M10 6l-6 6 6 6M4 12h16" /></svg>,

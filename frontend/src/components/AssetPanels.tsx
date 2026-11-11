@@ -3,6 +3,7 @@ import type { EClient, EHydrant, ELink, EShutoff, EWell, LinkProps } from "../li
 import { fmt } from "../lib/format";
 import { useEditor } from "../state/store";
 import { NumField, Readout, TextField } from "./Fields";
+import { Section } from "./Section";
 import { WellPump } from "./WellPump";
 
 type Opt = [string, string];
@@ -26,8 +27,7 @@ export function Choice({ label, value, options, onChange }: { label: string; val
 export function Attributes({ attrs, onChange }: { attrs: Record<string, unknown> | undefined; onChange: (a: Record<string, string | number | null>) => void }) {
   const entries = Object.entries(attrs ?? {}).filter(([k]) => !k.startsWith("__"));
   return (
-    <fieldset>
-      <legend>Atributos libres</legend>
+    <Section id="atributos" title="Atributos libres">
       {entries.length === 0 && <p className="muted small">Sin atributos. Las columnas adicionales de la planilla se guardan aquí.</p>}
       {entries.map(([k, v]) => (
         <TextField key={k} label={k} value={v === null || v === undefined ? "" : String(v)}
@@ -37,7 +37,7 @@ export function Attributes({ attrs, onChange }: { attrs: Record<string, unknown>
         if (!name.trim()) return;
         onChange({ ...(attrs ?? {}) as Record<string, string | number | null>, [name.trim()]: "" });
       }} />
-    </fieldset>
+    </Section>
   );
 }
 
@@ -49,14 +49,13 @@ export function PipeManagement({ link }: { link: ELink }) {
   const p = link.props;
   return (
     <>
-      <fieldset>
-        <legend>Gestión</legend>
+      <Section id="tramo.gestion" title="Gestión">
         <Choice label="Estado" value={p.condition} options={PIPE_CONDITION} onChange={(v) => updLink(link.uid, { condition: v as LinkProps["condition"] })} />
         {p.condition === "fuera_servicio" && <p className="muted small">Un tramo fuera de servicio se simula cerrado.</p>}
         <NumField label="Año de instalación" value={p.install_year} digits={0} allowNull onCommit={(v) => updLink(link.uid, { install_year: v === null ? null : Math.round(v) })} />
         <Choice label="Tipo de red" value={p.network_type} options={NETWORK_TYPE} onChange={(v) => updLink(link.uid, { network_type: v as LinkProps["network_type"] })} />
         <TextField label="Observaciones" value={p.description} onCommit={(v) => updLink(link.uid, { description: v || null })} />
-      </fieldset>
+      </Section>
       <Attributes attrs={p.attributes} onChange={(a) => updLink(link.uid, { attributes: a })} />
     </>
   );
@@ -67,14 +66,13 @@ export function ShutoffManagement({ sh }: { sh: EShutoff }) {
     ...n, shutoffs: { ...n.shutoffs, [sh.uid]: { ...n.shutoffs[sh.uid], props: { ...n.shutoffs[sh.uid].props, ...patch } } } }));
   return (
     <>
-      <fieldset>
-        <legend>Gestión</legend>
+      <Section id="llave.gestion" title="Gestión" primary>
         <Choice label="Tipo" value={sh.props.valve_type} options={SHUTOFF_TYPE} onChange={(v) => upd({ valve_type: v as EShutoff["props"]["valve_type"] })} />
         <Choice label="Condición" value={sh.props.condition} options={ASSET_CONDITION} onChange={(v) => upd({ condition: v as EShutoff["props"]["condition"] })} />
         {sh.props.condition === "inoperativo" && <p className="muted small">Inoperativa: no se considera para los cuarteles de corta.</p>}
         <NumField label="Diámetro" unit="mm" value={sh.props.diameter_mm} allowNull digits={0} onCommit={(v) => upd({ diameter_mm: v })} />
         <NumField label="Profundidad" unit="m" value={sh.props.depth_m} allowNull digits={2} onCommit={(v) => upd({ depth_m: v })} />
-      </fieldset>
+      </Section>
       <Attributes attrs={sh.props.attributes} onChange={(a) => upd({ attributes: a })} />
     </>
   );
@@ -85,13 +83,12 @@ export function ClientManagement({ c }: { c: EClient }) {
     ...n, clients: { ...n.clients, [c.uid]: { ...n.clients[c.uid], props: { ...n.clients[c.uid].props, ...patch } } } }));
   return (
     <>
-      <fieldset>
-        <legend>Datos comerciales</legend>
+      <Section id="cliente.comercial" title="Datos comerciales">
         <TextField label="N° de cliente" value={c.props.client_number} onCommit={(v) => upd({ client_number: v || null })} />
         <TextField label="Dirección" value={c.props.address} onCommit={(v) => upd({ address: v || null })} />
         <TextField label="Ruta de lectura" value={c.props.route} onCommit={(v) => upd({ route: v || null })} />
         <TextField label="N° de medidor" value={c.props.meter_number} onCommit={(v) => upd({ meter_number: v || null })} />
-      </fieldset>
+      </Section>
       <Attributes attrs={c.props.attributes} onChange={(a) => upd({ attributes: a })} />
     </>
   );

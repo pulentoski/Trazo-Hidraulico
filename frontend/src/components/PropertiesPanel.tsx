@@ -10,6 +10,9 @@ import { useEditor } from "../state/store";
 import { Attributes, ClientManagement, HydrantPanel, PipeManagement, ShutoffManagement, WellPanel } from "./AssetPanels";
 import { FieldLabel, Help, NumField, Readout, TextField } from "./Fields";
 import { PumpOperation } from "./PumpOperation";
+import { useAuth } from "../state/auth";
+import { useSections } from "../state/sections";
+import { ExpandAll, Section } from "./Section";
 
 const ID_RE = /^[^\s;"]{1,31}$/;
 const KIND_LABEL = { junction: "Nudo de consumo", reservoir: "Reservorio", tank: "Estanque", pipe: "Tubería", pump: "Bomba", valve: "Válvula" };
@@ -97,8 +100,7 @@ function NodePanel({ node }: { node: ENode }) {
         else updateNode(node.uid, { id: v });
       }} />
       <div className="coords">{fmt(node.pos[1], 6)}°, {fmt(node.pos[0], 6)}° (WGS84)</div>
-      <fieldset>
-        <legend>Cota</legend>
+      <Section id="nudo.cota" title="Cota" primary={!r && node.kind === "junction"}>
         <NumField label={node.kind === "tank" ? "Cota de fondo" : "Cota de terreno"} unit="m" value={p.elevation} allowNull onCommit={setElev} invalid={p.elevation == null}
           hint={node.kind === "tank" ? HELP.elevationTank : HELP.elevationGround} />
         {p.elevation == null && <ul className="issues"><li className="error">Falta la cota: es obligatoria para simular.</li></ul>}
@@ -109,25 +111,22 @@ function NodePanel({ node }: { node: ENode }) {
           </select>
         </label>
         <TextField label="Método" value={p.elevation_method} placeholder="Ej.: levantamiento GNSS, plano…" onCommit={(v) => updateNode(node.uid, { props: { elevation_method: v || null } })} />
-      </fieldset>
+      </Section>
       {node.kind === "junction" && (
-        <fieldset>
-          <legend>Demanda</legend>
+        <Section id="nudo.demanda" title="Demanda">
           <NumField label="Demanda base" unit="L/s" hint={HELP.baseDemand} value={p.base_demand} onCommit={(v) => updateNode(node.uid, { props: { base_demand: v ?? 0 } })} />
           <TextField label="Patrón" value={p.demand_pattern} placeholder="(ninguno)" onCommit={(v) => updateNode(node.uid, { props: { demand_pattern: v || null } })} />
           {(p.demands?.length ?? 0) > 0 && <div className="muted">+ {p.demands!.length} categorías de demanda adicionales (importadas)</div>}
           <DemandBreakdown nodeUid={node.uid} />
-        </fieldset>
+        </Section>
       )}
       {node.kind === "reservoir" && (
-        <fieldset>
-          <legend>Reservorio</legend>
+        <Section id="nudo.reservorio" title="Reservorio" primary={!r}>
           <NumField label="Carga total (nivel)" unit="m" value={p.head} allowNull invalid={p.head == null} onCommit={(v) => updateNode(node.uid, { props: { head: v } })} />
-        </fieldset>
+        </Section>
       )}
       {node.kind === "tank" && (
-        <fieldset>
-          <legend>Estanque</legend>
+        <Section id="nudo.estanque" title="Estanque" primary={!r}>
           <NumField label="Nivel inicial" unit="m" hint={HELP.initLevel} value={p.init_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { init_level: v } })} />
           <NumField label="Nivel mínimo" unit="m" hint={HELP.minLevel} value={p.min_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_level: v } })} />
           <NumField label="Nivel máximo" unit="m" hint={HELP.maxLevel} value={p.max_level} allowNull onCommit={(v) => updateNode(node.uid, { props: { max_level: v } })} />
@@ -141,18 +140,17 @@ function NodePanel({ node }: { node: ENode }) {
             }} />
           <NumField label="Volumen mínimo" unit="m³" hint={HELP.minVolume} value={p.min_volume} allowNull onCommit={(v) => updateNode(node.uid, { props: { min_volume: v } })} />
           <Readout label="Cota de rebalse" hint={HELP.overflow} value={fmt(tank?.overflowElevation, 2)} unit="m" />
-        </fieldset>
+        </Section>
       )}
       {r && (
-        <fieldset className="results">
-          <legend>Resultados {result!.times.length > 1 ? `(t = ${Math.round(result!.times[period] / 360) / 10} h)` : ""}</legend>
+        <Section id="nudo.resultados" className="results" primary title={<>Resultados {result!.times.length > 1 ? `(t = ${Math.round(result!.times[period] / 360) / 10} h)` : ""}</>}>
           {node.kind === "tank" ? (<>
             <Readout label="Nivel de agua" hint={HELP.waterLevel} value={fmt(r.pressure[period], 2)} unit="m" />
             <Readout label="Volumen almacenado" hint={HELP.storedVolume} value={fmt(tank?.volume, 1)} unit="m³" />
           </>) : <Readout label="Presión" value={fmt(r.pressure[period], 2)} unit="m" tone={r.pressure[period] < 0 ? "bad" : ""} />}
           <Readout label="Cota piezométrica" value={fmt(r.head[period], 2)} unit="m" />
           <Readout label={node.kind === "junction" ? "Demanda" : "Aporte (−) / consumo (+)"} value={fmt(r.demand[period], 3)} unit="L/s" />
-        </fieldset>
+        </Section>
       )}
       <Attributes attrs={node.props.attributes} onChange={(a) => updateNode(node.uid, { props: { attributes: a } })} />
       <Issues id={node.id} type="node" />
@@ -160,7 +158,7 @@ function NodePanel({ node }: { node: ENode }) {
   );
 }
 
-function PipeSelect({ links, catalog, formula }: { links: ELink[]; catalog: CatalogPipe[]; formula: HydraulicOptions["headloss"] }) {
+function PipeSelect({ links, catalog, formula, primary = true }: { links: ELink[]; catalog: CatalogPipe[]; formula: HydraulicOptions["headloss"]; primary?: boolean }) {
   const first = links[0].props;
   const material = first.catalog_pipe_id ? first.material ?? "PVC" : "custom";
   const classes = [...new Set(catalog.filter((c) => c.material === material).map((c) => c.pipe_class))];
@@ -179,8 +177,7 @@ function PipeSelect({ links, catalog, formula }: { links: ELink[]; catalog: Cata
   const catalogItem = catalog.find((c) => c.id === first.catalog_pipe_id);
   const verified = catalogItem?.verified;
   return (
-    <fieldset>
-      <legend>Tubería {links.length > 1 ? `(${links.length} tramos)` : ""}</legend>
+    <Section id="tramo.tuberia" title={<>Tubería {links.length > 1 ? `(${links.length} tramos)` : ""}</>} primary={primary}>
       <div className="row3">
         <label className="field"><span>Material</span>
           <select value={material} onChange={(e) => apply(e.target.value, cls, first.dn ?? undefined)}>
@@ -219,7 +216,7 @@ function PipeSelect({ links, catalog, formula }: { links: ELink[]; catalog: Cata
           <option value="open">Abierta</option><option value="closed">Cerrada</option><option value="cv">Con válvula de retención</option>
         </select>
       </label>
-    </fieldset>
+    </Section>
   );
 }
 
@@ -244,9 +241,8 @@ function LinkPanel({ link }: { link: ELink }) {
       </div>
       {link.kind === "pipe" ? (
         <>
-          <PipeSelect links={[link]} catalog={catalog} formula={options.headloss} />
-          <fieldset>
-            <legend>Largos</legend>
+          <PipeSelect links={[link]} catalog={catalog} formula={options.headloss} primary={!r} />
+          <Section id="tramo.largos" title="Largos">
             <Readout label="En planta" value={fmtLen(p.length_plan_m ?? est)} />
             <Readout label="Con pendiente" value={fmtLen(p.length_slope_m)} />
             <label className="field"><FieldLabel label="Largo hidráulico usado" help={HELP.lengthChoice} />
@@ -263,12 +259,12 @@ function LinkPanel({ link }: { link: ELink }) {
             <NumField label="Largo hidráulico (enviado al motor)" unit="m" value={p.length_hydraulic_m} allowNull invalid={!p.length_hydraulic_m}
               hint={HELP.lengthHydraulic}
               onCommit={(v) => updateLinks([link.uid], { length_hydraulic_m: v, length_choice: "manual" })} />
-          </fieldset>
+          </Section>
           <PipeManagement link={link} />
         </>
       ) : link.kind === "pump" ? (
         <>
-        <fieldset><legend>Bomba</legend>
+        <Section id="bomba.bomba" title="Bomba" primary={!r}>
           <Readout label="Curva" value={p.pump_curve ?? (p.pump_power ? `potencia ${fmt(p.pump_power, 1)} kW` : "—")} />
           <NumField label="Velocidad relativa" value={p.pump_speed ?? 1} onCommit={(v) => updateLinks([link.uid], { pump_speed: v })} />
           <label className="field"><span>Estado inicial</span>
@@ -276,26 +272,25 @@ function LinkPanel({ link }: { link: ELink }) {
               <option value="open">En operación</option><option value="closed">Detenida</option>
             </select>
           </label>
-        </fieldset>
+        </Section>
         <PumpOperation link={link} />
         </>
       ) : (
         <>
-        <fieldset><legend>Válvula {p.valve_type}</legend>
+        <Section id="valvula.valvula" title={`Válvula ${p.valve_type ?? ""}`} primary={!r}>
           <NumField label="Diámetro" unit="mm" value={p.inner_diameter_mm} onCommit={(v) => updateLinks([link.uid], { inner_diameter_mm: v })} />
           <NumField label="Consigna" value={p.valve_setting} allowNull onCommit={(v) => updateLinks([link.uid], { valve_setting: v })} />
-        </fieldset>
+        </Section>
         <PumpOperation link={link} />
         </>
       )}
       {r && (
-        <fieldset className="results">
-          <legend>Resultados</legend>
+        <Section id="tramo.resultados" className="results" title="Resultados" primary>
           <Readout label="Caudal" value={fmt(r.flow[period], 3)} unit="L/s" />
           <Readout label="Velocidad" value={fmt(Math.abs(r.velocity[period]), 3)} unit="m/s" />
           <Readout label={link.kind === "pipe" ? "Pérdida unitaria" : "Pérdida / ganancia"} value={fmt(link.kind === "pipe" ? Math.abs(r.headloss[period]) : r.headloss[period], 3)} unit={link.kind === "pipe" ? "m/km" : "m"} />
           <Readout label="Estado" value={STATUS_TXT[r.status[period]] ?? String(r.status[period])} />
-        </fieldset>
+        </Section>
       )}
       <Issues id={link.id} type="link" />
     </>
@@ -354,8 +349,7 @@ function ProjectPanel() {
         set({ project: p });
       }} />
       <div className="muted small">{counts.nodes} nudos · {counts.pipes} tuberías · {fmt(counts.km, 2)} km · largos en EPSG:{project.length_srid}</div>
-      <fieldset>
-        <legend>Opciones hidráulicas</legend>
+      <Section id="proyecto.opciones" title="Opciones hidráulicas" primary>
         <label className="field"><span>Fórmula de pérdida</span>
           <select value={options.headloss} onChange={(e) => changeFormula(e.target.value as HydraulicOptions["headloss"])}>
             <option value="H-W">Hazen-Williams (C)</option>
@@ -374,16 +368,15 @@ function ProjectPanel() {
           <NumField label="Presión requerida" unit="m" value={options.required_pressure} onCommit={(v) => setOptions({ ...options, required_pressure: v ?? 15 })} />
           <NumField label="Exponente" value={options.pressure_exponent} onCommit={(v) => setOptions({ ...options, pressure_exponent: v ?? 0.5 })} />
         </>)}
-      </fieldset>
+      </Section>
       <label className="check"><input type="checkbox" checked={!!options.include_projected_clients}
         onChange={(e) => setOptions({ ...options, include_projected_clients: e.target.checked })} />Incluir clientes proyectados en la demanda</label>
       <DesignParamsEditor profileName={profile?.name ?? null} />
       {engine && (
-        <fieldset>
-          <legend>Motor hidráulico</legend>
+        <Section id="proyecto.motor" title="Motor hidráulico">
           <div className="small">OWA-EPANET {engine.wheel_version} · tag {engine.epanet_tag}</div>
           <div className="small mono" title={engine.epanet_sha ?? ""}>SHA {engine.epanet_sha?.slice(0, 12)}</div>
-        </fieldset>
+        </Section>
       )}
     </>
   );
@@ -436,18 +429,17 @@ function ClientPanel({ c }: { c: EClient }) {
       <label className="field"><span>Estado</span>
         <select value={c.props.status} onChange={(e) => upd({ status: e.target.value as EClient["props"]["status"] })}>
           <option value="activo">Activo</option><option value="proyectado">Proyectado</option><option value="suspendido">Suspendido</option></select></label>
-      <fieldset>
-        <legend>Conexión</legend>
+      <Section id="cliente.conexion" title="Conexión" primary={pressure === undefined}>
         <Readout label="Nudo asignado" value={node?.id ?? "—"} />
         <Readout label="Tubería" value={c.link ? net.links[c.link]?.id ?? "—" : "—"} />
         <Readout label="Modo" value={c.props.connection_mode === "new_node" ? "nudo nuevo en el arranque" : "nudo más cercano"} />
         <NumField label="Cota del terreno" unit="m" value={c.props.elevation} allowNull onCommit={(v) => upd({ elevation: v })}
           hint="Opcional: con ella la presión del cliente se calcula en su cota (cota piezométrica del nudo − cota del cliente)." />
-      </fieldset>
+      </Section>
       {pressure !== undefined && (
-        <fieldset className="results"><legend>Resultados</legend>
+        <Section id="cliente.resultados" className="results" title="Resultados" primary>
           <Readout label="Presión en el cliente" value={fmt(pressure, 2)} unit="m" tone={pmin !== undefined && pressure < pmin ? "bad" : ""} />
-        </fieldset>)}
+        </Section>)}
       <ClientManagement c={c} />
       <Issues id={c.id} type="client" />
     </>
@@ -491,8 +483,7 @@ function DesignParamsEditor({ profileName }: { profileName: string | null }) {
   return (
     <>
       {groups.map(([g, title]) => (
-        <fieldset key={g}>
-          <legend>{title} {designParams.some((p) => p.group === g && !p.verified) && <span className="badge warn">no verificado</span>}</legend>
+        <Section key={g} id={`proyecto.${g}`} title={title} extra={designParams.some((p) => p.group === g && !p.verified) && <span className="badge warn">no verificado</span>}>
           {g === "criterio" && profileName && <div className="muted small">Por defecto: perfil «{profileName}»</div>}
           {designParams.filter((p) => p.group === g).map((p) => (
             <div key={p.key} className="param">
@@ -508,7 +499,7 @@ function DesignParamsEditor({ profileName }: { profileName: string | null }) {
                   <input type="checkbox" checked={p.verified} onChange={(e) => void save(p.key, p.value, e.target.checked, p.source)} />verificado</label>
               </div>
             </div>))}
-        </fieldset>
+        </Section>
       ))}
     </>
   );
@@ -542,6 +533,9 @@ function CurveField({ value, onCommit }: { value: number[]; onCommit: (v: number
 
 export function PropertiesPanel() {
   const { selection, net } = useEditor();
+  const userId = useAuth((s) => s.me?.id ?? "");
+  const setUser = useSections((s) => s.setUser);
+  useEffect(() => setUser(String(userId)), [userId, setUser]);
   let body: React.ReactNode;
   if (selection.length > 1) body = <MultiPanel uids={selection} />;
   else if (selection.length === 1 && net.clients[selection[0]]) body = <ClientPanel c={net.clients[selection[0]]} />;
@@ -551,5 +545,12 @@ export function PropertiesPanel() {
   else if (selection.length === 1 && net.nodes[selection[0]]) body = <NodePanel node={net.nodes[selection[0]]} />;
   else if (selection.length === 1 && net.links[selection[0]]) body = <LinkPanel link={net.links[selection[0]]} />;
   else body = <ProjectPanel />;
-  return <aside className="props" aria-label="Propiedades">{body}</aside>;
+  return (
+    <aside className="props" aria-label="Propiedades">
+      <div className="props-bar">
+        <ExpandAll />
+      </div>
+      {body}
+    </aside>
+  );
 }

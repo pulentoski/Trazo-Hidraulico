@@ -41,6 +41,7 @@ export function EditorPage() {
   const navigate = useNavigate();
   const loaded = useEditor((s) => s.project?.id === id);
   const [failed, setFailed] = useState(false);
+  const toolsCollapsed = useEditor((s) => s.toolsCollapsed);
   useShortcuts();
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export function EditorPage() {
   }, [id, navigate]);
 
   return (
-    <div className="app">
+    <div className={`app ${toolsCollapsed ? "tools-collapsed" : ""}`}>
       <TopBar />
       <ToolPanel />
       <main className="center">{loaded ? <MapView /> : <div className="loading">{failed ? "" : "Abriendo proyecto…"}</div>}</main>

@@ -845,6 +845,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/leaks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eventos de pérdidas (fugas, roturas, reparaciones) */
+        get: operations["list_leaks_api_projects__project_id__leaks_get"];
+        put?: never;
+        /** Registrar eventos de pérdidas */
+        post: operations["add_leaks_api_projects__project_id__leaks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/leaks/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Eliminar eventos de pérdidas */
+        post: operations["delete_leaks_api_projects__project_id__leaks_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/leaks/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Importar eventos desde Excel o CSV (todo o nada) */
+        post: operations["import_leaks_api_projects__project_id__leaks_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/leaks/template.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plantilla de eventos de pérdidas */
+        get: operations["leaks_template_api_projects__project_id__leaks_template_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/measurements": {
         parameters: {
             query?: never;
@@ -1310,6 +1379,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Panel general del proyecto */
+        get: operations["get_summary_api_projects__project_id__summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/summary.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resumen imprimible (HTML; imprimir a PDF desde el navegador) */
+        get: operations["summary_html_api_projects__project_id__summary_html_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/summary.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar el resumen a Excel */
+        get: operations["summary_xlsx_api_projects__project_id__summary_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/summary/area.geojson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Área operacional (GeoJSON, WGS84) */
+        get: operations["area_geojson_api_projects__project_id__summary_area_geojson_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/summary/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuración del resumen */
+        get: operations["get_settings_api_projects__project_id__summary_settings_get"];
+        /** Editar la configuración del resumen */
+        put: operations["put_settings_api_projects__project_id__summary_settings_put"];
+        post?: never;
+        /** Volver a los valores sugeridos */
+        delete: operations["reset_settings_api_projects__project_id__summary_settings_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/summary/zones.geojson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Zonas por presión (GeoJSON, WGS84) */
+        get: operations["zones_geojson_api_projects__project_id__summary_zones_geojson_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/validate": {
         parameters: {
             query?: never;
@@ -1527,6 +1700,17 @@ export interface components {
             /** Node */
             node: string;
         };
+        /** AreaBlock */
+        AreaBlock: {
+            /** Area Km2 */
+            area_km2: number;
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            } | null;
+            /** Margin M */
+            margin_m: number;
+        };
         /** AuditOut */
         AuditOut: {
             /** Action */
@@ -1559,6 +1743,32 @@ export interface components {
             mfa_required_for_admins: boolean;
             /** Password Min Length */
             password_min_length: number;
+        };
+        /** BalanceRow */
+        BalanceRow: {
+            clients: components["schemas"]["ElementList"];
+            /** Consumption M3 Day */
+            consumption_m3_day: number;
+            /** Meters */
+            meters: string[];
+            /** Nrw M3 Day */
+            nrw_m3_day: number;
+            /** Nrw Pct */
+            nrw_pct: number | null;
+            /**
+             * Period From
+             * Format: date-time
+             */
+            period_from: string;
+            /**
+             * Period To
+             * Format: date-time
+             */
+            period_to: string;
+            /** Production M3 Day */
+            production_m3_day: number;
+            /** Sector */
+            sector: string;
         };
         /** Body_create_from_excel_api_projects_import_excel_post */
         Body_create_from_excel_api_projects_import_excel_post: {
@@ -1603,6 +1813,11 @@ export interface components {
              * File
              * @description CSV con columnas lat, lon, nombre, consumo (L/s)
              */
+            file: string;
+        };
+        /** Body_import_leaks_api_projects__project_id__leaks_import_post */
+        Body_import_leaks_api_projects__project_id__leaks_import_post: {
+            /** File */
             file: string;
         };
         /** Body_import_measurements_api_projects__project_id__measurements_import_post */
@@ -1899,6 +2114,22 @@ export interface components {
             /** Supplied */
             supplied: boolean;
         };
+        /** ClientsBlock */
+        ClientsBlock: {
+            active: components["schemas"]["ElementList"];
+            /** By Route */
+            by_route: components["schemas"]["Group"][];
+            /** By Sector */
+            by_sector: components["schemas"]["Group"][];
+            /**
+             * Connections
+             * @description N° de arranques (puntos de conexión distintos)
+             */
+            connections: number;
+            projected: components["schemas"]["ElementList"];
+            suspended: components["schemas"]["ElementList"];
+            total: components["schemas"]["ElementList"];
+        };
         /** CodeIn */
         CodeIn: {
             /** Code */
@@ -2029,6 +2260,38 @@ export interface components {
              * @enum {string}
              */
             logic: "and" | "or";
+        };
+        /** Consumer */
+        Consumer: {
+            /** Client */
+            client: string;
+            /** Lps */
+            lps: number;
+            /** M3 Month */
+            m3_month: number;
+            /** Name */
+            name: string | null;
+            /** Pct */
+            pct: number;
+            /** Route */
+            route: string | null;
+        };
+        /** ConsumptionBlock */
+        ConsumptionBlock: {
+            /** By Route */
+            by_route: components["schemas"]["Group"][];
+            /** By Sector */
+            by_sector: components["schemas"]["Group"][];
+            /** Lps */
+            lps: number;
+            /** M3 Day */
+            m3_day: number;
+            /** M3 Month */
+            m3_month: number;
+            /** Projection */
+            projection: components["schemas"]["ProjectionPoint"][];
+            /** Projection Note */
+            projection_note: string;
         };
         /** CriteriaAlert */
         CriteriaAlert: {
@@ -2385,6 +2648,27 @@ export interface components {
             suggestions: components["schemas"]["Suggestion"][];
             summary: components["schemas"]["DiagItem"];
         };
+        /** DueBlock */
+        DueBlock: {
+            /** Ids */
+            ids: string[];
+            /** Km */
+            km: number;
+            /** Years */
+            years: number;
+        };
+        /** ElementList */
+        ElementList: {
+            /** Count */
+            count: number;
+            /** Ids */
+            ids?: string[];
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "node" | "link" | "client" | "shutoff" | "hydrant" | "well";
+        };
         /** EngineInfo */
         EngineInfo: {
             /** En Getversion */
@@ -2588,6 +2872,22 @@ export interface components {
             apply: boolean;
             /** Gcps */
             gcps: components["schemas"]["Gcp"][];
+        };
+        /** Group */
+        Group: {
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /** Ids */
+            ids?: string[];
+            /** Key */
+            key: string;
+            /** Km */
+            km?: number | null;
+            /** M3 Day */
+            m3_day?: number | null;
         };
         /** GrowthStep */
         GrowthStep: {
@@ -2890,6 +3190,70 @@ export interface components {
              */
             send_email: boolean;
         };
+        /** LeakEventIn */
+        LeakEventIn: {
+            /**
+             * Event Date
+             * Format: date
+             */
+            event_date: string;
+            /**
+             * Flow Lps
+             * @description Caudal estimado perdido (L/s)
+             */
+            flow_lps?: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fuga" | "rotura" | "reparacion";
+            /**
+             * Link Id
+             * @description ID del tramo
+             */
+            link_id: string;
+            /** Note */
+            note?: string | null;
+        };
+        /** LeakEventOut */
+        LeakEventOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Event Date
+             * Format: date
+             */
+            event_date: string;
+            /**
+             * Flow Lps
+             * @description Caudal estimado perdido (L/s)
+             */
+            flow_lps?: number | null;
+            /** Id */
+            id: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fuga" | "rotura" | "reparacion";
+            /**
+             * Link Id
+             * @description ID del tramo
+             */
+            link_id: string;
+            /** Note */
+            note?: string | null;
+        };
+        /** LeakImportResult */
+        LeakImportResult: {
+            /** Created */
+            created: number;
+            /** Errors */
+            errors: string[];
+        };
         /**
          * LevelControl
          * @description Control por nivel de un estanque: enciende (abre) bajo `on_below` y apaga (cierra) sobre `off_above`.
@@ -2911,6 +3275,15 @@ export interface components {
              */
             tank: string;
         };
+        /** LifeRow */
+        LifeRow: {
+            /** Material */
+            material: string;
+            /** Suggested */
+            suggested: number | null;
+            /** Years */
+            years: number;
+        };
         /** LineStringGeometry */
         LineStringGeometry: {
             /**
@@ -2927,6 +3300,24 @@ export interface components {
              * @constant
              */
             type: "LineString";
+        };
+        /** LinkEvents */
+        LinkEvents: {
+            /** Events */
+            events: number;
+            /** Flow Lps */
+            flow_lps: number;
+            /** Kinds */
+            kinds: {
+                [key: string]: number;
+            };
+            /**
+             * Last Date
+             * Format: date
+             */
+            last_date: string;
+            /** Link */
+            link: string;
         };
         /** LinkFeature */
         LinkFeature: {
@@ -3157,6 +3548,51 @@ export interface components {
             /** Mfa Required */
             mfa_required: boolean;
         };
+        /** LossesBlock */
+        LossesBlock: {
+            /** Balance */
+            balance: components["schemas"]["BalanceRow"][];
+            /** By Kind */
+            by_kind: {
+                [key: string]: number;
+            };
+            /** Events */
+            events: components["schemas"]["LeakEventOut"][];
+            /** Has Events */
+            has_events: boolean;
+            /** Has Production */
+            has_production: boolean;
+            /** Help */
+            help: string;
+            /** Top Links */
+            top_links: components["schemas"]["LinkEvents"][];
+            /** Total Events */
+            total_events: number;
+        };
+        /** MaintenanceBlock */
+        MaintenanceBlock: {
+            bad_condition: components["schemas"]["ElementList"];
+            /** Bad Condition Km */
+            bad_condition_km: number;
+            /** Current Year */
+            current_year: number;
+            /** Due */
+            due: components["schemas"]["DueBlock"][];
+            expired: components["schemas"]["DueBlock"];
+            /** Life */
+            life: components["schemas"]["LifeRow"][];
+            /** Life Verified */
+            life_verified: boolean;
+            /** Pipes */
+            pipes: components["schemas"]["PipeLife"][];
+            /** Plan */
+            plan: components["schemas"]["PlanYear"][];
+            /** Plan Cost */
+            plan_cost: number;
+            /** Prices Verified */
+            prices_verified: boolean;
+            unknown_year: components["schemas"]["ElementList"];
+        };
         /** MapLoadOut */
         MapLoadOut: {
             /** Allowed */
@@ -3323,6 +3759,26 @@ export interface components {
              * @default 2
              */
             pressure_m: number;
+        };
+        /** NetworkBlock */
+        NetworkBlock: {
+            /** By Age */
+            by_age: components["schemas"]["Group"][];
+            /** By Condition */
+            by_condition: components["schemas"]["Group"][];
+            /** By Dn */
+            by_dn: components["schemas"]["Group"][];
+            /** By Material */
+            by_material: components["schemas"]["Group"][];
+            control_valves: components["schemas"]["ElementList"];
+            hydrants: components["schemas"]["ElementList"];
+            /** Km Total */
+            km_total: number;
+            pipes: components["schemas"]["ElementList"];
+            pumps: components["schemas"]["ElementList"];
+            tanks: components["schemas"]["ElementList"];
+            valves: components["schemas"]["ElementList"];
+            wells: components["schemas"]["ElementList"];
         };
         /**
          * NetworkDocument
@@ -3735,12 +4191,71 @@ export interface components {
             /** Visible */
             visible?: boolean | null;
         };
+        /** OverElevation */
+        OverElevation: {
+            /** Client */
+            client: string;
+            /**
+             * Deficit
+             * @description Cota de terreno + presión mínima − cota piezométrica (m)
+             */
+            deficit: number;
+            /** Ground */
+            ground: number;
+            /** Head */
+            head: number;
+            /** Name */
+            name: string | null;
+            /** Node */
+            node: string;
+            /** Pmin */
+            pmin: number;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** PipeClients */
+        PipeClients: {
+            /** Clients */
+            clients: number;
+            /** Ids */
+            ids: string[];
+            /** Link */
+            link: string;
+        };
+        /** PipeLife */
+        PipeLife: {
+            /** Condition */
+            condition: string | null;
+            /** Cost */
+            cost: number | null;
+            /** Dn */
+            dn: number | null;
+            /** Expiry Year */
+            expiry_year: number | null;
+            /** Install Year */
+            install_year: number | null;
+            /** Length M */
+            length_m: number;
+            /** Link */
+            link: string;
+            /** Material */
+            material: string | null;
+        };
+        /** PlanYear */
+        PlanYear: {
+            /** Cost */
+            cost: number;
+            /** Ids */
+            ids: string[];
+            /** Km */
+            km: number;
+            /** Year */
+            year: number;
         };
         /** PointGeometry */
         PointGeometry: {
@@ -3758,6 +4273,64 @@ export interface components {
              * @constant
              */
             type: "Point";
+        };
+        /** PressureBlock */
+        PressureBlock: {
+            above_max: components["schemas"]["ElementList"];
+            /** Avg */
+            avg?: number | null;
+            below_min: components["schemas"]["ElementList"];
+            clients_below: components["schemas"]["ElementList"];
+            /** Critical Node */
+            critical_node?: string | null;
+            /** Critical Period */
+            critical_period?: number | null;
+            /** Critical Time */
+            critical_time?: number | null;
+            /** Critical Value */
+            critical_value?: number | null;
+            max?: components["schemas"]["ValueAt"] | null;
+            min?: components["schemas"]["ValueAt"] | null;
+            /** Pmax */
+            pmax: number;
+            /** Pmin */
+            pmin: number;
+            unsupplied: components["schemas"]["ElementList"];
+        };
+        /** PriceRow */
+        PriceRow: {
+            /**
+             * Dn Max
+             * @description Se aplica a tramos con DN ≤ este valor (mm)
+             */
+            dn_max: number;
+            /**
+             * Material
+             * @description Material («*» = cualquiera)
+             * @default *
+             */
+            material: string;
+            /**
+             * Price M
+             * @description Costo de renovación por metro (CLP/m, con excavación y reposición)
+             */
+            price_m: number;
+        };
+        /** ProductionMeter */
+        ProductionMeter: {
+            /** Element Id */
+            element_id: string;
+            /**
+             * Element Type
+             * @description Medidor del pozo o macromedidor en un tramo
+             * @enum {string}
+             */
+            element_type: "well" | "link";
+            /**
+             * Sector
+             * @description Sector abastecido («Total» = todos los clientes)
+             */
+            sector: string;
         };
         /** ProjectCreate */
         ProjectCreate: {
@@ -3825,6 +4398,19 @@ export interface components {
             length_srid?: number | null;
             /** Name */
             name?: string | null;
+        };
+        /** ProjectionPoint */
+        ProjectionPoint: {
+            /** Factor */
+            factor: number;
+            /** M3 Day */
+            m3_day: number;
+            /** M3 Month */
+            m3_month: number;
+            /** Year */
+            year: number;
+            /** Years */
+            years: number;
         };
         /** PumpCalc */
         PumpCalc: {
@@ -4125,6 +4711,13 @@ export interface components {
              * @enum {string}
              */
             scenario: "base" | "actual" | "horizonte";
+        };
+        /** ScenarioOption */
+        ScenarioOption: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** ScenarioRequest */
         ScenarioRequest: {
@@ -4509,6 +5102,150 @@ export interface components {
             /** Verified */
             verified: boolean;
         };
+        /** SummaryAlert */
+        SummaryAlert: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "error" | "warning";
+            /** Text */
+            text: string;
+            /** Topic */
+            topic: string;
+            /** Type */
+            type?: ("node" | "link" | "client" | "shutoff" | "hydrant" | "well") | null;
+        };
+        /** SummaryResult */
+        SummaryResult: {
+            /** Alerts */
+            alerts: components["schemas"]["SummaryAlert"][];
+            area: components["schemas"]["AreaBlock"];
+            clients: components["schemas"]["ClientsBlock"];
+            /** Clients Per Pipe */
+            clients_per_pipe: components["schemas"]["PipeClients"][];
+            consumption: components["schemas"]["ConsumptionBlock"];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            losses: components["schemas"]["LossesBlock"];
+            maintenance: components["schemas"]["MaintenanceBlock"];
+            /** Model Version */
+            model_version: number;
+            network: components["schemas"]["NetworkBlock"];
+            /** Over Elevation */
+            over_elevation: components["schemas"]["OverElevation"][];
+            /** Over Elevation Period */
+            over_elevation_period: number | null;
+            /** Peak Period */
+            peak_period: number | null;
+            /** Period */
+            period: number | null;
+            pressures: components["schemas"]["PressureBlock"];
+            /** Project Id */
+            project_id: string;
+            /** Scenario */
+            scenario: string;
+            /** Scenarios */
+            scenarios: components["schemas"]["ScenarioOption"][];
+            settings: components["schemas"]["SummarySettings"];
+            /** Sim Note */
+            sim_note: string | null;
+            /** Simulated */
+            simulated: boolean;
+            tank_well: components["schemas"]["TankWellBlock"];
+            /** Times */
+            times: number[];
+            /** Top Consumers */
+            top_consumers: components["schemas"]["Consumer"][];
+            zones: components["schemas"]["ZonesBlock"];
+        };
+        /** SummarySettings */
+        SummarySettings: {
+            /**
+             * Area Margin M
+             * @description Margen del área operacional alrededor de red y clientes (m)
+             * @default 50
+             */
+            area_margin_m: number;
+            /**
+             * Default Life
+             * @description Vida útil de materiales sin valor propio (años)
+             * @default 50
+             */
+            default_life: number;
+            /**
+             * Life Verified
+             * @description Vida útil revisada por el usuario
+             * @default false
+             */
+            life_verified: boolean;
+            /**
+             * Pressure Ranges
+             * @description Límites de los rangos de presión (m.c.a., crecientes)
+             */
+            pressure_ranges?: number[];
+            /** Prices */
+            prices?: components["schemas"]["PriceRow"][];
+            /**
+             * Prices Verified
+             * @default false
+             */
+            prices_verified: boolean;
+            /**
+             * Production Meters
+             * @description Medidores de producción por sector. Vacío = automático (pozos → Total; macromedidores → sector del tramo)
+             */
+            production_meters?: components["schemas"]["ProductionMeter"][];
+            /**
+             * Sector Attribute
+             * @description Atributo libre de clientes (y tramos) que indica el sector
+             * @default Sector
+             */
+            sector_attribute: string;
+            /**
+             * Service Life
+             * @description Vida útil por material (años)
+             */
+            service_life?: {
+                [key: string]: number;
+            };
+            /**
+             * Top N
+             * @default 10
+             * @enum {integer}
+             */
+            top_n: 10 | 20;
+        };
+        /** TankInfo */
+        TankInfo: {
+            /** Autonomy H */
+            autonomy_h: number | null;
+            /** Id */
+            id: string;
+            /** Level Max */
+            level_max?: number | null;
+            /**
+             * Level Min
+             * @description Nivel mínimo alcanzado en la simulación (m)
+             */
+            level_min?: number | null;
+            /** Outflow Lps */
+            outflow_lps: number | null;
+            /** Useful M3 */
+            useful_m3: number | null;
+        };
+        /** TankWellBlock */
+        TankWellBlock: {
+            /** Tanks */
+            tanks: components["schemas"]["TankInfo"][];
+            /** Wells */
+            wells: components["schemas"]["WellInfo"][];
+        };
         /** TrazoImportResult */
         TrazoImportResult: {
             /** Notes */
@@ -4638,6 +5375,13 @@ export interface components {
             /** Warnings */
             warnings: components["schemas"]["ValidationIssue"][];
         };
+        /** ValueAt */
+        ValueAt: {
+            /** Id */
+            id: string;
+            /** Value */
+            value: number;
+        };
         /**
          * ValveScenario
          * @description Escenario de operación de llaves: las llaves listadas quedan cerradas; el resto, abiertas.
@@ -4698,6 +5442,27 @@ export interface components {
              * @constant
              */
             type: "Feature";
+        };
+        /** WellInfo */
+        WellInfo: {
+            /** Authorized Lps */
+            authorized_lps: number | null;
+            /** Authorized M3 Day */
+            authorized_m3_day: number | null;
+            /** Flow Running Lps */
+            flow_running_lps: number | null;
+            /** Id */
+            id: string;
+            /** M3 Day */
+            m3_day: number | null;
+            /** Over Authorized */
+            over_authorized: boolean;
+            /** Pump */
+            pump: string | null;
+            /** Pump Hours Day */
+            pump_hours_day: number | null;
+            /** Use Pct */
+            use_pct: number | null;
         };
         /** WellProperties */
         WellProperties: {
@@ -4815,6 +5580,41 @@ export interface components {
              * @default 380
              */
             voltage_v: number;
+        };
+        /** ZoneFeature */
+        ZoneFeature: {
+            /** Cls */
+            cls: number;
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            };
+            /** Node */
+            node: string;
+            /** Pressure */
+            pressure: number;
+        };
+        /** ZoneRange */
+        ZoneRange: {
+            /** Area Km2 */
+            area_km2: number;
+            clients: components["schemas"]["ElementList"];
+            /** Cls */
+            cls: number;
+            /** Hi */
+            hi: number | null;
+            /** Label */
+            label: string;
+            /** Lo */
+            lo: number | null;
+            nodes: components["schemas"]["ElementList"];
+        };
+        /** ZonesBlock */
+        ZonesBlock: {
+            /** Features */
+            features: components["schemas"]["ZoneFeature"][];
+            /** Ranges */
+            ranges: components["schemas"]["ZoneRange"][];
         };
         /** Criterion */
         app__schemas__analysis__Criterion: {
@@ -6567,6 +7367,175 @@ export interface operations {
             };
         };
     };
+    list_leaks_api_projects__project_id__leaks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeakEventOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_leaks_api_projects__project_id__leaks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeakEventIn"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeakEventOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_leaks_api_projects__project_id__leaks_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdList"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_leaks_api_projects__project_id__leaks_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_leaks_api_projects__project_id__leaks_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeakImportResult"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeakImportResult"];
+                };
+            };
+        };
+    };
+    leaks_template_api_projects__project_id__leaks_template_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_measurements_api_projects__project_id__measurements_get: {
         parameters: {
             query?: {
@@ -7697,6 +8666,289 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SimulationBlocked"];
+                };
+            };
+        };
+    };
+    get_summary_api_projects__project_id__summary_get: {
+        parameters: {
+            query?: {
+                /** @description Versión (vacío = la última) */
+                version?: number | null;
+                /** @description «modelo» (última simulación), «normal» o un escenario de llaves */
+                scenario?: string;
+                /** @description Periodo de reporte (vacío = hora punta) */
+                period?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_html_api_projects__project_id__summary_html_get: {
+        parameters: {
+            query?: {
+                /** @description Versión (vacío = la última) */
+                version?: number | null;
+                /** @description «modelo» (última simulación), «normal» o un escenario de llaves */
+                scenario?: string;
+                /** @description Periodo de reporte (vacío = hora punta) */
+                period?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_xlsx_api_projects__project_id__summary_xlsx_get: {
+        parameters: {
+            query?: {
+                /** @description Versión (vacío = la última) */
+                version?: number | null;
+                /** @description «modelo» (última simulación), «normal» o un escenario de llaves */
+                scenario?: string;
+                /** @description Periodo de reporte (vacío = hora punta) */
+                period?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    area_geojson_api_projects__project_id__summary_area_geojson_get: {
+        parameters: {
+            query?: {
+                /** @description Versión (vacío = la última) */
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geo+json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_projects__project_id__summary_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummarySettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_settings_api_projects__project_id__summary_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SummarySettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummarySettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_settings_api_projects__project_id__summary_settings_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummarySettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    zones_geojson_api_projects__project_id__summary_zones_geojson_get: {
+        parameters: {
+            query?: {
+                /** @description Versión (vacío = la última) */
+                version?: number | null;
+                /** @description «modelo» (última simulación), «normal» o un escenario de llaves */
+                scenario?: string;
+                /** @description Periodo de reporte (vacío = hora punta) */
+                period?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geo+json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

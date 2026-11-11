@@ -2,10 +2,11 @@
 
 Requiere la pila levantada (make up) en http://localhost:8080; ingresa con E2E_EMAIL/E2E_PASSWORD (make test-e2e
 crea ese usuario administrador en la organización «Recorrido e2e»). Crea un proyecto
-«APR Demo (e2e)» desde examples/apr-demo.xlsx, recorre menú, herramientas, importación Excel, ortofoto,
-consultas, cuarteles, factibilidad, escenarios, simulación de 24 h, gráficos, deslizador de hora, diagnóstico,
-mediciones y exportaciones, y toma capturas en tema claro y oscuro a 1440 y 1024 px (docs/capturas/).
-Falla si hay errores de consola o solicitudes fallidas, y elimina el proyecto al terminar.
+«APR Demo (e2e)» desde examples/apr-demo.xlsx, recorre menú, panel general (Resumen), paneles plegables,
+herramientas, importación Excel, ortofoto, consultas, cuarteles, factibilidad, escenarios, simulación de 24 h,
+gráficos, deslizador de hora, diagnóstico, mediciones y exportaciones, y toma capturas en tema claro y oscuro a
+1440 y 1024 px (docs/capturas/). Falla si hay errores de consola o solicitudes fallidas, y elimina el proyecto
+al terminar.
 """
 from __future__ import annotations
 
@@ -90,6 +91,68 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
     expect(page.locator(".net-layer")).to_be_visible()
     wait_sim(page)
     shot(page, "editor", theme, width)
+
+    log("resumen")
+    summary = page.locator(".summary-tab")
+    expect(summary.locator(".summary-grid")).to_be_visible(timeout=30000)
+    expect(page.locator(".bottom .tabs button.on")).to_have_text("Resumen")  # primera pestaña al abrir
+    expect(summary.get_by_label("Clientes sobre cota")).to_contain_text("C-025")
+    expect(summary.get_by_label("Pérdidas y filtraciones")).to_contain_text("P-06")
+    expect(summary.get_by_label("Mantenimiento a futuro")).to_contain_text("P-08")
+    summary.get_by_role("button", name="Zonas por presión").first.click()
+    summary.get_by_role("button", name="Área operacional").first.click()
+    expect(page.locator(".net-layer path.ov-zone").first).to_be_attached()
+    expect(page.locator(".net-layer path.ov-area").first).to_be_attached()
+    summary.get_by_label("Clientes", exact=True).locator(".num-link").nth(1).click()  # activos → lista y mapa
+    expect(summary.locator(".summary-list")).to_contain_text("C-001")
+    expect(page.locator(".net-layer .hl-point").first).to_be_attached()
+    shot(page, "resumen", theme, width)
+    summary.get_by_label("Pérdidas y filtraciones").evaluate("el => el.scrollIntoView({block: 'start'})")
+    shot(page, "resumen-perdidas", theme, width)
+    summary.locator(".summary-list").get_by_role("button", name="Cerrar lista").click()
+    summary.get_by_role("button", name="Zonas por presión").first.click()
+    summary.get_by_role("button", name="Área operacional").first.click()
+
+    log("paneles plegados y desplegados")
+    page.locator(".tools-fold").click()
+    page.locator(".panel-fold").click()
+    expect(page.locator(".tools.collapsed")).to_be_visible()
+    expect(page.locator(".bottom.collapsed")).to_be_visible()
+    page.wait_for_timeout(300)
+    shot(page, "paneles-plegados", theme, width)
+    page.locator(".tools-fold").click()
+    page.locator(".panel-fold").click()
+    expect(page.locator(".props .sec.open")).to_have_count(1)  # por defecto, solo la sección más usada
+    page.locator(".props").get_by_role("button", name="Expandir todo").click()
+    expect(page.locator(".props .sec:not(.open)")).to_have_count(0)
+    page.wait_for_timeout(300)
+    shot(page, "paneles-desplegados", theme, width)
+    page.locator(".props").get_by_role("button", name="Contraer todo").click()
+    expect(page.locator(".props .sec.open")).to_have_count(0)
+    page.locator(".props .sec-toggle", has_text="Opciones hidráulicas").click()
+    expect(page.locator(".props .sec.open")).to_have_count(1)
+
+    if full:
+        log("resumen: registro de pérdidas y exportaciones")
+        losses = summary.get_by_label("Pérdidas y filtraciones")
+        tab(page, "Resumen")
+        expect(losses).to_contain_text("8 eventos")
+        losses.get_by_label("Tramo").select_option("P-10")
+        losses.get_by_label("Caudal estimado (L/s)").fill("0,04")
+        losses.get_by_label("Observación").fill("Recorrido e2e")
+        losses.get_by_role("button", name="Agregar").click()
+        expect(losses).to_contain_text("9 eventos")
+        losses.get_by_role("row", name=re.compile("Recorrido e2e")).get_by_role("button").last.click()
+        expect(losses).to_contain_text("8 eventos")
+        for path in ("summary.xlsx", "summary.html", "summary/area.geojson", "summary/zones.geojson", "leaks/template.xlsx"):
+            r = page.request.get(f"{BASE}/api/projects/{pid}/{path}")
+            assert r.ok, f"{path}: {r.status}"
+        page.reload()
+        wait_sim(page)
+        expect(page.locator(".props .sec.open")).to_have_count(1)  # el estado de las secciones se recuerda
+        expect(page.locator(".props .sec.open .sec-toggle")).to_have_text("Opciones hidráulicas")
+
+    tab(page, "Alertas")  # el resto del recorrido usa el mapa con el panel inferior de altura normal
 
     if full:
         log("herramientas")
