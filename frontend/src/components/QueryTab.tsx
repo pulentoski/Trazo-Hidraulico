@@ -46,6 +46,7 @@ export function QueryTab() {
       setRes(r);
       const uids = r.rows.map((row) => uidOf(net, r.element, String(row.id))).filter((u): u is string => !!u);
       set({ highlight: uids });
+      if (uids.length) useEditor.getState().frame(uids);
     } catch (e) { toast(errorText(e), "error"); } finally { setBusy(false); }
   };
   const load = (q: SavedQueryOut) => {

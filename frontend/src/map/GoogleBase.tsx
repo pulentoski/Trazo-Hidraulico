@@ -1,5 +1,8 @@
-// Mapa base de Google. La cámara la controla el editor (misma proyección Web Mercator), por lo que el mapa
-// no recibe gestos propios: toda la interacción ocurre en la capa SVG de la red.
+// Mapa base de Google, con cámara no controlada: se crea en la vista inicial (defaultCenter/defaultZoom), recibe
+// rueda y arrastre directamente (gestureHandling "greedy") e informa cada cambio de cámara a la capa de la red, que
+// usa la misma proyección Web Mercator. El editor lo mueve de forma imperativa (moveCamera) al encuadrar o al
+// desplazar desde una herramienta de dibujo. Se crea y se destruye con el editor (sin reutilizar instancias).
+import type { MapCameraChangedEvent } from "@vis.gl/react-google-maps";
 import { Map as GMap, useMap, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { useEffect, useState } from "react";
 import type { Camera } from "../lib/geo";
@@ -7,35 +10,49 @@ import type { MapType, Theme } from "../state/store";
 
 import { useMapConfig } from "../lib/mapConfig";
 
-function CameraSync({ camera, mapType }: { camera: Camera; mapType: MapType }) {
+/** Entrega la instancia al editor y la retira al desmontar (sin referencias a mapas destruidos). */
+function MapHandle({ onMap }: { onMap: (m: google.maps.Map | null) => void }) {
   const map = useMap();
   useEffect(() => {
-    map?.moveCamera({ center: { lat: camera.center[1], lng: camera.center[0] }, zoom: camera.zoom, tilt: 0, heading: 0 });
-  }, [map, camera]);
-  useEffect(() => {
-    map?.setMapTypeId(mapType);
-  }, [map, mapType]);
+    if (!map) return;
+    onMap(map);
+    return () => onMap(null);
+  }, [map, onMap]);
   return null;
 }
 
-export function GoogleBase({ camera, mapType, theme }: { camera: Camera; mapType: MapType; theme: Theme }) {
+interface Props {
+  initial: Camera;
+  mapType: MapType;
+  theme: Theme;
+  onCamera: (c: Camera) => void;
+  onMap: (m: google.maps.Map | null) => void;
+  /** Clic sobre el fondo del mapa (fuera de los elementos de la red). */
+  onBackgroundClick: () => void;
+}
+
+export function GoogleBase({ initial, mapType, theme, onCamera, onMap, onBackgroundClick }: Props) {
   const MAP_ID = useMapConfig((s) => s.mapId) || undefined;
+  const changed = (e: MapCameraChangedEvent) => onCamera({ center: [e.detail.center.lng, e.detail.center.lat], zoom: e.detail.zoom });
   return (
     <div className="map-base">
       <GMap
         mapId={MAP_ID}
-        defaultCenter={{ lat: camera.center[1], lng: camera.center[0] }}
-        defaultZoom={camera.zoom}
+        defaultCenter={{ lat: initial.center[1], lng: initial.center[0] }}
+        defaultZoom={initial.zoom}
         mapTypeId={mapType}
-        gestureHandling="none"
+        gestureHandling="greedy"
         disableDefaultUI
         keyboardShortcuts={false}
         clickableIcons={false}
+        disableDoubleClickZoom
         isFractionalZoomEnabled={false}
         colorScheme={MAP_ID ? (theme === "dark" ? "DARK" : "LIGHT") : undefined}
+        onCameraChanged={changed}
+        onClick={onBackgroundClick}
         style={{ position: "absolute", inset: 0 }}
       >
-        <CameraSync camera={camera} mapType={mapType} />
+        <MapHandle onMap={onMap} />
       </GMap>
     </div>
   );

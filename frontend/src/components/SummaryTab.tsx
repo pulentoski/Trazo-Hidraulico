@@ -5,7 +5,8 @@ import { api } from "../api/client";
 import type { ElementList, LeakEventIn, SummaryGroup, SummaryResult } from "../api/types";
 import { fmt } from "../lib/format";
 import type { ElType } from "../lib/summary";
-import { clp, hourLabel, pointsOf, polygonsOf, uidMaps, uidsOf, zoneColor } from "../lib/summary";
+import type { LngLat } from "../lib/geo";
+import { clp, hourLabel, polygonsOf, uidMaps, uidsOf, zoneColor } from "../lib/summary";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
 import { SummarySettingsDialog } from "./SummarySettings";
@@ -62,8 +63,8 @@ export function SummaryTab() {
   const show = (title: string, type: ElType, ids: string[], values?: Record<string, string>) => {
     setListing({ title, type, ids, values });
     const uids = uidsOf(maps, type, ids);
-    const pts = pointsOf(net, uids);
-    set({ highlight: uids, ...(pts.length ? { cameraRequest: { points: pts, nonce: Date.now() } } : {}) });
+    set({ highlight: uids });
+    useEditor.getState().frame(uids);
   };
   const goto = (type: ElType, id: string) => {
     const uid = maps[type].get(id);
@@ -93,8 +94,20 @@ export function SummaryTab() {
   );
 
   if (!pid) return null;
-  const toggleZones = () => data && set({ overlay: { ...overlay, zones: zonesOn ? [] : zoneLayer(data) } });
-  const toggleArea = () => data && set({ overlay: { ...overlay, area: areaOn ? [] : areaLayer(data) } });
+  /** Al mostrar una capa de grupo (zonas, área), el mapa encuadra todos sus polígonos. */
+  const frameRings = (layer: { coords: LngLat[][] }[]) => useEditor.getState().frame([], { points: layer.flatMap((z) => z.coords.flat()) });
+  const toggleZones = () => {
+    if (!data) return;
+    const zones = zonesOn ? [] : zoneLayer(data);
+    set({ overlay: { ...overlay, zones } });
+    if (zones.length) frameRings(zones);
+  };
+  const toggleArea = () => {
+    if (!data) return;
+    const area = areaOn ? [] : areaLayer(data);
+    set({ overlay: { ...overlay, area } });
+    if (area.length) frameRings(area);
+  };
   const dirty = revision !== savedRevision;
 
   return (

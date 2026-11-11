@@ -73,7 +73,7 @@ export function EditorPage() {
     <div className={`app ${toolsCollapsed ? "tools-collapsed" : ""}`}>
       <TopBar />
       <ToolPanel />
-      <main className="center">{loaded ? <MapView /> : <div className="loading">{failed ? "" : "Abriendo proyecto…"}</div>}</main>
+      <main className="center">{loaded ? <MapView key={id} /> : <div className="loading">{failed ? "" : "Abriendo proyecto…"}</div>}</main>
       <PropertiesPanel />
       <BottomPanel />
       <VersionsDialog />

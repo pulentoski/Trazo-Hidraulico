@@ -8,6 +8,7 @@ import { DEFAULT_CRITERIA } from "../lib/colors";
 import type { LngLat } from "../lib/geo";
 import type { ELink, ENode, Network } from "../lib/network";
 import { EMPTY, fromDocument } from "../lib/network";
+import { pointsOf } from "../lib/summary";
 
 export type Tool = "select" | "multiselect" | "junction" | "pipe" | "tank" | "reservoir" | "move" | "delete" | "measure"
   | "client" | "shutoff" | "feasibility" | "hydrant" | "well";
@@ -85,7 +86,10 @@ export interface EditorState {
   defaultProfileId: number | null;
   pendingDelete: string[] | null;
   /** Encuadre pedido; `coverLeft`: borde derecho (px de la ventana) de un panel que tapa el mapa por la izquierda. */
-  cameraRequest: { points: LngLat[]; nonce: number; coverLeft?: number } | null;
+  /** `maxZoom`: tope del acercamiento (un elemento solo se acerca a nivel de calle, no al máximo). */
+  cameraRequest: { points: LngLat[]; nonce: number; coverLeft?: number; maxZoom?: number } | null;
+  /** Elementos resaltados brevemente tras «ir al elemento» (anillo animado). */
+  flash: { uids: string[]; nonce: number } | null;
   toasts: Toast[];
   versionsOpen: boolean;
   /** Escenarios de llaves personalizados (se guardan con la versión). */
@@ -132,7 +136,10 @@ export interface EditorState {
   requestDelete: (uids: string[]) => void;
   confirmDelete: () => void;
   cancelDelete: () => void;
+  /** Ir al elemento: centra y acerca el mapa, lo selecciona y lo resalta brevemente. */
   focus: (uids: string[]) => void;
+  /** Encuadra un grupo (zona, cuartel, consulta) y lo resalta brevemente; `select` también lo selecciona. */
+  frame: (uids: string[], options?: { select?: boolean; points?: LngLat[] }) => void;
   fitAll: () => void;
   toast: (text: string, kind?: Toast["kind"]) => void;
   dismissToast: (id: number) => void;
@@ -188,6 +195,7 @@ function exists(net: Network, u: string): boolean {
 function allPoints(net: Network): LngLat[] {
   const pts: LngLat[] = Object.values(net.nodes).map((n) => n.pos);
   for (const l of Object.values(net.links)) pts.push(...l.vertices);
+  for (const pool of [net.clients, net.hydrants, net.wells] as Record<string, { pos: LngLat }>[]) for (const e of Object.values(pool)) pts.push(e.pos);
   return pts;
 }
 
@@ -249,6 +257,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   defaultProfileId: readPref<number | null>("defaultProfileId", null),
   pendingDelete: null,
   cameraRequest: null,
+  flash: null,
   toasts: [],
   versionsOpen: false,
   scenarios: [],
@@ -282,6 +291,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     past: [], future: [], selection: [], simStatus: "idle", simError: null, versionsOpen: false, pendingDelete: null,
     scenarios: [], designParams: null, scenarioView: null, clientDraft: null, feasibilityDraft: null,
     orthos: [], sectors: null, sectorFocus: null, highlight: [], mapPick: null, overlay: EMPTY_OVERLAY, gcpPreview: null,
+    cameraRequest: null, flash: null,
   }),
 
   commit: (fn, options) => {
@@ -352,26 +362,15 @@ export const useEditor = create<EditorState>()((set, get) => ({
   },
   cancelDelete: () => set({ pendingDelete: null }),
   focus: (uids) => {
-    const net = get().net;
-    const pts: LngLat[] = [];
-    for (const u of uids) {
-      if (net.nodes[u]) pts.push(net.nodes[u].pos);
-      for (const pool of [net.clients, net.hydrants, net.wells] as Record<string, { pos: LngLat }>[]) if (pool[u]) pts.push(pool[u].pos);
-      const sh = net.shutoffs[u];
-      if (sh && net.links[sh.link]) {
-        const l = net.links[sh.link];
-        for (const n of [net.nodes[l.from], net.nodes[l.to]]) if (n) pts.push(n.pos);
-      }
-      const l = net.links[u];
-      if (l) {
-        const a = net.nodes[l.from];
-        const b = net.nodes[l.to];
-        if (a) pts.push(a.pos);
-        if (b) pts.push(b.pos);
-        pts.push(...l.vertices);
-      }
-    }
-    set({ selection: uids, cameraRequest: { points: pts, nonce: Date.now() } });
+    const pts = pointsOf(get().net, uids);
+    const nonce = Date.now();
+    set({ selection: uids, flash: { uids, nonce }, ...(pts.length ? { cameraRequest: { points: pts, nonce, maxZoom: 18 } } : {}) });
+  },
+  frame: (uids, options) => {
+    const pts = [...pointsOf(get().net, uids), ...(options?.points ?? [])];
+    const nonce = Date.now();
+    set({ flash: { uids, nonce }, ...(options?.select ? { selection: uids } : {}),
+      ...(pts.length ? { cameraRequest: { points: pts, nonce } } : {}) });
   },
   fitAll: () => set({ cameraRequest: { points: allPoints(get().net), nonce: Date.now() } }),
   toast: (text, kind = "info") => {

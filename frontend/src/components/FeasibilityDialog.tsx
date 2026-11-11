@@ -28,6 +28,11 @@ function FeasibilityForm({ pos, linkUid }: { pos: [number, number]; linkUid: str
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<FeasibilityResult | null>(null);
   const [req, setReq] = useState<FeasibilityRequest | null>(null);
+  /** Ir al elemento de una fila de resultados (cliente o tramo, por su ID). */
+  const go = (pool: "clients" | "links", id: string) => {
+    const hit = Object.values(net[pool]).find((x) => x.id === id);
+    if (hit) useEditor.getState().focus([hit.uid]);
+  };
   const close = () => set({ feasibilityDraft: null });
   const qv = parseNum(q);
   const ev = parseNum(elev);
@@ -125,19 +130,19 @@ function FeasibilityForm({ pos, linkUid }: { pos: [number, number]; linkUid: str
           {res.affected_clients.length > 0 && (<>
             <h3>Consumos bajo la presión mínima</h3>
             <table className="tbl compact"><thead><tr><th>ID</th><th>Nombre</th><th>Nudo</th><th className="num">Antes (m)</th><th className="num">Después (m)</th><th>Causado</th></tr></thead>
-              <tbody>{res.affected_clients.map((a) => <tr key={a.id}><td>{a.id}</td><td>{a.name ?? ""}</td><td>{a.node}</td><td className="num">{fmt(a.before, 2)}</td><td className="num bad">{fmt(a.after, 2)}</td><td>{a.newly_below ? "sí" : "ya estaba bajo"}</td></tr>)}</tbody></table>
+              <tbody>{res.affected_clients.map((a) => <tr key={a.id} className="clickable" title="Ir al cliente" onClick={() => go("clients", a.id)}><td>{a.id}</td><td>{a.name ?? ""}</td><td>{a.node}</td><td className="num">{fmt(a.before, 2)}</td><td className="num bad">{fmt(a.after, 2)}</td><td>{a.newly_below ? "sí" : "ya estaba bajo"}</td></tr>)}</tbody></table>
           </>)}
           {res.link_issues.length > 0 && (<>
             <h3>Tramos sobre la velocidad o pérdida máxima</h3>
             <table className="tbl compact"><thead><tr><th>Tramo</th><th className="num">DN</th><th className="num">Velocidad (m/s)</th><th className="num">Pérdida (m/km)</th></tr></thead>
-              <tbody>{res.link_issues.map((i) => <tr key={i.id}><td>{i.id}</td><td className="num">{i.dn ?? "—"}</td>
+              <tbody>{res.link_issues.map((i) => <tr key={i.id} className="clickable" title="Ir al tramo" onClick={() => go("links", i.id)}><td>{i.id}</td><td className="num">{i.dn ?? "—"}</td>
                 <td className={`num ${i.over_velocity ? "bad" : ""}`}>{fmt(i.velocity_before, 2)} → {fmt(i.velocity_after, 2)}</td>
                 <td className={`num ${i.over_headloss ? "bad" : ""}`}>{fmt(i.headloss_before, 1)} → {fmt(i.headloss_after, 1)}</td></tr>)}</tbody></table>
           </>)}
           {res.upgrades.length > 0 && (<>
             <h3>Cuello de botella: {res.bottleneck} — {res.upgrade_feasible ? "pasa a FACTIBLE aumentando el DN" : "aumentar el DN no basta"}</h3>
             <table className="tbl compact"><thead><tr><th>Tramo</th><th>Material</th><th className="num">DN</th><th className="num">Interior (mm)</th><th className="num">Presión punto (m)</th><th>Resultado</th></tr></thead>
-              <tbody>{res.upgrades.map((u, i) => <tr key={i}><td>{u.link}</td><td>{u.material ?? "—"} {u.pipe_class ?? ""}</td><td className="num">{u.dn_from ?? "—"} → {u.dn_to ?? "—"}</td>
+              <tbody>{res.upgrades.map((u, i) => <tr key={i} className="clickable" title="Ir al tramo" onClick={() => go("links", u.link)}><td>{u.link}</td><td>{u.material ?? "—"} {u.pipe_class ?? ""}</td><td className="num">{u.dn_from ?? "—"} → {u.dn_to ?? "—"}</td>
                 <td className="num">{fmt(u.inner_from, 1)} → {fmt(u.inner_to, 1)}</td><td className="num">{fmt(u.pressure_new, 2)}</td><td>{u.feasible ? "FACTIBLE" : u.note ?? "no factible"}</td></tr>)}</tbody></table>
           </>)}
           <div className="modal-actions">

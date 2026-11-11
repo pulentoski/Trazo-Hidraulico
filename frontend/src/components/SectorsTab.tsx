@@ -8,7 +8,7 @@ import { useEditor } from "../state/store";
 import { Help } from "./Fields";
 
 export function SectorsTab() {
-  const { project, serverVersion, sectors, sectorFocus, set, net, focus, toast, revision, savedRevision } = useEditor();
+  const { project, serverVersion, sectors, sectorFocus, set, net, frame, toast, revision, savedRevision } = useEditor();
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (!project || serverVersion === null) return;
@@ -23,7 +23,7 @@ export function SectorsTab() {
   const show = (id: string) => {
     const s = sectors?.sectors.find((x) => x.id === id);
     set({ sectorFocus: id });
-    if (s) focus(s.links.map((l) => uidOf(net, "tramos", l)).filter((u): u is string => !!u));
+    if (s) frame(s.links.map((l) => uidOf(net, "tramos", l)).filter((u): u is string => !!u), { select: true });
   };
   return (
     <>

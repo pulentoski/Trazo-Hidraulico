@@ -63,9 +63,17 @@ function midpointAngle(pts: Pt[]): { p: Pt; angle: number; length: number } {
   return { p: pts[0], angle: 0, length: 0 };
 }
 
-interface Props { camera: Camera; size: Size; setCamera: (c: Camera) => void }
+interface Props {
+  camera: Camera;
+  size: Size;
+  setCamera: (c: Camera) => void;
+  /** El fondo deja pasar rueda y arrastre al mapa base (solo los elementos de la red reciben el puntero). */
+  passThrough?: boolean;
+}
 
-export function NetworkLayer({ camera, size, setCamera }: Props) {
+const FLASH_MS = 1800;
+
+export function NetworkLayer({ camera, size, setCamera, passThrough = false }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const s = useEditor();
   const { net, tool, selection, result, period, linkMode, labels, profiles, project, designParams: s_designParams, scenarioView } = s;
@@ -99,6 +107,27 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     setDraft(null);
     setMeasure([]);
   }, [tool]);
+
+  // Mayús sostenida (selección por caja) vuelve a capturar el fondo aunque el mapa reciba los gestos.
+  const [shiftDown, setShiftDown] = useState(false);
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => setShiftDown(e.shiftKey);
+    const off = () => setShiftDown(false);
+    window.addEventListener("keydown", on);
+    window.addEventListener("keyup", on);
+    window.addEventListener("blur", off);
+    return () => { window.removeEventListener("keydown", on); window.removeEventListener("keyup", on); window.removeEventListener("blur", off); };
+  }, []);
+
+  // Resaltado breve tras «ir al elemento».
+  const flash = s.flash;
+  const [flashOn, setFlashOn] = useState<number | null>(null);
+  useEffect(() => {
+    if (!flash) return;
+    setFlashOn(flash.nonce);
+    const t = window.setTimeout(() => setFlashOn(null), FLASH_MS);
+    return () => window.clearTimeout(t);
+  }, [flash]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -591,6 +620,24 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     }
   }
 
+  // Anillo del resaltado breve
+  const flashEls: React.ReactNode[] = [];
+  if (flash && flashOn === flash.nonce) {
+    for (const u of flash.uids) {
+      const l = net.links[u];
+      if (l) {
+        flashEls.push(<polyline key={`fl-${u}`} className="flash-link" points={linkCoords(net, l).map(proj).map((q) => q.join(",")).join(" ")} />);
+        continue;
+      }
+      const sh = net.shutoffs[u];
+      const pos = net.nodes[u]?.pos ?? net.clients[u]?.pos ?? net.hydrants[u]?.pos ?? net.wells[u]?.pos
+        ?? (sh && net.links[sh.link] ? pointAlong(linkCoords(net, net.links[sh.link]), sh.position) : undefined);
+      if (!pos) continue;
+      const [x, y] = proj(pos);
+      flashEls.push(<circle key={`fl-${u}-${flash.nonce}`} className="flash-ring" cx={x} cy={y} r={14} />);
+    }
+  }
+
   // Cuartel de corta destacado: tramos del cuartel y válvulas a cerrar
   const sectorEls: React.ReactNode[] = [];
   const focusSector = s.sectors?.sectors.find((x) => x.id === s.sectorFocus);
@@ -662,10 +709,11 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
   const hoverLabel = hidden ? <text x={hidden.x} y={hidden.y} className={`${hidden.cls} lbl-hover`} textAnchor={hidden.anchor === "middle" ? "middle" : undefined}>{hidden.text}</text> : null;
 
   const box = gesture.kind === "box" ? gesture : null;
+  const pass = passThrough && !shiftDown && gesture.kind === "none";
   const cursorClass = gesture.kind === "pan" ? "grabbing" : s.mapPick ? "tool-pick" : `tool-${tool}`;
 
   return (
-    <svg ref={svgRef} className={`net-layer ${cursorClass}`} width={size.width} height={size.height}
+    <svg ref={svgRef} className={`net-layer ${cursorClass}${pass ? " pass" : ""}`} width={size.width} height={size.height}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
       onPointerOver={(e) => { const t = readTarget(e.target); setHoverUid(isEl(t) ? t.uid : null); }}
       onPointerLeave={() => { setCursor(null); setHoverUid(null); }} onDoubleClick={onDoubleClick} onWheel={onWheel} onContextMenu={onContextMenu}>
@@ -679,6 +727,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
       <g>{shutoffEls}</g>
       <g>{nodeEls}</g>
       <g>{assetEls}</g>
+      <g className="flash" data-flash={flashEls.length ? flash?.uids.join(" ") : undefined}>{flashEls}</g>
       {feasEl}
       <g>{handleEls}</g>
       <g className="labels">{labelEls}</g>

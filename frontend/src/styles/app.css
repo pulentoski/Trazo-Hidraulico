@@ -129,6 +129,18 @@ button.link { border: 0; background: none; padding: 0; height: auto; color: var(
 }
 .net-layer { position: absolute; inset: 0; touch-action: none; user-select: none; }
 .net-layer.grabbing { cursor: grabbing; }
+/* Con mapa de Google y herramienta de navegación: el fondo y las capas de lectura dejan pasar rueda y arrastre al
+   mapa (gestureHandling greedy); solo los elementos de la red (data-t) reciben el puntero. */
+.net-layer.pass { pointer-events: none; }
+.net-layer.pass [data-t] { pointer-events: auto; }
+.net-layer.pass .overlay .ov-zone { pointer-events: none; }
+.flash-ring { fill: none; stroke: #00b7d4; stroke-width: 3; pointer-events: none; transform-box: fill-box; transform-origin: center;
+  animation: flash-ring 0.6s ease-out 3; }
+.flash-link { fill: none; stroke: #00b7d4; stroke-width: 10; stroke-linecap: round; stroke-opacity: 0.8; pointer-events: none;
+  animation: flash-link 0.6s ease-in-out 3; }
+@keyframes flash-ring { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+@keyframes flash-link { 0%, 100% { stroke-opacity: 0.15; } 50% { stroke-opacity: 0.85; } }
+@media (prefers-reduced-motion: reduce) { .flash-ring, .flash-link { animation: none; } }
 .net-layer.tool-select, .net-layer.tool-multiselect { cursor: default; }
 .net-layer.tool-junction, .net-layer.tool-tank, .net-layer.tool-reservoir, .net-layer.tool-pipe, .net-layer.tool-measure { cursor: crosshair; }
 .net-layer.tool-move { cursor: move; }
