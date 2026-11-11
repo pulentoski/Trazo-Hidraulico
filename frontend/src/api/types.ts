@@ -95,3 +95,4 @@ export type LeakEventIn = S["LeakEventIn"];
 export type LeakEventOut = S["LeakEventOut"];
 export type LeakImportResult = S["LeakImportResult"];
 export type PriceRow = S["PriceRow"];
+export type MapsStatus = S["MapsStatus"];

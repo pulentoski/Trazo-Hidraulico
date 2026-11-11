@@ -5093,6 +5093,154 @@
         "title": "MapLoadOut",
         "type": "object"
       },
+      "MapsConfig": {
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Key de Google Maps (para cargar el mapa en el navegador)",
+            "title": "Api Key"
+          },
+          "map_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Id"
+          },
+          "source": {
+            "description": "db = guardada desde Configuración; none = usar el respaldo del frontend (VITE_GOOGLE_MAPS_API_KEY) si lo hay",
+            "enum": [
+              "db",
+              "none"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "MapsConfig",
+        "type": "object"
+      },
+      "MapsStatus": {
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "encryption_ready": {
+            "description": "SETTINGS_SECRET_KEY definida en el servidor",
+            "title": "Encryption Ready",
+            "type": "boolean"
+          },
+          "key_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Primeros y últimos 4 caracteres de la key",
+            "title": "Key Hint"
+          },
+          "map_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Id"
+          },
+          "unreadable": {
+            "description": "Hay una key guardada que no se puede descifrar (cambió la clave)",
+            "title": "Unreadable",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "required": [
+          "configured",
+          "map_id",
+          "updated_at",
+          "updated_by",
+          "encryption_ready",
+          "unreadable"
+        ],
+        "title": "MapsStatus",
+        "type": "object"
+      },
+      "MapsUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nueva key (omitir para conservar la actual)",
+            "title": "Api Key"
+          },
+          "map_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Map ID (vacío lo borra; omitir lo conserva)",
+            "title": "Map Id"
+          }
+        },
+        "title": "MapsUpdate",
+        "type": "object"
+      },
       "Me": {
         "properties": {
           "current_org": {
@@ -7207,6 +7355,18 @@
       },
       "ProjectOut": {
         "properties": {
+          "client_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Clientes de la última versión (solo en el listado)",
+            "title": "Client Count"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -7250,6 +7410,18 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "network_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Km de tuberías de la última versión (solo en el listado)",
+            "title": "Network Km"
           },
           "org_id": {
             "format": "uuid",
@@ -10671,6 +10843,85 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/maps": {
+      "delete": {
+        "operationId": "maps_delete_api_admin_maps_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapsStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Borrar la key y el Map ID guardados",
+        "tags": [
+          "plataforma"
+        ]
+      },
+      "get": {
+        "operationId": "maps_status_api_admin_maps_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapsStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Estado del mapa base (superadministrador)",
+        "tags": [
+          "plataforma"
+        ]
+      },
+      "put": {
+        "operationId": "maps_save_api_admin_maps_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapsStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Guardar la key (cifrada) y el Map ID",
+        "tags": [
+          "plataforma"
+        ]
+      }
+    },
     "/api/admin/orgs": {
       "get": {
         "operationId": "admin_orgs_api_admin_orgs_get",
@@ -11524,6 +11775,27 @@
         "summary": "Estado de la API, la base de datos y la caché",
         "tags": [
           "sistema"
+        ]
+      }
+    },
+    "/api/maps/config": {
+      "get": {
+        "operationId": "maps_config_api_maps_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapsConfig"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Key y Map ID del mapa base (usuarios con sesión)",
+        "tags": [
+          "plataforma"
         ]
       }
     },

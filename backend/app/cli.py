@@ -131,6 +131,8 @@ def ensure_user(args) -> None:
             user = _user(session, args.email, args.password, args.email.split("@")[0])
             user.mfa_enabled, user.mfa_secret = False, None  # usuario de pruebas: el recorrido configura el TOTP
             user.failed_logins, user.locked_until = 0, None
+            if args.superadmin:
+                user.is_superadmin = True
             _member(session, user, org, args.role)
             session.commit()
         finally:
@@ -199,6 +201,7 @@ def main() -> None:
     e.add_argument("--email", required=True)
     e.add_argument("--password", required=True)
     e.add_argument("--org", required=True)
+    e.add_argument("--superadmin", action="store_true", help="Superadministrador de plataforma (solo pruebas locales)")
     e.add_argument("--role", choices=auth.ROLES, required=True)
     e.set_defaults(func=ensure_user)
     sub.add_parser("purge").set_defaults(func=purge)

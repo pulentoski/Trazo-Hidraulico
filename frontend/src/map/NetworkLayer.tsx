@@ -8,6 +8,8 @@ import { distToSegment, haversine, panBy, project, unproject, zoomAt } from "../
 import type { EHydrant, ELink, ENode, EWell, Network } from "../lib/network";
 import { defaultNodeProps, defaultPipeProps, estimatedLength, linkCoords, nearestPipe, nextId, pointAlong, projectOnLink,
   roughnessFor, uid } from "../lib/network";
+import type { LabelItem } from "../lib/labels";
+import { placeLabels } from "../lib/labels";
 import { criteriaOf, useEditor } from "../state/store";
 
 type Pt = [number, number];
@@ -71,6 +73,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
   const [cursor, setCursor] = useState<Pt | null>(null);
   const [draft, setDraft] = useState<{ from: string; vertices: LngLat[] } | null>(null);
   const [measure, setMeasure] = useState<LngLat[]>([]);
+  const [hoverUid, setHoverUid] = useState<string | null>(null);
   const gestureRef = useRef(gesture);
   gestureRef.current = gesture;
 
@@ -373,7 +376,9 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
   const zoomScale = Math.max(0.6, Math.min(1.4, (camera.zoom - 12) / 5 + 0.8));
   const linkEls: React.ReactNode[] = [];
   const arrowEls: React.ReactNode[] = [];
-  const labelEls: React.ReactNode[] = [];
+  const labelItems: LabelItem[] = [];
+  const lbl = (uid: string, x: number, y: number, text: string, cls: string, prio: number, anchor: "start" | "middle" = "start") =>
+    labelItems.push({ key: `${uid}-lbl`, uid, x, y, text, cls, prio: selected.has(uid) ? 100 : prio, anchor });
   const handleEls: React.ReactNode[] = [];
 
   for (const l of Object.values(net.links)) {
@@ -419,9 +424,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     if (r && labels.velocity) texts.push(`${fmt(Math.abs(r.velocity[period]), 2)} m/s`);
     if (r && labels.headloss && l.kind === "pipe") texts.push(`${fmt(Math.abs(r.headloss[period]), 2)} m/km`);
     if (texts.length && mid.length > 40) {
-      labelEls.push(
-        <text key={`${l.uid}-lbl`} x={mid.p[0]} y={mid.p[1] - 8} className="lbl lbl-link" textAnchor="middle">{texts.join(" · ")}</text>,
-      );
+      lbl(l.uid, mid.p[0], mid.p[1] - 8, texts.join(" · "), "lbl lbl-link", 30, "middle");
     }
     if (isSel && (tool === "select" || tool === "move")) {
       l.vertices.forEach((vtx, i) => {
@@ -451,7 +454,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     const texts: string[] = [];
     if (labels.nodeIds) texts.push(n.id);
     if (labels.pressure && pr !== undefined) texts.push(`${fmt(pr, 1)} m`);
-    if (texts.length) labelEls.push(<text key={`${n.uid}-lbl`} x={x + 9} y={y - 7} className="lbl">{texts.join(" · ")}</text>);
+    if (texts.length) lbl(n.uid, x + 9, y - 7, texts.join(" · "), "lbl", n.kind === "junction" ? 50 : 60);
   }
 
   // Sectores sin agua (escenario de llaves mostrado)
@@ -493,7 +496,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
         <circle r={k + 3} className="hit-node" />
       </g>,
     );
-    if (labels.linkIds) labelEls.push(<text key={`${sh.uid}-lbl`} x={at[0] + 9} y={at[1] + 14} className="lbl lbl-link">{sh.id}</text>);
+    if (labels.linkIds) lbl(sh.uid, at[0] + 9, at[1] + 14, sh.id, "lbl lbl-link", 20);
   }
 
   // Clientes y sus arranques
@@ -520,7 +523,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
         </g>
       </g>,
     );
-    if (labels.nodeIds) labelEls.push(<text key={`${c.uid}-lbl`} x={x + 8} y={y + 4} className="lbl lbl-link">{c.id}</text>);
+    if (labels.nodeIds) lbl(c.uid, x + 8, y + 4, c.id, "lbl lbl-link", 10);
   }
 
   // Grifos y pozos
@@ -541,7 +544,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
         </g>
       </g>,
     );
-    if (labels.nodeIds) labelEls.push(<text key={`${h.uid}-lbl`} x={x + 9} y={y - 6} className="lbl">{h.id}</text>);
+    if (labels.nodeIds) lbl(h.uid, x + 9, y - 6, h.id, "lbl", 40);
   }
   for (const w of Object.values(net.wells)) {
     const [x, y] = proj(w.pos);
@@ -555,7 +558,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
         <circle r={k + 4} className="hit-node" />
       </g>,
     );
-    if (labels.nodeIds) labelEls.push(<text key={`${w.uid}-lbl`} x={x + 10} y={y + 4} className="lbl">{w.id}</text>);
+    if (labels.nodeIds) lbl(w.uid, x + 10, y + 4, w.id, "lbl", 40);
   }
 
   // Capas del Resumen: zonas por presión y área operacional (bajo la red, sin capturar clics)
@@ -651,13 +654,21 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
     );
   }
 
+  // Etiquetas sin superposición: las que chocan se ocultan y aparecen al pasar el mouse sobre su elemento.
+  const visible = placeLabels(labelItems, size);
+  const labelEls = labelItems.filter((l) => visible.has(l.key)).map((l) =>
+    <text key={l.key} x={l.x} y={l.y} className={l.cls} textAnchor={l.anchor === "middle" ? "middle" : undefined}>{l.text}</text>);
+  const hidden = hoverUid ? labelItems.find((l) => l.uid === hoverUid && !visible.has(l.key)) : undefined;
+  const hoverLabel = hidden ? <text x={hidden.x} y={hidden.y} className={`${hidden.cls} lbl-hover`} textAnchor={hidden.anchor === "middle" ? "middle" : undefined}>{hidden.text}</text> : null;
+
   const box = gesture.kind === "box" ? gesture : null;
   const cursorClass = gesture.kind === "pan" ? "grabbing" : s.mapPick ? "tool-pick" : `tool-${tool}`;
 
   return (
     <svg ref={svgRef} className={`net-layer ${cursorClass}`} width={size.width} height={size.height}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
-      onPointerLeave={() => setCursor(null)} onDoubleClick={onDoubleClick} onWheel={onWheel} onContextMenu={onContextMenu}>
+      onPointerOver={(e) => { const t = readTarget(e.target); setHoverUid(isEl(t) ? t.uid : null); }}
+      onPointerLeave={() => { setCursor(null); setHoverUid(null); }} onDoubleClick={onDoubleClick} onWheel={onWheel} onContextMenu={onContextMenu}>
       <g className="overlay">{overlayEls}</g>
       <g>{dryEls}</g>
       <g>{sectorEls}</g>
@@ -671,6 +682,7 @@ export function NetworkLayer({ camera, size, setCamera }: Props) {
       {feasEl}
       <g>{handleEls}</g>
       <g className="labels">{labelEls}</g>
+      {hoverLabel}
       {draftEl}
       {measureEl}
       {box && (

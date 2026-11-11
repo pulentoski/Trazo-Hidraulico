@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { fmt, fmtTime } from "../lib/format";
-import { useEditor, writePref } from "../state/store";
+import { fmt } from "../lib/format";
+import { useAuth } from "../state/auth";
+import { useEditor } from "../state/store";
+import { DEFAULT_H, MIN_H, clampH, maxH, usePanelSize } from "./panelSize";
+import type { TabDef } from "./TabBar";
+import { TabBar } from "./TabBar";
 import { SummaryTab } from "./SummaryTab";
 import { ChartsTab } from "./ChartsTab";
 import { ClientsTab } from "./ClientsTab";
@@ -23,7 +27,9 @@ interface AlertRow { sev: "error" | "warning"; origin: string; text: string; typ
 export function BottomPanel() {
   const { result, validation, period, set, net, simError, focus, bottomTab, bottomCollapsed: collapsed } = useEditor();
   const [tab, setTabState] = useState<Tab>("summary");
-  const setCollapsed = (v: boolean) => { set({ bottomCollapsed: v }); writePref("bottomCollapsed", v); };
+  const userId = useAuth((s) => s.me?.id ?? "");
+  const { height, maximized, setSize, startDrag, dragging, sectionRef } = usePanelSize(userId, collapsed, (v) => set({ bottomCollapsed: v }));
+  const setCollapsed = (v: boolean) => setSize({ collapsed: v });
   const setTab = (t: Tab) => { setTabState(t); set({ bottomTab: t }); };
   useEffect(() => {
     if (bottomTab && bottomTab !== tab) { setTabState(bottomTab as Tab); setCollapsed(false); }
@@ -85,40 +91,53 @@ export function BottomPanel() {
   }), [net.links, result, period]);
 
   const errors = alerts.filter((a) => a.sev === "error").length;
+  const tabList: TabDef[] = [
+    { id: "summary", label: "Resumen" },
+    { id: "alerts", label: "Alertas", count: alerts.length, countCls: errors ? "bad" : alerts.length ? "warn" : "" },
+    { id: "nodes", label: "Nudos", count: nodeRows.length },
+    { id: "links", label: "Tramos", count: linkRows.length },
+    { id: "clients", label: "Clientes", count: Object.keys(net.clients).length },
+    { id: "simulation", label: "Simulación" },
+    { id: "demand", label: "Demanda" },
+    { id: "charts", label: "Gráficos" },
+    { id: "diagnosis", label: "Diagnóstico" },
+    { id: "measurements", label: "Mediciones" },
+    { id: "scenarios", label: "Escenarios" },
+    { id: "sectors", label: "Cuarteles" },
+    { id: "query", label: "Consultas" },
+    { id: "hydrants", label: "Grifos", count: Object.keys(net.hydrants).length },
+    { id: "layers", label: "Capas" },
+    { id: "engine", label: "Corrida" },
+  ];
   const kindTxt: Record<string, string> = { junction: "nudo", reservoir: "reservorio", tank: "estanque", pipe: "tubería", pump: "bomba", valve: "válvula" };
 
   return (
-    <section className={`bottom ${collapsed ? "collapsed" : tab === "summary" ? "tall" : ""}`} aria-label="Panel inferior">
-      <div className="tabs">
-        <button className={tab === "summary" ? "on" : ""} onClick={() => setTab("summary")}>Resumen</button>
-        <button className={tab === "alerts" ? "on" : ""} onClick={() => setTab("alerts")}>Alertas <span className={`count ${errors ? "bad" : alerts.length ? "warn" : ""}`}>{alerts.length}</span></button>
-        <button className={tab === "nodes" ? "on" : ""} onClick={() => setTab("nodes")}>Nudos <span className="count">{nodeRows.length}</span></button>
-        <button className={tab === "links" ? "on" : ""} onClick={() => setTab("links")}>Tramos <span className="count">{linkRows.length}</span></button>
-        <button className={tab === "clients" ? "on" : ""} onClick={() => setTab("clients")}>Clientes <span className="count">{Object.keys(net.clients).length}</span></button>
-        <button className={tab === "simulation" ? "on" : ""} onClick={() => setTab("simulation")}>Simulación</button>
-        <button className={tab === "demand" ? "on" : ""} onClick={() => setTab("demand")}>Demanda</button>
-        <button className={tab === "charts" ? "on" : ""} onClick={() => setTab("charts")}>Gráficos</button>
-        <button className={tab === "diagnosis" ? "on" : ""} onClick={() => setTab("diagnosis")}>Diagnóstico</button>
-        <button className={tab === "measurements" ? "on" : ""} onClick={() => setTab("measurements")}>Mediciones</button>
-        <button className={tab === "scenarios" ? "on" : ""} onClick={() => setTab("scenarios")}>Escenarios</button>
-        <button className={tab === "sectors" ? "on" : ""} onClick={() => setTab("sectors")}>Cuarteles</button>
-        <button className={tab === "query" ? "on" : ""} onClick={() => setTab("query")}>Consultas</button>
-        <button className={tab === "hydrants" ? "on" : ""} onClick={() => setTab("hydrants")}>Grifos <span className="count">{Object.keys(net.hydrants).length}</span></button>
-        <button className={tab === "layers" ? "on" : ""} onClick={() => setTab("layers")}>Capas</button>
-        <button className={tab === "engine" ? "on" : ""} onClick={() => setTab("engine")}>Corrida</button>
-        <div className="tabs-spacer" />
-        {result && result.times.length > 1 && (
-          <label className="period">
-            <span>t = {fmtTime(result.times[period])}</span>
-            <input type="range" min={0} max={result.times.length - 1} value={period} onChange={(e) => set({ period: Number(e.target.value) })} />
-          </label>
-        )}
-        <button className="ghost small panel-fold" onClick={() => setCollapsed(!collapsed)} aria-expanded={!collapsed}
-          title={collapsed ? "Desplegar el panel inferior" : "Plegar el panel inferior (más espacio para el mapa)"}>
-          <svg viewBox="0 0 10 10" aria-hidden="true"><path d={collapsed ? "M2 6.5 5 3.5 8 6.5" : "M2 3.5 5 6.5 8 3.5"} /></svg>
-          <span>{collapsed ? "Desplegar" : "Plegar"}</span>
-        </button>
-      </div>
+    <section ref={sectionRef} className={`bottom ${collapsed ? "collapsed" : ""} ${maximized && !collapsed ? "maxed" : ""} ${dragging ? "dragging" : ""}`}
+      aria-label="Panel inferior" style={collapsed ? undefined : { height: maximized ? undefined : height }}>
+      {!collapsed && !maximized && (
+        <div className="bottom-resize" role="separator" aria-orientation="horizontal" aria-label="Cambiar la altura del panel inferior"
+          aria-valuenow={Math.round(height)} aria-valuemin={MIN_H} aria-valuemax={Math.round(maxH())} tabIndex={0}
+          title="Arrastre para cambiar la altura (doble clic: tamaño normal)" onPointerDown={startDrag}
+          onDoubleClick={() => setSize({ height: DEFAULT_H })}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowUp") { e.preventDefault(); setSize({ height: clampH(height + 24) }); }
+            if (e.key === "ArrowDown") { e.preventDefault(); setSize({ height: clampH(height - 24) }); }
+          }}><i /></div>
+      )}
+      <TabBar tabs={tabList} active={tab} onPick={(id) => setTab(id as Tab)}
+        controls={(
+          <div className="panel-size" role="group" aria-label="Tamaño del panel inferior">
+            <button className={`ghost small ${collapsed ? "on" : ""}`} onClick={() => setSize({ collapsed: !collapsed, maximized: false })} aria-pressed={collapsed}
+              aria-label={collapsed ? "Desplegar el panel inferior" : "Plegar el panel inferior"} title={collapsed ? "Desplegar el panel inferior" : "Plegar el panel inferior (más espacio para el mapa)"}>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 9h8" /></svg></button>
+            <button className={`ghost small ${!collapsed && !maximized ? "on" : ""}`} onClick={() => setSize({ collapsed: false, maximized: false })}
+              aria-label="Tamaño normal del panel inferior" title="Tamaño normal">
+              <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5.5" width="8" height="4" rx="1" /></svg></button>
+            <button className={`ghost small ${maximized && !collapsed ? "on" : ""}`} onClick={() => setSize({ collapsed: false, maximized: !maximized || collapsed })}
+              aria-label="Maximizar el panel inferior" title="Maximizar (deja el mapa visible arriba)">
+              <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="7.5" rx="1" /></svg></button>
+          </div>
+        )} />
       {!collapsed && (
         <div className="tab-body">
           {tab === "summary" && <SummaryTab />}

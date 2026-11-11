@@ -38,6 +38,8 @@ class ProjectOut(BaseModel):
     updated_at: datetime
     latest_version: int | None = None
     version_count: int = 0
+    client_count: int | None = Field(None, description="Clientes de la última versión (solo en el listado)")
+    network_km: float | None = Field(None, description="Km de tuberías de la última versión (solo en el listado)")
 
 
 class VersionOut(BaseModel):

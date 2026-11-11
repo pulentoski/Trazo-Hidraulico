@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import NetworkLink, NetworkNode, Project, ProjectVersion, SimulationRun
+from app.models import NetworkClient, NetworkLink, NetworkNode, Project, ProjectVersion, SimulationRun
 
 
 def list_projects(session: Session, org_ids: list[uuid.UUID] | None = None) -> list[tuple[Project, int | None, int]]:
@@ -15,6 +15,25 @@ def list_projects(session: Session, org_ids: list[uuid.UUID] | None = None) -> l
         .order_by(Project.updated_at.desc())
     )
     return [(p, latest, count) for p, latest, count in session.execute(stmt)]
+
+
+def latest_stats(session: Session, project_ids: list[uuid.UUID]) -> dict[uuid.UUID, tuple[int, float]]:
+    """(clientes, km de tuberías) de la última versión de cada proyecto, en dos consultas."""
+    if not project_ids:
+        return {}
+    latest = (select(ProjectVersion.project_id, func.max(ProjectVersion.number).label("n"))
+              .where(ProjectVersion.project_id.in_(project_ids)).group_by(ProjectVersion.project_id).subquery())
+    versions = dict(session.execute(
+        select(ProjectVersion.id, ProjectVersion.project_id)
+        .join(latest, (latest.c.project_id == ProjectVersion.project_id) & (latest.c.n == ProjectVersion.number))).all())
+    if not versions:
+        return {}
+    clients = dict(session.execute(select(NetworkClient.version_id, func.count(NetworkClient.id))
+                                   .where(NetworkClient.version_id.in_(versions)).group_by(NetworkClient.version_id)).all())
+    km = dict(session.execute(select(NetworkLink.version_id, func.sum(NetworkLink.length_hydraulic_m))
+                              .where(NetworkLink.version_id.in_(versions), NetworkLink.kind == "pipe")
+                              .group_by(NetworkLink.version_id)).all())
+    return {pid: (int(clients.get(vid, 0)), round(float(km.get(vid) or 0) / 1000, 3)) for vid, pid in versions.items()}
 
 
 def get_project(session: Session, project_id: uuid.UUID) -> Project | None:

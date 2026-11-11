@@ -104,3 +104,13 @@ class VersionReview(Base):
     status: Mapped[str] = mapped_column(String(12))
     comment: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PlatformSetting(Base):
+    """Configuración de la plataforma (p. ej. key de Google Maps). Los valores sensibles se guardan cifrados."""
+    __tablename__ = "platform_setting"
+    key: Mapped[str] = mapped_column(String(60), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+    encrypted: Mapped[bool] = mapped_column(Boolean, default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_by: Mapped[str | None] = mapped_column(String(200), nullable=True)

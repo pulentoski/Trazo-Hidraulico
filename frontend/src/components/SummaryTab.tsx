@@ -323,10 +323,10 @@ function LossesCard({ data, show, goto, reload, readOnly, pid, net, toast }: {
     } catch (e) { toast(errorText(e), "error"); }
   };
   return (
-    <section className="card s-card wide" aria-label="Pérdidas y filtraciones">
+    <section className="card s-card" aria-label="Pérdidas y filtraciones">
       <h4>Pérdidas y filtraciones <span className="muted">· {lo.total_events} eventos</span></h4>
       {!lo.has_events && !lo.has_production && <p className="notice warn small">{lo.help}</p>}
-      <div className="cols3">
+      <div className="stack-s">
         <div>
           <h5>Agua no contabilizada</h5>
           {lo.balance.length ? (
@@ -348,7 +348,7 @@ function LossesCard({ data, show, goto, reload, readOnly, pid, net, toast }: {
           {lo.top_links.length > 0 && <button className="small" onClick={() => show("Tramos con eventos", "link", lo.top_links.map((x) => x.link),
             Object.fromEntries(lo.top_links.map((x) => [x.link, `${x.events} eventos`])))}>Ver en el mapa</button>}
         </div>
-        <div className="span2">
+        <div>
           <h5>Registro de eventos</h5>
           {!readOnly && (
             <div className="leak-form">
@@ -392,9 +392,9 @@ function MaintenanceCard({ data, show, goto }: { data: SummaryResult; show: Show
   const m = data.maintenance;
   const exp = Object.fromEntries(m.pipes.map((p) => [p.link, p.expiry_year ? `vence ${p.expiry_year}` : "sin año"]));
   return (
-    <section className="card s-card wide" aria-label="Mantenimiento a futuro">
+    <section className="card s-card" aria-label="Mantenimiento a futuro">
       <h4>Mantenimiento a futuro {!(m.life_verified && m.prices_verified) && <span className="badge warn">no verificado</span>}</h4>
-      <div className="cols3">
+      <div className="stack-s">
         <div>
           <h5>Vencimientos</h5>
           <table className="tbl compact mini"><tbody>
@@ -407,7 +407,7 @@ function MaintenanceCard({ data, show, goto }: { data: SummaryResult; show: Show
           <p className="small">{m.life.map((l) => `${l.material} ${l.years}`).join(" · ")}</p>
           <p className="muted small">Editable en «Configurar…»: valores sugeridos {m.life_verified ? "revisados" : "no verificado"}.</p>
         </div>
-        <div className="span2">
+        <div>
           <h5>Plan de renovación (20 años) · {clp(m.plan_cost)}</h5>
           {m.plan.length ? (
             <table className="tbl compact mini">

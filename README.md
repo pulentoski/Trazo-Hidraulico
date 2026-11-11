@@ -20,18 +20,16 @@ Google Maps es opcional. Sin key, el editor y la simulación funcionan igual sob
 y se muestra un aviso en lugar del mapa. Para usar el mapa base:
 
 1. En Google Cloud, habilite **Maps JavaScript API** (y **Geocoding API** para la búsqueda de dirección).
-2. Cree una API key con **restricción de aplicación «Sitios web»** y agregue solo
-   `http://localhost:8080/*` y `http://127.0.0.1:8080/*`. Restrinja también las APIs a las dos anteriores.
-3. (Opcional) Cree un Map ID vectorial para el tema oscuro del mapa.
-4. Edite `.env`:
-   ```
-   VITE_GOOGLE_MAPS_API_KEY=su-key
-   VITE_GOOGLE_MAPS_MAP_ID=su-map-id
-   ```
-   Estas variables se incorporan al compilar el frontend: después de cambiarlas ejecute `make up`.
+2. Cree una API key con **restricción de aplicación «Sitios web»** (el dominio publicado, o
+   `http://localhost:8080/*` en local) y restrinja las APIs a las dos anteriores.
+3. Ingrese como **superadministrador** y vaya a **Configuración → Mapa base**: pegue la key (y, opcional, un
+   Map ID vectorial para el tema oscuro), use «Probar» y «Guardar». Se guarda **cifrada** en la base con
+   `SETTINGS_SECRET_KEY` (la genera `make env`) y el mapa se activa sin reconstruir contenedores; nunca se muestra
+   completa. «Borrar» la quita.
 
-La key es **única para toda la plataforma** (la define quien administra el servidor). La pantalla
-Configuración solo indica si está configurada; nunca la muestra.
+Las variables `VITE_GOOGLE_MAPS_API_KEY` y `VITE_GOOGLE_MAPS_MAP_ID` del `.env` quedan solo como respaldo
+(se incorporan al compilar con `make up`). La key es **única para toda la plataforma**; los usuarios no ingresan
+keys propias.
 
 ### Acceso (usuarios propios)
 

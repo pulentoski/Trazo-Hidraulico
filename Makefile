@@ -21,8 +21,14 @@ help: ## Muestra esta ayuda
 env: ## Crea .env desde .env.example con claves aleatorias (si no existe)
 	@if [ ! -f .env ]; then \
 	  sed -e "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$$(openssl rand -hex 24)/" \
+	      -e "s|^SETTINGS_SECRET_KEY=.*|SETTINGS_SECRET_KEY=$$(openssl rand -base64 32 | tr -d '\n')|" \
 	      -e "s/^REDIS_PASSWORD=.*/REDIS_PASSWORD=$$(openssl rand -hex 24)/" .env.example > .env; \
 	  chmod 600 .env; echo "Creado .env (claves aleatorias). Agrega tu key de Google Maps si la tienes."; \
+	fi
+	@if ! grep -qE '^SETTINGS_SECRET_KEY=.+' .env || grep -qE '^SETTINGS_SECRET_KEY=cambia-esta' .env; then \
+	  sed -i '/^SETTINGS_SECRET_KEY=/d' .env; \
+	  echo "SETTINGS_SECRET_KEY=$$(openssl rand -base64 32 | tr -d '\n')" >> .env; \
+	  echo "Agregada SETTINGS_SECRET_KEY a .env (cifra la key de Google Maps guardada en la base)."; \
 	fi
 
 check-auth: env ## Verifica la configuración de basic auth en .env antes de arrancar
@@ -81,15 +87,17 @@ test-frontend: env
 
 E2E_EMAIL ?= e2e@trazo.local
 E2E_PASSWORD ?= Recorrido-e2e-2026
+E2E_ADMIN_EMAIL ?= e2e-plataforma@trazo.local
 # BASE_URL: dirección a recorrer (en una instancia publicada, p. ej. https://IP; acepta el certificado interno).
 # E2E_SHOTS: carpeta de capturas (por defecto docs/capturas).
 BASE_URL ?= http://localhost:8080
 E2E_SHOTS ?= docs/capturas
 test-e2e: ## Recorrido visual con Playwright contra la pila levantada (make up; o BASE_URL=https://IP en una instancia)
 	$(COMPOSE) exec -T api python -m app.cli ensure-user --email $(E2E_EMAIL) --password $(E2E_PASSWORD) --org "Recorrido e2e" --role admin
+	$(COMPOSE) exec -T api python -m app.cli ensure-user --email $(E2E_ADMIN_EMAIL) --password $(E2E_PASSWORD) --org "Recorrido e2e" --role admin --superadmin
 	docker build -q -t trazo-hidraulico/e2e:local e2e >/dev/null
 	docker run --rm --network host --ipc=host -u $(HOST_UID):$(HOST_GID) -e HOME=/tmp -v $(CURDIR):/repo -w /repo \
-	  -e E2E_EMAIL=$(E2E_EMAIL) -e E2E_PASSWORD=$(E2E_PASSWORD) -e BASE_URL=$(BASE_URL) -e E2E_SHOTS=$(E2E_SHOTS) \
+	  -e E2E_EMAIL=$(E2E_EMAIL) -e E2E_ADMIN_EMAIL=$(E2E_ADMIN_EMAIL) -e E2E_PASSWORD=$(E2E_PASSWORD) -e BASE_URL=$(BASE_URL) -e E2E_SHOTS=$(E2E_SHOTS) \
 	  trazo-hidraulico/e2e:local python3 e2e/recorrido.py
 
 test-ortho-grande: ## Ortofoto de ~800 MB: subida por partes, procesamiento, teselas, tiempos y memoria (docs/validation/ortofoto-grande.md)

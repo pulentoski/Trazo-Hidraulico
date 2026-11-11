@@ -4,7 +4,7 @@ import { api } from "../api/client";
 import { LabelsControl } from "../components/LabelsControl";
 import { Legend } from "../components/Legend";
 import { ScaleBar } from "../components/ScaleBar";
-import { GOOGLE_MAPS_API_KEY as API_KEY } from "../lib/mapConfig";
+import { useMapConfig } from "../lib/mapConfig";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { fitBounds, unproject, zoomAt } from "../lib/geo";
 import type { MapType } from "../state/store";
@@ -64,10 +64,12 @@ export function MapView() {
   const theme = useEditor((s) => s.theme);
   const setStore = useEditor((s) => s.set);
   const [quotaDenied, setQuotaDenied] = useState(false);
+  const { apiKey: API_KEY, loaded: mapConfigLoaded, load: loadMapConfig } = useMapConfig();
+  useEffect(() => { if (!mapConfigLoaded) void loadMapConfig(); }, [mapConfigLoaded, loadMapConfig]);
   useEffect(() => {
     if (!API_KEY) return;
     api.mapLoad().then((r) => { if (!r.allowed) setQuotaDenied(true); }).catch(() => undefined);
-  }, []);
+  }, [API_KEY]);
   const useGoogle = Boolean(API_KEY) && !mapFailed && !quotaDenied;
   const { orthos } = useOrthos();
   const [noticeClosed, setNoticeClosed] = useState(() => {
@@ -130,7 +132,7 @@ export function MapView() {
           <button className="ghost small notice-close" aria-label="Cerrar aviso" onClick={() => { setNoticeClosed(true); writePref("hideMapNotice", true); }}>✕</button>
           <strong>Mapa base no disponible.</strong>{" "}
           {quotaDenied ? "Se alcanzó el límite mensual de cargas del mapa del plan de su organización." : API_KEY ? "No se pudo cargar Google Maps (revise la key y sus restricciones)." :
-            "Configure VITE_GOOGLE_MAPS_API_KEY en .env y ejecute make up."} El editor y la simulación funcionan igual sobre este lienzo; también puede usar una ortofoto propia como fondo (pestaña Capas).
+            "Un superadministrador puede ingresar la key en Configuración → Mapa base (sin reconstruir nada)."} El editor y la simulación funcionan igual sobre este lienzo; también puede usar una ortofoto propia como fondo (pestaña Capas).
         </div>
       )}
       <ScaleBar camera={camera} />

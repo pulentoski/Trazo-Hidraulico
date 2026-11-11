@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { Camera } from "../lib/geo";
 import type { MapType, Theme } from "../state/store";
 
-const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
+import { useMapConfig } from "../lib/mapConfig";
 
 function CameraSync({ camera, mapType }: { camera: Camera; mapType: MapType }) {
   const map = useMap();
@@ -19,6 +19,7 @@ function CameraSync({ camera, mapType }: { camera: Camera; mapType: MapType }) {
 }
 
 export function GoogleBase({ camera, mapType, theme }: { camera: Camera; mapType: MapType; theme: Theme }) {
+  const MAP_ID = useMapConfig((s) => s.mapId) || undefined;
   return (
     <div className="map-base">
       <GMap

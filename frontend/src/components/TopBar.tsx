@@ -128,32 +128,36 @@ export function TopBar() {
       </button>
       <Brand />
       <div className="project-name" title={s.project?.name ?? ""}>{s.project?.name ?? "…"}</div>
-      <div className="tb-group">
+      <div className="tb-group" role="group" aria-label="Archivo">
         <button onClick={() => { setLabel(""); setSaveOpen(true); }} disabled={!s.project} title="Guardar versión con nombre (Ctrl+S)"><Icon.save /><span>Guardar</span></button>
-        <button onClick={s.undo} disabled={!s.past.length} title="Deshacer (Ctrl+Z)"><Icon.undo /></button>
-        <button onClick={s.redo} disabled={!s.future.length} title="Rehacer (Ctrl+Y)"><Icon.redo /></button>
+        <button onClick={() => s.set({ versionsOpen: true })} disabled={!s.project} title="Versiones del modelo" aria-label="Versiones"><Icon.history /></button>
       </div>
-      <div className="tb-group">
+      <div className="tb-group" role="group" aria-label="Edición">
+        <button onClick={s.undo} disabled={!s.past.length} title="Deshacer (Ctrl+Z)" aria-label="Deshacer"><Icon.undo /></button>
+        <button onClick={s.redo} disabled={!s.future.length} title="Rehacer (Ctrl+Y)" aria-label="Rehacer"><Icon.redo /></button>
+      </div>
+      <div className="tb-group" role="group" aria-label="Vista">
         <button onClick={() => s.set({ bottomTab: "summary", bottomCollapsed: false })} disabled={!s.project} title="Panel general del proyecto (Resumen)"
           aria-label="Resumen" className="summary-btn"><Icon.summary /><span>Resumen</span></button>
       </div>
-      <div className="tb-group">
+      <div className="tb-group" role="group" aria-label="Simulación">
         <button className="primary" onClick={simulateNow} disabled={!s.project} title="Simular ahora (F5)"><Icon.play /><span>Simular</span></button>
+        <div className="status-wrap">
+          <button className={`status ${st.cls}`} onClick={() => setDetail(!detail)} aria-expanded={detail} title="Ver detalle del cálculo">
+            <i />{st.label}
+          </button>
+          {detail && <StatusDetail onClose={() => setDetail(false)} />}
+        </div>
+      </div>
+      <div className="tb-group" role="group" aria-label="Exportar">
         <a className={`btn ${!s.project || dirty ? "disabled" : ""}`} href={s.project ? api.exportUrl(s.project.id, s.serverVersion ?? undefined) : undefined}
-          aria-disabled={!s.project || dirty} title={dirty ? "Esperando guardado" : "Exportar la versión actual como .inp"}><Icon.download /><span>Exportar .inp</span></a>
+          aria-disabled={!s.project || dirty} title={dirty ? "Esperando guardado" : "Exportar la versión actual como .inp"}><Icon.download /><span>.inp</span></a>
         <SigMenu dirty={dirty} />
       </div>
       <div className="tb-spacer" />
-      <div className="status-wrap">
-        <button className={`status ${st.cls}`} onClick={() => setDetail(!detail)} aria-expanded={detail} title="Ver detalle del cálculo">
-          <i />{st.label}
-        </button>
-        {detail && <StatusDetail onClose={() => setDetail(false)} />}
-      </div>
       <div className="version-info" title="Cada guardado crea una versión inmutable">
         {s.serverVersion !== null && <>v{s.serverVersion} · {dirty ? "cambios sin guardar" : `${s.lastSaveKind === "manual" ? "guardado" : "autoguardado"} ${time}`}</>}
       </div>
-      <button className="ghost" onClick={() => s.set({ versionsOpen: true })} disabled={!s.project} title="Versiones del modelo"><Icon.history /></button>
       {s.readOnly && <span className="badge warn" title="Su rol en esta organización no permite editar">solo lectura</span>}
       <UserMenu />
       <button className="ghost" onClick={toggleTheme} title={s.theme === "dark" ? "Tema claro" : "Tema oscuro"}>{s.theme === "dark" ? <Icon.sun /> : <Icon.moon />}</button>

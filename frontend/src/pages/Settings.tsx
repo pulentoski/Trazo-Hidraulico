@@ -1,7 +1,7 @@
 // Configuración: criterios de diseño por defecto, unidades, tema y estado del mapa base.
 import { PageHeader } from "../components/PageHeader";
 import { fmt } from "../lib/format";
-import { GOOGLE_MAPS_MAP_ID, HAS_MAP_KEY } from "../lib/mapConfig";
+import { MapBaseSection } from "../components/MapBaseSettings";
 import type { ThemePref } from "../state/store";
 import { useEditor, writePref } from "../state/store";
 
@@ -66,26 +66,7 @@ export function Settings() {
           </div>
         </section>
 
-        <section className="card">
-          <h2>Mapa base</h2>
-          <dl className="kv">
-            <dt>Google Maps</dt>
-            <dd>{HAS_MAP_KEY ? <span className="ok-text">● Key configurada</span> : <span className="warn-text">● Sin key: el editor usa un lienzo neutro</span>}</dd>
-            <dt>Map ID (estilo vectorial)</dt>
-            <dd>{GOOGLE_MAPS_MAP_ID ? "Configurado" : "No configurado (tema oscuro del mapa no disponible)"}</dd>
-          </dl>
-          <p className="muted small">Por seguridad la key no se muestra.</p>
-        </section>
-
-        <section className="card admin">
-          <h2>Administración</h2>
-          <p>
-            La key de Google Maps es <strong>única para toda la plataforma</strong>: la define el administrador en el servidor
-            (<code>VITE_GOOGLE_MAPS_API_KEY</code> en <code>.env</code>) y se incorpora al compilar. Los usuarios no ingresan
-            keys propias. Debe estar restringida por referente HTTP al dominio publicado y solo a las APIs Maps JavaScript y Geocoding.
-          </p>
-          <p className="muted small">Sección informativa. La gestión de usuarios y permisos llegará en la etapa 5.</p>
-        </section>
+        <MapBaseSection />
       </main>
     </div>
   );

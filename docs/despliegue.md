@@ -107,6 +107,13 @@ sus administradores.
 - Servicio `backup`: respaldo diario a las `BACKUP_TIME` (03:30, hora de `TZ`) con retención de
   `BACKUP_RETENTION_DAYS` días (14) en `BACKUP_DIR` (`/var/backups/trazo-hidraulico`).
 
+## Mapa base (Google Maps)
+
+La key se ingresa en **Configuración → Mapa base** con el superadministrador y queda cifrada en la base
+(Fernet) con `SETTINGS_SECRET_KEY` del `.env` (`make env` la agrega si falta). Respalde el `.env`: sin esa clave
+la key guardada no se puede leer y hay que volver a ingresarla. El frontend la pide en tiempo de ejecución
+(`/api/maps/config`), así que guardarla no requiere reconstruir contenedores.
+
 ## Seguridad
 
 - Autenticación propia (ver [autenticacion.md](autenticacion.md)): Argon2id, bloqueo temporal tras 5 intentos,

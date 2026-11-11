@@ -25,6 +25,7 @@ from playwright.sync_api import Page, expect, sync_playwright
 
 BASE = os.environ.get("BASE_URL", "http://localhost:8080")
 EMAIL = os.environ.get("E2E_EMAIL", "e2e@trazo.local")
+ADMIN_EMAIL = os.environ.get("E2E_ADMIN_EMAIL", "e2e-plataforma@trazo.local")
 PASSWORD = os.environ.get("E2E_PASSWORD", "Recorrido-e2e-2026")
 ROOT = Path(__file__).resolve().parent.parent
 SHOTS = ROOT / os.environ.get("E2E_SHOTS", "docs/capturas")
@@ -78,7 +79,13 @@ def set_theme(page: Page, theme: str) -> None:
 
 
 def tab(page: Page, label: str) -> None:
-    page.locator(".bottom .tabs button", has_text=re.compile(rf"^{label}")).first.click()
+    """Abre una pestaña del panel inferior; si no cabe en la barra, desde el menú «Más ▾»."""
+    btn = page.locator(".bottom .tabs > button", has_text=re.compile(rf"^{label}"))
+    if btn.count():
+        btn.first.click()
+        return
+    page.locator(".bottom .tabs-more").click()
+    page.locator(".tabs-more-pop button", has_text=re.compile(rf"^{label}")).first.click()
 
 
 def wait_sim(page: Page) -> None:
@@ -89,7 +96,21 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
     set_theme(page, theme)
     page.goto(f"{BASE}/")
     expect(page.get_by_text("APR Demo (e2e)").first).to_be_visible()
+    card = page.get_by_role("article", name="APR Demo (e2e)")
+    expect(card).to_contain_text("30 clientes")
+    page.get_by_label("Buscar proyecto").fill("zzz-no-existe")
+    expect(page.get_by_text("Ningún proyecto coincide")).to_be_visible()
+    page.get_by_label("Buscar proyecto").fill("demo (e2e")
+    expect(card).to_be_visible()
+    page.get_by_label("Buscar proyecto").fill("")
     shot(page, "inicio", theme, width)
+    page.get_by_role("button", name="Menú de usuario").click()
+    expect(page.get_by_role("menuitem", name="Cerrar sesión")).to_be_visible()
+    page.keyboard.press("Escape")
+    if full:
+        page.get_by_role("button", name=re.compile("^Nuevo proyecto")).first.click()
+        expect(page.get_by_role("dialog", name="Nuevo proyecto")).to_be_visible()
+        page.keyboard.press("Escape")
     page.goto(f"{BASE}/proyecto/{pid}")
     expect(page.locator(".net-layer")).to_be_visible()
     wait_sim(page)
@@ -98,7 +119,7 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
     log("resumen")
     summary = page.locator(".summary-tab")
     expect(summary.locator(".summary-grid")).to_be_visible(timeout=30000)
-    expect(page.locator(".bottom .tabs button.on")).to_have_text("Resumen")  # primera pestaña al abrir
+    expect(page.locator(".bottom .tabs > button.on")).to_have_text("Resumen")  # primera pestaña al abrir
     expect(summary.get_by_label("Clientes sobre cota")).to_contain_text("C-025")
     expect(summary.get_by_label("Pérdidas y filtraciones")).to_contain_text("P-06")
     expect(summary.get_by_label("Mantenimiento a futuro")).to_contain_text("P-08")
@@ -116,15 +137,23 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
     summary.get_by_role("button", name="Zonas por presión").first.click()
     summary.get_by_role("button", name="Área operacional").first.click()
 
+    log("panel inferior: maximizar, plegar y tamaño normal")
+    page.get_by_role("button", name="Maximizar el panel inferior").click()
+    expect(page.locator(".bottom.maxed")).to_be_visible()
+    page.wait_for_timeout(300)
+    shot(page, "resumen-maximizado", theme, width)
+    page.get_by_role("button", name="Tamaño normal del panel inferior").click()
+    expect(page.locator(".bottom.maxed")).to_have_count(0)
+
     log("paneles plegados y desplegados")
     page.locator(".tools-fold").click()
-    page.locator(".panel-fold").click()
+    page.get_by_role("button", name="Plegar el panel inferior").click()
     expect(page.locator(".tools.collapsed")).to_be_visible()
     expect(page.locator(".bottom.collapsed")).to_be_visible()
     page.wait_for_timeout(300)
     shot(page, "paneles-plegados", theme, width)
     page.locator(".tools-fold").click()
-    page.locator(".panel-fold").click()
+    page.get_by_role("button", name="Desplegar el panel inferior").click()
     expect(page.locator(".props .sec.open")).to_have_count(1)  # por defecto, solo la sección más usada
     page.locator(".props").get_by_role("button", name="Expandir todo").click()
     expect(page.locator(".props .sec:not(.open)")).to_have_count(0)
@@ -150,8 +179,29 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         for path in ("summary.xlsx", "summary.html", "summary/area.geojson", "summary/zones.geojson", "leaks/template.xlsx"):
             r = page.request.get(f"{BASE}/api/projects/{pid}/{path}")
             assert r.ok, f"{path}: {r.status}"
+        log("panel inferior redimensionable y recordado")
+        handle = page.get_by_role("separator", name="Cambiar la altura del panel inferior")
+        h0 = page.locator(".bottom").bounding_box()["height"]
+        hb = handle.bounding_box()
+        page.mouse.move(hb["x"] + hb["width"] / 2, hb["y"] + hb["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(hb["x"] + hb["width"] / 2, hb["y"] - 120, steps=6)
+        page.mouse.up()
+        h1 = page.locator(".bottom").bounding_box()["height"]
+        assert h1 > h0 + 80, (h0, h1)
+        page.mouse.move(hb["x"] + hb["width"] / 2, hb["y"] - 120)
+        page.mouse.down()
+        page.mouse.move(hb["x"] + hb["width"] / 2, 2000, steps=6)  # tamaño mínimo
+        page.mouse.up()
+        assert page.locator(".bottom").bounding_box()["height"] >= 139
+        handle.focus()
+        for _ in range(6):
+            page.keyboard.press("ArrowUp")
+        h2 = page.locator(".bottom").bounding_box()["height"]
         page.reload()
         wait_sim(page)
+        assert abs(page.locator(".bottom").bounding_box()["height"] - h2) < 2  # se recuerda por usuario
+        handle.dblclick()  # doble clic: vuelve al tamaño normal
         expect(page.locator(".props .sec.open")).to_have_count(1)  # el estado de las secciones se recuerda
         expect(page.locator(".props .sec.open .sec-toggle")).to_have_text("Opciones hidráulicas")
 
@@ -351,7 +401,30 @@ def totp(secret: str) -> str:
     return str((struct.unpack(">I", mac[off:off + 4])[0] & 0x7FFFFFFF) % 1_000_000).zfill(6)
 
 
-def login(browser) -> dict:
+def config_tour(browser, state: dict, theme: str, width: int) -> None:
+    """Configuración → Mapa base con el superadministrador: guardar una key de prueba (cifrada), ver su estado y borrarla."""
+    ctx = browser.new_context(viewport={"width": width, "height": 900}, locale="es-CL", storage_state=state,
+                              ignore_https_errors=INSECURE, reduced_motion="reduce")
+    page = ctx.new_page()
+    watch(page)
+    set_theme(page, theme)
+    page.goto(f"{BASE}/configuracion")
+    sec = page.get_by_label("Mapa base")
+    expect(sec.get_by_text("Administración de la plataforma")).to_be_visible()
+    had = sec.get_by_text("Key guardada").count() and sec.locator(".kv.compact dd").first.inner_text().strip() not in ("—", "")
+    if not had:  # solo si la plataforma no tiene una key real: se guarda una de prueba y se borra al final
+        sec.get_by_label("API key de Google Maps").fill("AIzaSyE2E-prueba-0000000000000000000")
+        sec.get_by_role("button", name="Guardar").click()
+        expect(sec.locator(".kv.compact")).to_contain_text("AIza…0000")
+    shot(page, "configuracion", theme, width)
+    if not had:
+        page.once("dialog", lambda d: d.accept())
+        sec.get_by_role("button", name="Borrar").click()
+        expect(sec.locator(".kv.compact dd").first).to_have_text("—")
+    ctx.close()
+
+
+def login(browser, email: str = EMAIL) -> dict:
     """Ingreso por la pantalla /login (con TOTP si el rol lo exige); devuelve el estado de sesión."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="es-CL", ignore_https_errors=INSECURE)
     page = ctx.new_page()
@@ -359,7 +432,7 @@ def login(browser) -> dict:
     page.goto(f"{BASE}/acerca-de")
     expect(page).to_have_url(re.compile(r"/login\?volver="))
     shot(page, "login", "light", 1440)
-    page.get_by_label("Correo").fill(EMAIL)
+    page.get_by_label("Correo").fill(email)
     page.get_by_label("Contraseña").fill(PASSWORD)
     page.get_by_role("button", name="Ingresar").click()
     page.wait_for_url(re.compile(r"/(acerca-de|perfil)"), timeout=15000)
@@ -380,6 +453,7 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch()
         state = login(browser)
+        admin_state = login(browser, ADMIN_EMAIL)
         api = p.request.new_context(base_url=BASE, storage_state=state, ignore_https_errors=INSECURE)
         r = api.post("/api/projects/import-excel", multipart={
             "file": {"name": "apr-demo.xlsx", "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -389,7 +463,7 @@ def main() -> int:
         try:
             for i, (theme, width) in enumerate((("claro", 1440), ("oscuro", 1440), ("claro", 1024), ("oscuro", 1024))):
                 log(f"== tema {theme}, {width} px ==")
-                ctx = browser.new_context(viewport={"width": width, "height": 900}, accept_downloads=True, locale="es-CL",
+                ctx = browser.new_context(viewport={"width": width, "height": 900}, accept_downloads=True, locale="es-CL", reduced_motion="reduce",
                                           storage_state=state, ignore_https_errors=INSECURE)
                 page = ctx.new_page()
                 watch(page)
@@ -400,6 +474,7 @@ def main() -> int:
                     print("Problemas hasta el fallo:", *dict.fromkeys(problems), sep="\n  - ")
                     raise
                 ctx.close()
+                config_tour(browser, admin_state, "light" if theme == "claro" else "dark", width)
         finally:
             api.delete(f"/api/projects/{pid}")
             browser.close()

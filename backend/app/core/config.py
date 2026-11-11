@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     ortho_warp_mem_mb: int = 256  # memoria de trabajo de gdalwarp
     ortho_dir: str = "/data/ortho"  # almacenamiento compartido de ortofotos (volumen)
 
+    # Clave para cifrar configuración sensible en la base (key de Google Maps): Fernet, 32 bytes en base64 url-safe.
+    # Generar con: python -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+    settings_secret_key: str = ""
+
     # Autenticación y sesiones (etapa 5)
     session_hours: float = 12.0  # expiración de la sesión
     cookie_secure: bool = True  # cookie solo por HTTPS (en http://localhost los navegadores la aceptan igual)

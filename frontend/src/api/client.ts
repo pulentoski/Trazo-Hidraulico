@@ -7,7 +7,7 @@ import type {
   FeasibilityRequest, FeasibilityResult, FireResult, Gcp, GcpFit, ImportApplyResult, ImportPreview, ImportResult,
   NetworkDocument, NetworkSave, NetworkSaveResult, OrthophotoOut, ProjectOut, QueryDef, QueryElement, QueryResult,
   SavedQueryOut, ScenarioResult, SearchHit, SectorsResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
-  LeakEventIn, LeakEventOut, LeakImportResult, SummaryResult, SummarySettings,
+  LeakEventIn, LeakEventOut, LeakImportResult, MapsStatus, SummaryResult, SummarySettings,
 } from "./types";
 
 const client = createClient<paths>({ baseUrl: "" });
@@ -227,6 +227,10 @@ export const api = {
     if (!res.ok) fail(res.status, body);
     return body;
   },
+  mapsConfig: () => unwrap<{ api_key?: string | null; map_id?: string | null; source: "db" | "none" }>(client.GET("/api/maps/config")),
+  mapsStatus: () => unwrap<MapsStatus>(client.GET("/api/admin/maps")),
+  saveMaps: (body: { api_key?: string; map_id?: string }) => unwrap<MapsStatus>(client.PUT("/api/admin/maps", { body })),
+  deleteMaps: () => unwrap<MapsStatus>(client.DELETE("/api/admin/maps")),
   summary: (id: string, q: { version?: number; scenario?: string; period?: number | null }) =>
     unwrap<SummaryResult>(client.GET("/api/projects/{project_id}/summary", {
       params: { path: { project_id: id }, query: { version: q.version, scenario: q.scenario, period: q.period ?? undefined } },

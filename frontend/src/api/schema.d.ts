@@ -4,6 +4,25 @@
  */
 
 export interface paths {
+    "/api/admin/maps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estado del mapa base (superadministrador) */
+        get: operations["maps_status_api_admin_maps_get"];
+        /** Guardar la key (cifrada) y el Map ID */
+        put: operations["maps_save_api_admin_maps_put"];
+        post?: never;
+        /** Borrar la key y el Map ID guardados */
+        delete: operations["maps_delete_api_admin_maps_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/orgs": {
         parameters: {
             query?: never;
@@ -423,6 +442,23 @@ export interface paths {
         };
         /** Estado de la API, la base de datos y la caché */
         get: operations["health_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/maps/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Key y Map ID del mapa base (usuarios con sesión) */
+        get: operations["maps_config_api_maps_config_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3688,6 +3724,61 @@ export interface components {
             /** Limit */
             limit: number | null;
         };
+        /** MapsConfig */
+        MapsConfig: {
+            /**
+             * Api Key
+             * @description Key de Google Maps (para cargar el mapa en el navegador)
+             */
+            api_key?: string | null;
+            /** Map Id */
+            map_id?: string | null;
+            /**
+             * Source
+             * @description db = guardada desde Configuración; none = usar el respaldo del frontend (VITE_GOOGLE_MAPS_API_KEY) si lo hay
+             * @enum {string}
+             */
+            source: "db" | "none";
+        };
+        /** MapsStatus */
+        MapsStatus: {
+            /** Configured */
+            configured: boolean;
+            /**
+             * Encryption Ready
+             * @description SETTINGS_SECRET_KEY definida en el servidor
+             */
+            encryption_ready: boolean;
+            /**
+             * Key Hint
+             * @description Primeros y últimos 4 caracteres de la key
+             */
+            key_hint?: string | null;
+            /** Map Id */
+            map_id: string | null;
+            /**
+             * Unreadable
+             * @description Hay una key guardada que no se puede descifrar (cambió la clave)
+             */
+            unreadable: boolean;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By */
+            updated_by: string | null;
+        };
+        /** MapsUpdate */
+        MapsUpdate: {
+            /**
+             * Api Key
+             * @description Nueva key (omitir para conservar la actual)
+             */
+            api_key?: string | null;
+            /**
+             * Map Id
+             * @description Map ID (vacío lo borra; omitir lo conserva)
+             */
+            map_id?: string | null;
+        };
         /** Me */
         Me: {
             /** Current Org */
@@ -4454,6 +4545,11 @@ export interface components {
         /** ProjectOut */
         ProjectOut: {
             /**
+             * Client Count
+             * @description Clientes de la última versión (solo en el listado)
+             */
+            client_count?: number | null;
+            /**
              * Created At
              * Format: date-time
              */
@@ -4473,6 +4569,11 @@ export interface components {
             length_srid: number;
             /** Name */
             name: string;
+            /**
+             * Network Km
+             * @description Km de tuberías de la última versión (solo en el listado)
+             */
+            network_km?: number | null;
             /**
              * Org Id
              * Format: uuid
@@ -5806,6 +5907,79 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    maps_status_api_admin_maps_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapsStatus"];
+                };
+            };
+        };
+    };
+    maps_save_api_admin_maps_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MapsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapsStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    maps_delete_api_admin_maps_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapsStatus"];
+                };
+            };
+        };
+    };
     admin_orgs_api_admin_orgs_get: {
         parameters: {
             query?: never;
@@ -6519,6 +6693,26 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    maps_config_api_maps_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapsConfig"];
                 };
             };
         };

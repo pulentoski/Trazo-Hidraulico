@@ -23,9 +23,12 @@ def list_projects(session: SessionDep,
     p = auth.principal()
     orgs = [o for o in p.roles if org is None or o == org]
     out = []
-    for project, latest, count in projects_repo.list_projects(session, orgs):
+    rows = projects_repo.list_projects(session, orgs)
+    stats = projects_repo.latest_stats(session, [p.id for p, _, _ in rows])
+    for project, latest, count in rows:
         item = ProjectOut.model_validate(project)
         item.latest_version, item.version_count = latest, count
+        item.client_count, item.network_km = stats.get(project.id, (0, 0.0))
         out.append(item)
     return out
 

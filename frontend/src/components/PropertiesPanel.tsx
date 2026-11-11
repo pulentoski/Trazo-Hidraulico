@@ -342,13 +342,14 @@ function ProjectPanel() {
 
   return (
     <>
-      <h3>Proyecto</h3>
-      <TextField label="Nombre" value={project.name} onCommit={async (v) => {
-        if (!v.trim()) return;
-        const p = await api.updateProject(project.id, { name: v.trim() });
-        set({ project: p });
-      }} />
-      <div className="muted small">{counts.nodes} nudos · {counts.pipes} tuberías · {fmt(counts.km, 2)} km · largos en EPSG:{project.length_srid}</div>
+      <Section id="proyecto.datos" title="Proyecto">
+        <TextField label="Nombre" value={project.name} onCommit={async (v) => {
+          if (!v.trim()) return;
+          const p = await api.updateProject(project.id, { name: v.trim() });
+          set({ project: p });
+        }} />
+        <div className="muted small">{counts.nodes} nudos · {counts.pipes} tuberías · {fmt(counts.km, 2)} km · largos en EPSG:{project.length_srid}</div>
+      </Section>
       <Section id="proyecto.opciones" title="Opciones hidráulicas" primary>
         <label className="field"><span>Fórmula de pérdida</span>
           <select value={options.headloss} onChange={(e) => changeFormula(e.target.value as HydraulicOptions["headloss"])}>
@@ -368,9 +369,9 @@ function ProjectPanel() {
           <NumField label="Presión requerida" unit="m" value={options.required_pressure} onCommit={(v) => setOptions({ ...options, required_pressure: v ?? 15 })} />
           <NumField label="Exponente" value={options.pressure_exponent} onCommit={(v) => setOptions({ ...options, pressure_exponent: v ?? 0.5 })} />
         </>)}
+        <label className="check"><input type="checkbox" checked={!!options.include_projected_clients}
+          onChange={(e) => setOptions({ ...options, include_projected_clients: e.target.checked })} />Incluir clientes proyectados en la demanda</label>
       </Section>
-      <label className="check"><input type="checkbox" checked={!!options.include_projected_clients}
-        onChange={(e) => setOptions({ ...options, include_projected_clients: e.target.checked })} />Incluir clientes proyectados en la demanda</label>
       <DesignParamsEditor profileName={profile?.name ?? null} />
       {engine && (
         <Section id="proyecto.motor" title="Motor hidráulico">
