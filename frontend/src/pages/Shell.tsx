@@ -1,6 +1,7 @@
 // Marco común a todas las rutas: tema, datos de referencia (catálogo, perfiles, motor) y avisos.
 import { useEffect } from "react";
 import { Outlet } from "react-router";
+import { onRateLimitNotice } from "../api/http";
 import { Toasts } from "../components/Dialogs";
 import { resolveTheme, useEditor } from "../state/store";
 
@@ -19,6 +20,10 @@ export function Shell() {
   }, [themePref, set]);
 
   const animations = useEditor((s) => s.animations);
+  useEffect(() => {
+    onRateLimitNotice((t) => useEditor.getState().toast(t));
+    return () => onRateLimitNotice(null);
+  }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);

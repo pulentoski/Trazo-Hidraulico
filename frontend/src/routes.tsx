@@ -27,6 +27,9 @@ export function RequireAuth() {
   useEffect(() => { if (status === "loading") void refresh(); }, [status, refresh]);
   useEffect(() => {
     if (status !== "ok" || !me || me.mfa_setup_required || me.mfa_pending) return;
+    // Datos de referencia: una vez por carga de la aplicación (no en cada refresco de la sesión).
+    const st = useEditor.getState();
+    if (st.catalog.length && st.profiles.length && st.engine) return;
     Promise.all([api.catalog(), api.profiles(), api.engine()])
       .then(([catalog, profiles, engine]) => set({ catalog, profiles, engine }))
       .catch(() => undefined);

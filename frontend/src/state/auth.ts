@@ -1,6 +1,6 @@
 // Sesión del usuario: datos de /api/auth/me, rol en cada organización y organización activa.
 import { create } from "zustand";
-import { api } from "../api/client";
+import { ApiError, api } from "../api/client";
 import type { Me, Role } from "../api/types";
 
 interface AuthState {
@@ -18,9 +18,15 @@ export const useAuth = create<AuthState>()((set, get) => ({
       const me = await api.me();
       set({ me, status: "ok" });
       return me;
-    } catch {
-      set({ me: null, status: "anon" });
-      return null;
+    } catch (e) {
+      // Solo un 401 significa «sin sesión». Un 429 (tras los reintentos), un error del servidor o de red no
+      // cierran la sesión: se conserva lo conocido y se vuelve a consultar.
+      if (e instanceof ApiError && e.status === 401) {
+        set({ me: null, status: "anon" });
+        return null;
+      }
+      window.setTimeout(() => { void get().refresh(); }, 5000);
+      return get().me;
     }
   },
   roleIn: (org) => get().me?.orgs.find((o) => o.id === org)?.role ?? null,

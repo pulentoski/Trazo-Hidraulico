@@ -44,8 +44,17 @@ export function SummaryTab() {
     }
   }, [pid, scenario, period, set]);
 
-  // Se recalcula al guardar una versión nueva o al terminar una simulación.
-  useEffect(() => { void load(); }, [load, serverVersion, result?.run_id]);
+  // Se recalcula al guardar una versión nueva o al cambiar escenario u hora.
+  useEffect(() => { void load(); }, [load, serverVersion]);
+  // Al terminar una simulación solo hace falta recalcular si el resumen vigente no la incluía (el servidor ya
+  // simula la versión al armar el resumen: así no se pide dos veces al abrir el proyecto).
+  const runVersion = result?.model_version;
+  useEffect(() => {
+    if (runVersion === undefined || !data) return;
+    if (data.model_version === runVersion && !data.sim_note) return;
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result?.run_id]);
 
   // Capas del mapa siguen los datos vigentes (si están activas).
   const zonesOn = overlay.zones.length > 0;

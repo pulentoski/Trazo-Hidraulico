@@ -30,11 +30,6 @@ OLD = {"/perfil": "/ajustes/seguridad", "/configuracion": "/ajustes/preferencias
        "/organizacion": "/ajustes/miembros", "/plataforma": "/ajustes/organizaciones"}
 
 
-def fresh_window() -> None:
-    """La API limita las solicitudes por IP y minuto (300): cada bloque de la prueba parte en un minuto nuevo."""
-    time.sleep(61 - time.time() % 60)
-
-
 def nav_ids(page: Page) -> list[str]:
     nav = page.get_by_role("navigation", name="Secciones de ajustes")
     expect(nav).to_be_visible()
@@ -55,7 +50,6 @@ def visit(page: Page, sid: str, title: str) -> None:
 
 def check_role(browser, role: str, email: str, visible: dict[str, str]) -> None:
     log(f"ajustes: {role}")
-    fresh_window()
     state = login(browser, email)
     ctx = browser.new_context(viewport={"width": 1280, "height": 860}, locale="es-CL", storage_state=state,
                               ignore_https_errors=INSECURE, reduced_motion="reduce")
@@ -88,6 +82,26 @@ def check_role(browser, role: str, email: str, visible: dict[str, str]) -> None:
             page.goto(f"{BASE}{old}")
             target = new if new.split("/")[-1] in visible else "/ajustes/perfil"
             expect(page).to_have_url(re.compile(rf"{target}$"))
+        if role == "lector":
+            log("ajustes: un 429 reintenta sin cerrar la sesión")
+            hits = {"n": 0}
+
+            def limited(route):
+                hits["n"] += 1
+                if hits["n"] <= 2:
+                    route.fulfill(status=429, headers={"Retry-After": "1", "Content-Type": "application/json"},
+                                  body='{"detail": "Demasiadas solicitudes", "code": "rate_limited"}')
+                else:
+                    route.continue_()
+            page.route("**/api/auth/me", limited)
+            n = len(problems)
+            page.goto(f"{BASE}/ajustes/seguridad")
+            expect(page.locator(".toast").filter(has_text="Demasiadas solicitudes, reintentando")).to_be_visible()
+            expect(page.locator(".ajustes-panel > header h2")).to_have_text("Seguridad", timeout=15000)
+            expect(page).to_have_url(re.compile(r"/ajustes/seguridad$"))  # no se fue al ingreso
+            assert hits["n"] == 3, hits
+            page.unroute("**/api/auth/me")
+            problems[n:] = [x for x in problems[n:] if "429" not in x]  # los 429 simulados son esperados
         # Guardar con confirmación: nombre visible
         visit(page, "perfil", "Perfil")
         name = page.get_by_label("Nombre visible")
@@ -112,7 +126,6 @@ def check_role(browser, role: str, email: str, visible: dict[str, str]) -> None:
         if role == "superadmin":
             for theme in ("light", "dark"):
                 log(f"ajustes: capturas de todas las secciones ({theme})")
-                fresh_window()
                 set_theme(page, theme)
                 page.reload()
                 for sid, title in visible.items():
@@ -122,7 +135,6 @@ def check_role(browser, role: str, email: str, visible: dict[str, str]) -> None:
                     page.wait_for_timeout(200)
                     shot(page, f"ajustes-{sid}", theme, 1280)
             log("ajustes: preferencias (tema y animaciones)")
-            fresh_window()
             set_theme(page, "light")
             page.reload()
             visit(page, "preferencias", "Preferencias")

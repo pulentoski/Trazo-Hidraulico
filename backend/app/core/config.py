@@ -28,7 +28,8 @@ class Settings(BaseSettings):
     report_dir: str | None = None
 
     # Protección mínima para publicar (sin usuarios todavía)
-    rate_limit_per_minute: int = 300  # solicitudes a /api por IP y minuto; 0 desactiva
+    rate_limit_per_minute: int = 300  # solicitudes a /api por IP y minuto sin sesión (rutas públicas); 0 desactiva
+    rate_limit_user_per_minute: int = 1200  # solicitudes a /api por usuario autenticado y minuto; 0 desactiva
     max_inp_mb: int = 20  # tamaño máximo del .inp importado (Caddy aplica el mismo límite)
     max_xlsx_mb: int = 20  # tamaño máximo de planillas Excel/CSV importadas
     # Tamaño máximo de una ortofoto (total de la subida por partes). ORTHO_MAX_MB; MAX_ORTHO_MB se acepta por

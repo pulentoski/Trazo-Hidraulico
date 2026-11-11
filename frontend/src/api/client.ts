@@ -1,4 +1,5 @@
 import createClient from "openapi-fetch";
+import { apiFetch } from "./http";
 import type { paths } from "./schema";
 import type {
   CatalogPipe, ClientImportResult, CompareResult, DemandInputs, DemandResult, DesignParamsOut, TrazoImportResult,
@@ -11,7 +12,7 @@ import type {
   GFilters, GTab, GestionSettings, OrgSettings, SystemInfo, RecordKind, RecordSpec, RecordImportPreview, TabResult, MaintenanceLogOut,
 } from "./types";
 
-const client = createClient<paths>({ baseUrl: "" });
+const client = createClient<paths>({ baseUrl: "", fetch: (req: Request) => apiFetch(req) });
 
 export class ApiError extends Error {
   status: number;
@@ -73,7 +74,7 @@ async function form<T>(url: string, file: File, fields: object): Promise<T> {
   const fd = new FormData();
   fd.append("file", file);
   for (const [k, v] of Object.entries(fields)) if (v !== undefined && v !== null && v !== "") fd.append(k, String(v));
-  const res = await fetch(url, { method: "POST", body: fd });
+  const res = await apiFetch(url, { method: "POST", body: fd });
   const body = await res.json().catch(() => null);
   if (res.status === 422 && body && typeof body === "object" && "preview" in body) return body as T;
   if (!res.ok) fail(res.status, body);
@@ -123,7 +124,7 @@ export const api = {
     form.append("file", file);
     if (name) form.append("name", name);
     form.append("crs", crs);
-    const res = await fetch("/api/projects/import", { method: "POST", body: form });
+    const res = await apiFetch("/api/projects/import", { method: "POST", body: form });
     const body = await res.json().catch(() => null);
     if (!res.ok) fail(res.status, body);
     return body as ImportResult;
@@ -144,7 +145,7 @@ export const api = {
     unwrap<FeasibilityResult>(client.POST("/api/projects/{project_id}/feasibility", { params: { path: { project_id: id } }, body })),
   /** Informe HTML: se abre en una pestaña nueva para imprimir o guardar como PDF. */
   feasibilityReport: async (id: string, body: FeasibilityRequest): Promise<string> => {
-    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/feasibility/report`, {
+    const res = await apiFetch(`/api/projects/${encodeURIComponent(id)}/feasibility/report`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
     if (!res.ok) fail(res.status, await res.json().catch(() => null));
@@ -154,7 +155,7 @@ export const api = {
     const form = new FormData();
     form.append("file", file);
     if (baseVersion != null) form.append("base_version", String(baseVersion));
-    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/clients/import`, { method: "POST", body: form });
+    const res = await apiFetch(`/api/projects/${encodeURIComponent(id)}/clients/import`, { method: "POST", body: form });
     const body = await res.json().catch(() => null);
     if (!res.ok) fail(res.status, body);
     return body as ClientImportResult;
@@ -235,7 +236,7 @@ export const api = {
   importMeasurements: async (id: string, file: File): Promise<{ created: number; errors: string[] }> => {
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/measurements/import`, { method: "POST", body: fd });
+    const res = await apiFetch(`/api/projects/${encodeURIComponent(id)}/measurements/import`, { method: "POST", body: fd });
     const body = await res.json().catch(() => null);
     if (res.status === 422 && body && "errors" in body) return body;
     if (!res.ok) fail(res.status, body);
@@ -272,7 +273,7 @@ export const api = {
   importLeaks: async (id: string, file: File): Promise<LeakImportResult> => {
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/leaks/import`, { method: "POST", body: fd });
+    const res = await apiFetch(`/api/projects/${encodeURIComponent(id)}/leaks/import`, { method: "POST", body: fd });
     const body = await res.json().catch(() => null);
     if (res.status === 422 && body && "errors" in body) return body;
     if (!res.ok) fail(res.status, body);
@@ -321,7 +322,7 @@ export const api = {
   query: (id: string, body: QueryDef) =>
     unwrap<QueryResult>(client.POST("/api/projects/{project_id}/query", { params: { path: { project_id: id } }, body })),
   queryExport: async (id: string, body: QueryDef, fmt: "csv" | "xlsx"): Promise<Blob> => {
-    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/query/export?fmt=${fmt}`, {
+    const res = await apiFetch(`/api/projects/${encodeURIComponent(id)}/query/export?fmt=${fmt}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
     if (!res.ok) fail(res.status, await res.json().catch(() => null));
@@ -348,7 +349,7 @@ export const api = {
     fd.append("file", file);
     if (world) fd.append("world", world);
     for (const [k, v] of Object.entries(meta)) if (v) fd.append(k, v);
-    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/orthophotos`, { method: "POST", body: fd });
+    const res = await apiFetch(`/api/projects/${encodeURIComponent(id)}/orthophotos`, { method: "POST", body: fd });
     const body = await res.json().catch(() => null);
     if (!res.ok) fail(res.status, body);
     return body as OrthophotoOut;
@@ -402,7 +403,7 @@ export const api = {
   importRecords: async (id: string, kind: RecordKind, file: File, apply: boolean, onlyValid = false): Promise<RecordImportPreview> => {
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/gestion/records/${kind}/import?apply=${apply}&only_valid=${onlyValid}`,
+    const res = await apiFetch(`/api/projects/${encodeURIComponent(id)}/gestion/records/${kind}/import?apply=${apply}&only_valid=${onlyValid}`,
       { method: "POST", body: fd });
     const body = await res.json().catch(() => null);
     if (!res.ok) {

@@ -196,6 +196,7 @@ services:
       REDIS_DB: "1"
       # El límite de solicitudes se prueba aparte (tests/test_proteccion.py) con un cupo bajo.
       RATE_LIMIT_PER_MINUTE: "0"
+      RATE_LIMIT_USER_PER_MINUTE: "0"
       LOGIN_RATE_PER_MINUTE: "0"
       MFA_REQUIRED_FOR_ADMINS: "false"
       REPORT_DIR: /reports

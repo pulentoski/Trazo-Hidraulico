@@ -139,6 +139,11 @@ indicadores, dibujo de gráficos; en el mapa, flujo animado en el sentido del ag
 tramo, pulso en nudos bajo la presión mínima, resaltado al seleccionar y «Reproducir día»): se desactivan en
 Preferencias y respetan `prefers-reduced-motion`; solo se anima lo visible (≈ 60 cuadros/s con APR Demo y Net3).
 
+Límite de solicitudes a `/api`: con sesión, por usuario (`RATE_LIMIT_USER_PER_MINUTE`, 1200 por minuto); sin sesión,
+por IP (`RATE_LIMIT_PER_MINUTE`, 300) y el ingreso con su propio límite de intentos. Las teselas de ortofotos y las
+partes de una subida no cuentan. Un 429 nunca cierra la sesión: la interfaz avisa «Demasiadas solicitudes,
+reintentando…» y reintenta respetando `Retry-After`.
+
 ## Gestión del APR y coordenadas
 
 Detalle en [docs/gestion.md](docs/gestion.md): página **Gestión** por proyecto (`/proyecto/:id/gestion`, botón en la

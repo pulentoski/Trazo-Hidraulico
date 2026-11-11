@@ -1,5 +1,6 @@
 // Subida por partes reanudable de ortofotos: partes de tamaño fijo, reintentos con espera creciente y retoma desde
 // el último byte confirmado por el servidor (también tras recargar la página: se recuerda la subida por archivo).
+import { apiFetch } from "../api/http";
 import type { OrthophotoOut } from "../api/types";
 
 export interface UploadMeta { name?: string; source?: string; captured_on?: string; src_crs?: string; world?: string; target_res_cm?: number | null }
@@ -67,7 +68,7 @@ export async function uploadInParts(pid: string, file: File, meta: UploadMeta, o
   let state: UploadState | null = null;
   const prev = rememberedUpload(pid, file);
   if (prev) {
-    const r = await fetch(`${base}/${encodeURIComponent(prev)}/upload`);
+    const r = await apiFetch(`${base}/${encodeURIComponent(prev)}/upload`);
     if (r.ok) {
       const s = (await r.json()) as UploadState;
       if (s.ortho.status === "uploading" && s.size === file.size) state = s;
@@ -75,7 +76,7 @@ export async function uploadInParts(pid: string, file: File, meta: UploadMeta, o
     if (!state) remember(pid, file, null);
   }
   if (!state) {
-    state = await json<UploadState>(await fetch(`${base}/uploads`, {
+    state = await json<UploadState>(await apiFetch(`${base}/uploads`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ filename: file.name, size: file.size, ...meta }),
     }));
@@ -108,7 +109,7 @@ export async function uploadInParts(pid: string, file: File, meta: UploadMeta, o
       report(offset);
       await sleep(Math.min(30000, 1000 * 2 ** (retrying - 1)), signal);
       try {
-        const s = (await (await fetch(url)).json()) as UploadState;
+        const s = (await (await apiFetch(url)).json()) as UploadState;
         offset = s.offset;
         state = s;
       } catch { /* se reintenta con el offset conocido */ }
