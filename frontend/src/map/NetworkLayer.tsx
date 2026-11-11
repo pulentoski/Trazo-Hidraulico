@@ -315,6 +315,15 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
     }
   };
 
+  // Crear con la herramienta activa en una coordenada ingresada («Ingresar coordenadas»): igual que un clic allí.
+  const placeRequest = s.placeRequest;
+  useEffect(() => {
+    if (!placeRequest) return;
+    useEditor.getState().set({ placeRequest: null });
+    clickAction(proj(placeRequest.pos), { type: "bg" }, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placeRequest]);
+
   // ── Eventos de puntero ──
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button === 2) return;
@@ -620,6 +629,32 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
     }
   }
 
+  // Mapa de calor (desde «Gestión»: fugas por tramo, etc.)
+  const heatEls: React.ReactNode[] = [];
+  if (s.heat) {
+    for (const [u, w] of Object.entries(s.heat)) {
+      const l = net.links[u];
+      if (l) {
+        heatEls.push(<polyline key={`ht-${u}`} className="heat-link" points={linkCoords(net, l).map(proj).map((q) => q.join(",")).join(" ")}
+          style={{ strokeOpacity: 0.25 + 0.6 * w, strokeWidth: 8 + 12 * w }} />);
+        continue;
+      }
+      const pos = net.nodes[u]?.pos ?? net.clients[u]?.pos ?? net.hydrants[u]?.pos ?? net.wells[u]?.pos;
+      if (pos) {
+        const [x, y] = proj(pos);
+        heatEls.push(<circle key={`ht-${u}`} className="heat-point" cx={x} cy={y} r={8 + 12 * w} style={{ fillOpacity: 0.2 + 0.5 * w }} />);
+      }
+    }
+  }
+  const pinEl = s.pin ? (() => {
+    const [x, y] = proj(s.pin);
+    return (
+      <g className="coord-pin" transform={`translate(${x},${y})`} data-pin={`${s.pin[1].toFixed(6)},${s.pin[0].toFixed(6)}`}>
+        <circle r={9} /><path d="M -14 0 H -4 M 4 0 H 14 M 0 -14 V -4 M 0 4 V 14" />
+      </g>
+    );
+  })() : null;
+
   // Anillo del resaltado breve
   const flashEls: React.ReactNode[] = [];
   if (flash && flashOn === flash.nonce) {
@@ -720,6 +755,7 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
       <g className="overlay">{overlayEls}</g>
       <g>{dryEls}</g>
       <g>{sectorEls}</g>
+      <g className="heat">{heatEls}</g>
       <g>{hlEls}</g>
       <g>{linkEls}</g>
       <g>{arrowEls}</g>
@@ -727,6 +763,7 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
       <g>{shutoffEls}</g>
       <g>{nodeEls}</g>
       <g>{assetEls}</g>
+      {pinEl}
       <g className="flash" data-flash={flashEls.length ? flash?.uids.join(" ") : undefined}>{flashEls}</g>
       {feasEl}
       <g>{handleEls}</g>

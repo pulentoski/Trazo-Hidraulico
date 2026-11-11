@@ -7,6 +7,8 @@ import { ScaleBar } from "../components/ScaleBar";
 import type { BaseKind } from "../lib/mapConfig";
 import { baseOf, useMapConfig } from "../lib/mapConfig";
 import { nominatim } from "../lib/nominatim";
+import { parseCoordinates } from "../lib/coords";
+import { CoordBar } from "../components/Coordinates";
 import type { Camera, LngLat, Size } from "../lib/geo";
 import { fitBounds, unproject, zoomAt } from "../lib/geo";
 import type { MapType } from "../state/store";
@@ -33,14 +35,25 @@ const isSatellite = (t: MapType) => t === "satellite" || t === "hybrid";
 
 type Geocode = (q: string) => Promise<LngLat | null>;
 
-/** Búsqueda de dirección: Geocoder de Google o Nominatim (OpenStreetMap), según el mapa base. */
+/** Buscador del mapa: acepta coordenadas (lat/lon, GMS o UTM; huso 19S por defecto) y, con mapa base, direcciones
+ *  (Geocoder de Google o Nominatim de OpenStreetMap). Una coordenada centra el mapa y queda marcada. */
 function AddressSearch({ onLocate, geocode, failText }: { onLocate: (c: Camera) => void; geocode: Geocode | null; failText: string }) {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const toast = useEditor((s) => s.toast);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!geocode || !q.trim()) return;
+    if (!q.trim()) return;
+    const c = parseCoordinates(q);
+    if (c) {
+      onLocate({ center: c.pos, zoom: 18 });
+      useEditor.getState().set({ pin: c.pos });
+      return;
+    }
+    if (!geocode) {
+      toast("Sin mapa base solo se buscan coordenadas: lat, lon · grados-minutos-segundos · UTM (E N huso).", "error");
+      return;
+    }
     setBusy(true);
     try {
       const pos = await geocode(q.trim());
@@ -54,8 +67,9 @@ function AddressSearch({ onLocate, geocode, failText }: { onLocate: (c: Camera) 
   };
   return (
     <form className="map-search" onSubmit={submit}>
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar dirección…" aria-label="Buscar dirección" />
-      <button type="submit" disabled={busy || !geocode}>{busy ? "…" : "Ir"}</button>
+      <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar dirección o coordenadas"
+        placeholder={geocode === null ? "Buscar coordenadas…" : "Buscar dirección o coordenadas…"} />
+      <button type="submit" disabled={busy}>{busy ? "…" : "Ir"}</button>
     </form>
   );
 }
@@ -67,7 +81,7 @@ function GoogleAddressSearch({ onLocate }: { onLocate: (c: Camera) => void }) {
     const loc = results[0]?.geometry.location;
     return loc ? [loc.lng(), loc.lat()] : null;
   }), [geocoder]);
-  return <AddressSearch onLocate={onLocate} geocode={geocode}
+  return <AddressSearch onLocate={onLocate} geocode={geocode ?? (async () => { throw new Error("cargando"); })}
     failText="La búsqueda de direcciones no está disponible (revise la API de Geocoding de la key)." />;
 }
 
@@ -235,6 +249,7 @@ function MapLayers({ wanted, googleFailed, size, host }: { wanted: BaseKind; goo
       <div className="map-controls top-left">
         {base === "google" && <GoogleAddressSearch onLocate={setCamera} />}
         {base === "osm" && <OsmAddressSearch onLocate={setCamera} />}
+        {base === "blank" && <AddressSearch onLocate={setCamera} geocode={null} failText="" />}
         <QuickSearch />
         <LabelsControl />
       </div>
@@ -270,7 +285,22 @@ function MapLayers({ wanted, googleFailed, size, host }: { wanted: BaseKind; goo
       )}
       <ScaleBar camera={camera} />
       <HourSlider />
+      <CoordBar host={host} camera={camera} size={size} />
+      <MapNote />
     </>
+  );
+}
+
+/** Aviso del resaltado abierto desde «Gestión» (ver en el mapa), con botón para quitarlo. */
+function MapNote() {
+  const note = useEditor((s) => s.mapNote);
+  if (!note) return null;
+  return (
+    <div className="map-note" role="status">
+      <span>{note}</span>
+      <button type="button" className="ghost small" aria-label="Quitar resaltado"
+        onClick={() => useEditor.getState().set({ mapNote: null, heat: null, highlight: [] })}>✕</button>
+    </div>
   );
 }
 

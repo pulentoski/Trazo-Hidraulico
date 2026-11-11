@@ -8,6 +8,7 @@ import type {
   NetworkDocument, NetworkSave, NetworkSaveResult, OrthophotoOut, ProjectOut, QueryDef, QueryElement, QueryResult,
   SavedQueryOut, ScenarioResult, SearchHit, SectorsResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
   LeakEventIn, LeakEventOut, LeakImportResult, MapsStatus, SummaryResult, SummarySettings,
+  GFilters, GTab, GestionSettings, RecordKind, RecordSpec, RecordImportPreview, TabResult, MaintenanceLogOut,
 } from "./types";
 
 const client = createClient<paths>({ baseUrl: "" });
@@ -55,6 +56,14 @@ async function unwrap<T>(p: Promise<{ data?: unknown; error?: unknown; response:
   const { data, error, response } = await p;
   if (error !== undefined || !response.ok) fail(response.status, error);
   return data as T;
+}
+
+export interface GQuery { desde?: string; hasta?: string; sector?: string; ruta?: string }
+function qs(q: object): string {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== null && v !== "") p.set(k, String(v));
+  const t = p.toString();
+  return t ? `?${t}` : "";
 }
 
 export interface ImportOpts { sheet?: string | null; delete_missing?: boolean; utm_zone?: number | null; hemisphere?: string }
@@ -354,6 +363,49 @@ export const api = {
     unwrap<GcpFit>(client.POST("/api/projects/{project_id}/orthophotos/{ortho_id}/gcps", {
       params: { path: { project_id: id, ortho_id: oid } }, body: { gcps, apply, save },
     })),
+  // ── Gestión ──
+  gestionFilters: (id: string) => unwrap<GFilters>(client.GET("/api/projects/{project_id}/gestion/filters", { params: { path: { project_id: id } } })),
+  gestionSettings: (id: string) => unwrap<GestionSettings>(client.GET("/api/projects/{project_id}/gestion/settings", { params: { path: { project_id: id } } })),
+  saveGestionSettings: (id: string, body: GestionSettings) =>
+    unwrap<GestionSettings>(client.PUT("/api/projects/{project_id}/gestion/settings", { params: { path: { project_id: id } }, body })),
+  resetGestionSettings: (id: string) =>
+    unwrap<GestionSettings>(client.DELETE("/api/projects/{project_id}/gestion/settings", { params: { path: { project_id: id } } })),
+  gestionTab: (id: string, tab: GTab, q: GQuery) =>
+    unwrap<TabResult>(client.GET("/api/projects/{project_id}/gestion/tabs/{tab}", { params: { path: { project_id: id, tab }, query: q } })),
+  gestionTableUrl: (id: string, tab: GTab, key: string, fmt: "xlsx" | "csv", q: GQuery) =>
+    `/api/projects/${encodeURIComponent(id)}/gestion/tabs/${tab}/tables/${encodeURIComponent(key)}.${fmt}${qs(q)}`,
+  gestionReportUrl: (id: string, fmt: "html" | "xlsx", q: GQuery) => `/api/projects/${encodeURIComponent(id)}/gestion/report.${fmt}${qs(q)}`,
+  recordSpecs: (id: string) => unwrap<RecordSpec[]>(client.GET("/api/projects/{project_id}/gestion/records", { params: { path: { project_id: id } } })),
+  records: (id: string, kind: RecordKind, q: { desde?: string; hasta?: string } = {}) =>
+    unwrap<{ kind: RecordKind; rows: Record<string, unknown>[] }>(client.GET("/api/projects/{project_id}/gestion/records/{kind}", {
+      params: { path: { project_id: id, kind }, query: q } })),
+  addRecords: (id: string, kind: RecordKind, rows: Record<string, unknown>[]) =>
+    unwrap<{ rows: Record<string, unknown>[] }>(client.POST("/api/projects/{project_id}/gestion/records/{kind}", {
+      params: { path: { project_id: id, kind } }, body: rows })),
+  editRecord: (id: string, kind: RecordKind, rid: number, row: Record<string, unknown>) =>
+    unwrap<{ rows: Record<string, unknown>[] }>(client.PUT("/api/projects/{project_id}/gestion/records/{kind}/{rid}", {
+      params: { path: { project_id: id, kind, rid } }, body: row })),
+  deleteRecords: (id: string, kind: RecordKind, ids: number[]) =>
+    unwrap<unknown>(client.POST("/api/projects/{project_id}/gestion/records/{kind}/delete", { params: { path: { project_id: id, kind } }, body: { ids } })),
+  completeTask: (id: string, rid: number, body: { done_on: string; by?: string | null; note?: string | null }) =>
+    unwrap<{ rows: Record<string, unknown>[] }>(client.POST("/api/projects/{project_id}/gestion/records/mantenciones/{rid}/complete", {
+      params: { path: { project_id: id, rid } }, body })),
+  taskLogs: (id: string) => unwrap<MaintenanceLogOut[]>(client.GET("/api/projects/{project_id}/gestion/records/mantenciones/logs", {
+    params: { path: { project_id: id } } })),
+  recordTemplateUrl: (id: string, kind: RecordKind) => `/api/projects/${encodeURIComponent(id)}/gestion/records/${kind}/template.xlsx`,
+  recordExportUrl: (id: string, kind: RecordKind, fmt: "xlsx" | "csv") => `/api/projects/${encodeURIComponent(id)}/gestion/records/${kind}/export.${fmt}`,
+  importRecords: async (id: string, kind: RecordKind, file: File, apply: boolean, onlyValid = false): Promise<RecordImportPreview> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/gestion/records/${kind}/import?apply=${apply}&only_valid=${onlyValid}`,
+      { method: "POST", body: fd });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      if (res.status === 422 && body && typeof body === "object" && "rows" in body) return body as RecordImportPreview;
+      fail(res.status, body);
+    }
+    return body as RecordImportPreview;
+  },
   exportUrl: (id: string, version?: number) =>
     `/api/projects/${encodeURIComponent(id)}/export.inp${version ? `?version=${version}` : ""}`,
 };

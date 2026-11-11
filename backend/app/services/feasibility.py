@@ -209,3 +209,18 @@ def assess(session: Session, project: Project, req: FeasibilityRequest) -> tuple
         reasons=reasons,
     )
     return result, scen
+
+
+def record(session: Session, project: Project, req: FeasibilityRequest, result: FeasibilityResult) -> None:
+    """Historial de factibilidades (página «Gestión» → Planificación): cada evaluación queda registrada."""
+    from app.models import FeasibilityRecord
+    from app.services import auth
+
+    p = auth.current.get()
+    session.add(FeasibilityRecord(project_id=project.id, created_by=p.email if p and not p.system else None,
+                                  model_version=result.model_version, link_id=req.link,
+                                  location=list(result.location),
+                                  consumption_lps=req.consumption_lps, elevation=req.elevation, feasible=result.feasible,
+                                  pressure_new=result.pressure_new, bottleneck=result.bottleneck,
+                                  name=req.name or None))
+    session.commit()

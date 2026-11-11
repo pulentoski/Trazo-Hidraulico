@@ -10,4 +10,5 @@ export const PATHS = {
   settings: "/configuracion",
   about: "/acerca-de",
   project: (id: string) => `/proyecto/${encodeURIComponent(id)}`,
+  gestion: (id: string) => `/proyecto/${encodeURIComponent(id)}/gestion`,
 } as const;

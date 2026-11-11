@@ -1,6 +1,6 @@
 // Editor de un proyecto (/proyecto/:id).
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { BottomPanel } from "../components/BottomPanel";
 import { ClientDialog } from "../components/ClientDialog";
 import { ConfirmDelete, VersionsDialog } from "../components/Dialogs";
@@ -42,7 +42,34 @@ export function EditorPage() {
   const loaded = useEditor((s) => s.project?.id === id);
   const [failed, setFailed] = useState(false);
   const toolsCollapsed = useEditor((s) => s.toolsCollapsed);
+  const [params, setParams] = useSearchParams();
   useShortcuts();
+
+  // «Ver en el mapa» desde Gestión: encuadra y resalta los elementos (con intensidad si es un mapa de calor).
+  useEffect(() => {
+    if (!loaded || !id || params.get("ver") !== "gestion") return;
+    let ref: { type: string; ids: string[]; weights?: Record<string, number> | null; label?: string } | null = null;
+    try { ref = JSON.parse(sessionStorage.getItem(`trazo.ver.${id}`) ?? "null"); } catch { ref = null; }
+    const next = new URLSearchParams(params);
+    next.delete("ver");
+    setParams(next, { replace: true });
+    if (!ref?.ids?.length) return;
+    const st = useEditor.getState();
+    const pools: Record<string, Record<string, { id: string; uid: string }>> = {
+      node: st.net.nodes, link: st.net.links, client: st.net.clients, shutoff: st.net.shutoffs, hydrant: st.net.hydrants, well: st.net.wells,
+    };
+    const byId = new Map(Object.values(pools[ref.type] ?? {}).map((e) => [e.id, e.uid]));
+    const uids = ref.ids.map((x) => byId.get(x)).filter((u): u is string => !!u);
+    if (!uids.length) return;
+    let heat: Record<string, number> | null = null;
+    if (ref.weights) {
+      const max = Math.max(...Object.values(ref.weights), 1e-9);
+      heat = {};
+      for (const [k, w] of Object.entries(ref.weights)) { const u = byId.get(k); if (u) heat[u] = w / max; }
+    }
+    st.set({ highlight: heat ? [] : uids, heat, mapNote: `Gestión · ${ref.label ?? "elementos"}: ${uids.length} ${uids.length === 1 ? "elemento" : "elementos"}` });
+    st.frame(uids);
+  }, [loaded, id, params, setParams]);
 
   useEffect(() => {
     if (!id) return;

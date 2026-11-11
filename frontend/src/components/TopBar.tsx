@@ -121,6 +121,15 @@ export function TopBar() {
     else s.toast("No se pudieron guardar los últimos cambios; revise el estado antes de salir.", "error");
   };
 
+  const toGestion = async () => {
+    if (!s.project) return;
+    setLeaving(true);
+    const ok = await flushPending();
+    setLeaving(false);
+    if (ok) navigate(PATHS.gestion(s.project.id));
+    else s.toast("No se pudieron guardar los últimos cambios; revise el estado antes de salir.", "error");
+  };
+
   return (
     <header className="topbar">
       <button className="ghost back-btn" onClick={() => void back()} disabled={leaving} title="Volver al menú principal (guarda los cambios pendientes)">
@@ -139,6 +148,8 @@ export function TopBar() {
       <div className="tb-group" role="group" aria-label="Vista">
         <button onClick={() => s.set({ bottomTab: "summary", bottomCollapsed: false })} disabled={!s.project} title="Panel general del proyecto (Resumen)"
           aria-label="Resumen" className="summary-btn"><Icon.summary /><span>Resumen</span></button>
+        <button onClick={() => void toGestion()} disabled={!s.project || leaving} title="Gestión: indicadores, registros de operación e informe mensual (guarda los cambios pendientes)"
+          aria-label="Gestión" className="summary-btn"><Icon.table /><span>Gestión</span></button>
       </div>
       <div className="tb-group" role="group" aria-label="Simulación">
         <button className="primary" onClick={simulateNow} disabled={!s.project} title="Simular ahora (F5)"><Icon.play /><span>Simular</span></button>

@@ -90,6 +90,13 @@ export interface EditorState {
   cameraRequest: { points: LngLat[]; nonce: number; coverLeft?: number; maxZoom?: number } | null;
   /** Elementos resaltados brevemente tras «ir al elemento» (anillo animado). */
   flash: { uids: string[]; nonce: number } | null;
+  /** Punto marcado al buscar una coordenada. */
+  pin: LngLat | null;
+  /** Crear un elemento con la herramienta activa en una coordenada ingresada (en vez de un clic). */
+  placeRequest: { pos: LngLat; nonce: number } | null;
+  /** Intensidad por elemento (uid → 0–1) y rótulo del resaltado abierto desde «Gestión» (ver en el mapa). */
+  heat: Record<string, number> | null;
+  mapNote: string | null;
   toasts: Toast[];
   versionsOpen: boolean;
   /** Escenarios de llaves personalizados (se guardan con la versión). */
@@ -258,6 +265,10 @@ export const useEditor = create<EditorState>()((set, get) => ({
   pendingDelete: null,
   cameraRequest: null,
   flash: null,
+  pin: null,
+  placeRequest: null,
+  heat: null,
+  mapNote: null,
   toasts: [],
   versionsOpen: false,
   scenarios: [],
@@ -291,7 +302,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     past: [], future: [], selection: [], simStatus: "idle", simError: null, versionsOpen: false, pendingDelete: null,
     scenarios: [], designParams: null, scenarioView: null, clientDraft: null, feasibilityDraft: null,
     orthos: [], sectors: null, sectorFocus: null, highlight: [], mapPick: null, overlay: EMPTY_OVERLAY, gcpPreview: null,
-    cameraRequest: null, flash: null,
+    cameraRequest: null, flash: null, pin: null, placeRequest: null, heat: null, mapNote: null,
   }),
 
   commit: (fn, options) => {

@@ -273,7 +273,9 @@ def parse_table(sheet: Sheet, table: list[list[Any]], *, first_row: int = 1) -> 
 
 
 # Hojas de registros del proyecto (no son elementos del modelo): mediciones y eventos de pérdidas.
-AUX_SHEETS = {norm("Mediciones"), norm("Pérdidas")}
+# Hojas de registros del proyecto (no son elementos de la red): se importan aparte al crear el proyecto.
+AUX_SHEETS = {norm(x) for x in ("Mediciones", "Pérdidas", "Energía", "Cloro", "Cortes", "Reclamos", "Mantenciones",
+                                "Lecturas")}
 
 
 def read_workbook(content: bytes) -> tuple[dict[str, RawSheet], list[tuple[str, str]] | None, list[str]]:

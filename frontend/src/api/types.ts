@@ -96,3 +96,20 @@ export type LeakEventOut = S["LeakEventOut"];
 export type LeakImportResult = S["LeakImportResult"];
 export type PriceRow = S["PriceRow"];
 export type MapsStatus = S["MapsStatus"];
+
+// Página «Gestión»
+export type GTab = S["TabResult"]["tab"];
+export type TabResult = S["TabResult"];
+export type GIndicator = S["Indicator"];
+export type GChartData = S["Chart"];
+export type GTable = S["Table"];
+export type GMapRef = S["MapRef"];
+export type GFilters = S["Filters"];
+export type GestionSettings = S["GestionSettings"];
+export type GTarget = S["Target"];
+export type RecordKind = S["RecordSpec"]["kind"];
+export type RecordSpec = S["RecordSpec"];
+export type RecordFieldSpec = S["FieldSpec"];
+export type RecordImportPreview = S["RecordImportPreview"];
+export type MaintenanceLogOut = S["MaintenanceLogOut"];
+export type CapacityResult = S["CapacityResult"];

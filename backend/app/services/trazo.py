@@ -16,7 +16,7 @@ import zipfile
 from datetime import date, datetime, timezone
 from typing import IO
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.services.auth import new_project_org
@@ -84,7 +84,7 @@ def export(session: Session, project: Project, number: int | None, *, include_or
         "project": {"name": project.name, "description": project.description, "length_srid": project.length_srid,
                     "design_profile": profile.name if profile else None, "design_params": project.design_params,
                     "demand_projection": project.demand_projection, "monitoring": project.monitoring,
-                    "summary_settings": project.summary_settings},
+                    "summary_settings": project.summary_settings, "gestion_settings": project.gestion_settings},
         "version": {"number": version.number, "kind": version.kind, "label": version.label,
                     "content_sha256": version.content_sha256},
         "model": {"options": model.options.model_dump(mode="json"), "aux": model.aux,
@@ -95,6 +95,7 @@ def export(session: Session, project: Project, number: int | None, *, include_or
         "leak_events": [{"link_id": e.link_id, "event_date": e.event_date.isoformat(), "kind": e.kind,
                          "flow_lps": e.flow_lps, "note": e.note} for e in leaks],
         "orthophotos": ortho_docs,
+        **_gestion_doc(session, project),
     }
     target = dest or io.BytesIO()
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, allowZip64=True) as z:
@@ -192,9 +193,100 @@ def import_file(session: Session, filename: str, content: bytes | str, *,
             skipped += 1
     if skipped:
         notes.append(f"{skipped} eventos de pérdidas no válidos se omitieron.")
+    project.gestion_settings = _gestion_settings(p.get("gestion_settings"))
+    session.flush()
+    notes += _import_gestion(session, project, doc)
     session.commit()
     notes += _import_orthos(session, project, content, doc.get("orthophotos") or [])
     return project, version.number, notes
+
+
+def _gestion_doc(session: Session, project: Project) -> dict:
+    """Registros de la página «Gestión» (operación, mantenciones con su cumplimiento y factibilidades)."""
+    from app.models import FeasibilityRecord, MaintenanceLog
+    from app.services import gestion_records as rec
+
+    records: dict[str, list[dict]] = {}
+    task_index: dict[int, int] = {}
+    for kind, spec in rec.SPECS.items():
+        rows = sorted(rec.list_rows(session, project, kind), key=lambda r: r.id)
+        records[kind] = [{f.key: rec._json(getattr(r, f.key)) for f in spec.fields} for r in rows]
+        if kind == "mantenciones":
+            for i, r in enumerate(rows):
+                task_index[r.id] = i
+    logs = [{"task": task_index[x.task_id], "done_on": x.done_on.isoformat(),
+             "scheduled_for": x.scheduled_for.isoformat() if x.scheduled_for else None, "by": x.by, "note": x.note}
+            for x in session.scalars(select(MaintenanceLog).where(MaintenanceLog.project_id == project.id)
+                                     .order_by(MaintenanceLog.id)) if x.task_id in task_index]
+    feas = [{"created_at": f.created_at.isoformat(), "created_by": f.created_by, "model_version": f.model_version,
+             "link_id": f.link_id, "location": f.location, "consumption_lps": f.consumption_lps, "elevation": f.elevation,
+             "feasible": f.feasible, "pressure_new": f.pressure_new, "bottleneck": f.bottleneck, "name": f.name}
+            for f in session.scalars(select(FeasibilityRecord).where(FeasibilityRecord.project_id == project.id)
+                                     .order_by(FeasibilityRecord.id))]
+    return {"records": records, "maintenance_logs": logs, "feasibility_history": feas}
+
+
+def _gestion_settings(raw) -> dict | None:
+    if not raw:
+        return None
+    from app.schemas.gestion import GestionSettings
+
+    try:
+        return GestionSettings.model_validate(raw).model_dump(mode="json")
+    except ValueError:
+        return None
+
+
+def _import_gestion(session: Session, project: Project, doc: dict) -> list[str]:
+    from app.models import FeasibilityRecord, MaintenanceLog
+    from app.services import gestion_records as rec
+
+    notes: list[str] = []
+    ctx = rec.context(session, project)
+    tasks: dict[int, object] = {}
+    for kind, spec in rec.SPECS.items():
+        items = (doc.get("records") or {}).get(kind) or []
+        good: list[tuple[int, dict, dict]] = []
+        bad = 0
+        for i, raw in enumerate(items):
+            vals, err = rec.validate(spec, raw, ctx) if isinstance(raw, dict) else ({}, ["fila no válida"])
+            if err:
+                bad += 1
+            else:
+                good.append((i, vals, raw))
+        if good:
+            _, _, rows = rec.create(session, project, kind, [v for _, v, _ in good], None)
+            if kind == "mantenciones":
+                # Los cumplimientos vienen en «maintenance_logs»: se descarta el registrado al crear la tarea.
+                for r, (i, _, _raw) in zip(rows, good):
+                    tasks[i] = r
+                session.flush()
+                session.execute(delete(MaintenanceLog).where(MaintenanceLog.task_id.in_([r.id for r in rows])))
+        if bad:
+            notes.append(f"Registro «{spec.title}»: {bad} filas no válidas se omitieron.")
+    session.flush()
+    for x in doc.get("maintenance_logs") or []:
+        try:
+            t = tasks.get(int(x["task"]))
+            if t is None:
+                continue
+            session.add(MaintenanceLog(task_id=t.id, project_id=project.id, done_on=date.fromisoformat(x["done_on"]),
+                                       scheduled_for=date.fromisoformat(x["scheduled_for"]) if x.get("scheduled_for") else None,
+                                       by=(x.get("by") or None), note=(x.get("note") or None)))
+        except (ValueError, TypeError, KeyError):
+            continue
+    for f in doc.get("feasibility_history") or []:
+        try:
+            session.add(FeasibilityRecord(project_id=project.id, created_by=f.get("created_by"),
+                                          created_at=datetime.fromisoformat(f["created_at"]),
+                                          model_version=int(f["model_version"]), link_id=str(f["link_id"])[:31],
+                                          location=list(f.get("location") or []), consumption_lps=float(f["consumption_lps"]),
+                                          elevation=f.get("elevation"), feasible=bool(f["feasible"]),
+                                          pressure_new=f.get("pressure_new"), bottleneck=f.get("bottleneck"),
+                                          name=(str(f["name"])[:200] if f.get("name") else None)))
+        except (ValueError, TypeError, KeyError):
+            continue
+    return notes
 
 
 def _settings(raw) -> dict | None:

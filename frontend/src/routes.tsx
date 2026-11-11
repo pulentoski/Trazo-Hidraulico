@@ -5,6 +5,7 @@ import { api } from "./api/client";
 import { About } from "./pages/About";
 import { Invitation, Login, Recover } from "./pages/Auth";
 import { EditorPage } from "./pages/Editor";
+import { GestionPage } from "./pages/Gestion";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
 import { Organization } from "./pages/Organization";
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
           { path: PATHS.settings, element: <Settings /> },
           { path: PATHS.about, element: <About /> },
           { path: "/proyecto/:id", element: <EditorPage /> },
+          { path: "/proyecto/:id/gestion", element: <GestionPage /> },
         ],
       },
       { path: "*", element: <NotFound /> },

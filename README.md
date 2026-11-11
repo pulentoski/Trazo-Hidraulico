@@ -126,6 +126,17 @@ y alertas; cada número enlaza a su lista y al mapa; exporta a PDF (HTML imprimi
 organiza en secciones plegables (se recuerda por usuario) y la barra de herramientas y el panel inferior se pliegan
 para dar más espacio al mapa.
 
+## Gestión del APR y coordenadas
+
+Detalle en [docs/gestion.md](docs/gestion.md): página **Gestión** por proyecto (`/proyecto/:id/gestion`, botón en la
+barra superior del editor y en cada proyecto del inicio) con 7 pestañas (operación, clientes y consumo, pérdidas,
+activos y mantenimiento, cumplimiento, planificación y equipo), filtros de período, sector y ruta, indicadores con
+variación y metas configurables («no verificado» hasta revisarlas), gráficos, tablas exportables (Excel/CSV), «ver en
+el mapa» e informe mensual (HTML imprimible y Excel). Registros nuevos: energía, cloro, cortes, reclamos,
+mantenciones/tareas y lecturas de clientes (formulario, plantilla, importación con vista previa y exportación; viajan
+en el `.trazo`). En el mapa: búsqueda y creación por coordenadas (lat/lon, grados-minutos-segundos o UTM, huso 19S por
+defecto), edición de las coordenadas de un elemento y barra con la coordenada del cursor.
+
 ## Publicar en un dominio con HTTPS
 
 Lo más simple es el instalador para Ubuntu 22.04/24.04 (`deploy/instalar.sh`); la guía completa (instancia

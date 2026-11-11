@@ -186,6 +186,7 @@ function ProjectCard({ p, onDelete }: { p: ProjectOut; onDelete: (p: ProjectOut)
       ) : (
         <div className="project-actions">
           <button className="small primary" onClick={() => navigate(PATHS.project(p.id))}>Abrir</button>
+          <button className="small" onClick={() => navigate(PATHS.gestion(p.id))} title="Indicadores, registros de operación e informe mensual">Gestión</button>
           <div className="card-menu menu-wrap">
             <button className="small ghost" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-label={`Más acciones de «${p.name}»`} title="Más acciones">⋯</button>
             {menu && (

@@ -186,6 +186,41 @@ def _import_records(session: Session, project: Project, content: bytes, links: s
         elif items:
             summary.add_leaks(session, project, items)
             notes.append(f"Hoja «Pérdidas»: {len(items)} eventos registrados.")
+    notes += _import_gestion_sheets(session, project, content)
+    return notes
+
+
+def _import_gestion_sheets(session: Session, project: Project, content: bytes) -> list[str]:
+    """Hojas de registros de la página «Gestión» (Energía, Cloro, Cortes, Reclamos, Mantenciones, Lecturas)."""
+    from openpyxl import load_workbook
+
+    from app.services import gestion_records as rec
+
+    wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    by_name = {norm(ws.title): ws for ws in wb.worksheets}
+    tables = {kind: [list(r) for r in by_name[norm(spec.sheet)].iter_rows(values_only=True)]
+              for kind, spec in rec.SPECS.items() if norm(spec.sheet) in by_name}
+    wb.close()
+    if not tables:
+        return []
+    notes: list[str] = []
+    ctx = rec.context(session, project)
+    for kind, table in tables.items():
+        spec = rec.SPECS[kind]
+        try:
+            parsed = rec.parse(spec, table, ctx)
+        except ValueError as exc:
+            notes.append(f"Hoja «{spec.sheet}» no importada: {exc}")
+            continue
+        good = [vals for _, vals, err in parsed if not err]
+        bad = [(n, err) for n, _, err in parsed if err]
+        if good:
+            rec.create(session, project, kind, good, None)
+            notes.append(f"Hoja «{spec.sheet}»: {len(good)} filas registradas.")
+        if bad:
+            n, err = bad[0]
+            notes.append(f"Hoja «{spec.sheet}»: {len(bad)} filas con errores se omitieron (fila {n}: {err[0]}).")
+    session.commit()
     return notes
 
 

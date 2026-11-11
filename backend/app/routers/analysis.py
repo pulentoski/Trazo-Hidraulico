@@ -51,7 +51,9 @@ def compare_scenarios(project_id: uuid.UUID, body: CompareRequest, session: Sess
              summary="Factibilidad de un nuevo cliente (no modifica el proyecto)")
 def assess_feasibility(project_id: uuid.UUID, body: FeasibilityRequest, session: SessionDep) -> FeasibilityResult:
     project = get_project_or_404(session, project_id)
-    return feasibility.assess(session, project, body)[0]
+    result = feasibility.assess(session, project, body)[0]
+    feasibility.record(session, project, body, result)
+    return result
 
 
 @router.post("/feasibility/report", response_class=Response, responses={200: {"content": {"text/html": {}}}, **BLOCKED},

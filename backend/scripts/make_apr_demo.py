@@ -10,6 +10,7 @@ Uso (dentro de la imagen de la API):  python scripts/make_apr_demo.py /ruta/apr-
 from __future__ import annotations
 
 import json
+import math
 import sys
 
 from pyproj import Transformer
@@ -153,36 +154,177 @@ def rows() -> dict[str, list[Row]]:
     return out
 
 
-def records(data: bytes) -> bytes:
-    """Agrega las hojas de registros del proyecto: lecturas de producción (pozo y macromedidor) y pérdidas."""
-    import io
-    from datetime import datetime, timedelta
+# Doce meses de registros de operación (noviembre de 2025 a octubre de 2026), deterministas.
+MONTHS = [(2025, 11), (2025, 12)] + [(2026, m) for m in range(1, 11)]
+SEASON = {1: 1.22, 2: 1.2, 3: 1.08, 4: 0.97, 5: 0.9, 6: 0.85, 7: 0.84, 8: 0.87, 9: 0.94, 10: 1.0, 11: 1.07, 12: 1.17}
 
-    from openpyxl import load_workbook
+
+def _days():
+    from datetime import date, timedelta
+
+    d = date(2025, 11, 1)
+    while d <= date(2026, 10, 31):
+        yield d
+        d += timedelta(days=1)
+
+
+def _wave(k: int) -> float:
+    """Variación determinista en [-1, 1] (sin azar: la planilla es reproducible)."""
+    import math
+
+    return math.sin(k * 12.9898) * 0.6 + math.sin(k * 4.1414) * 0.4
+
+
+def _sheet(wb, title: str, header: list[str], helps: list[str], rows: list[list]):
     from openpyxl.styles import Font
 
+    ws = wb.create_sheet(title)
+    ws.append(header)
+    ws.append(helps)
+    for r in rows:
+        ws.append(r)
+    for c in range(1, ws.max_column + 1):
+        ws.cell(1, c).font = Font(bold=True)
+        ws.cell(2, c).font = Font(italic=True, color="666666")
+    return ws
+
+
+def records(data: bytes) -> bytes:
+    """Agrega las hojas de registros del proyecto: mediciones (producción, presión y nivel), pérdidas y los registros
+    de la página «Gestión» (energía, cloro, cortes, reclamos, mantenciones y lecturas de clientes)."""
+    import io
+    from datetime import date, datetime, timedelta
+
+    from openpyxl import load_workbook
+
     wb = load_workbook(io.BytesIO(data))
-    ws = wb.create_sheet("Mediciones")
-    ws.append(["Elemento", "ID", "Medición", "Fecha y hora", "Valor", "Nota"])
-    ws.append(["nudo, tramo, cliente o pozo", "ID del elemento", "medidor (m³), presión (m) o nivel (m)",
-               "AAAA-MM-DD HH:MM", "lectura", "opcional"])
-    t0 = datetime(2026, 10, 1, 8, 0)
-    well, macro = 1373232.8, 48211.0
-    for d in range(31):  # lecturas diarias de octubre: producción ≈ 26,9 m³/día (pozo) y 3,1 m³/día (zona alta)
-        t = (t0 + timedelta(days=d)).strftime("%Y-%m-%d %H:%M")
-        ws.append(["pozo", "PZ-1", "medidor", t, round(well, 1), "lectura inicial" if d == 0 else None])
-        ws.append(["tramo", "P-12", "medidor", t, round(macro, 2), "macromedidor zona alta" if d == 0 else None])
-        well += 26.9 + (1.4 if d % 7 in (5, 6) else -0.6)
-        macro += 3.1 + (0.2 if d % 7 in (5, 6) else -0.08)
-    lk = wb.create_sheet("Pérdidas")
-    lk.append(["Tramo", "Fecha", "Tipo", "Caudal estimado", "Observación"])
-    lk.append(["ID del tramo", "AAAA-MM-DD", "fuga, rotura o reparación", "L/s (opcional)", "texto libre"])
-    for day, link, kind, q, note in LEAKS:
-        lk.append([link, day, kind, q, note])
-    for sh in (ws, lk):
-        for c in range(1, sh.max_column + 1):
-            sh.cell(1, c).font = Font(bold=True)
-            sh.cell(2, c).font = Font(italic=True, color="666666")
+    meas = []
+    well, macro = 1364010.0, 47120.0
+    for k, d in enumerate(_days()):  # lecturas diarias: producción ≈ 26,9 m³/día (pozo) y 3,1 m³/día (zona alta)
+        t = f"{d.isoformat()} 08:00"
+        meas.append(["pozo", "PZ-1", "medidor", t, round(well, 1), "lectura inicial" if k == 0 else None])
+        meas.append(["tramo", "P-12", "medidor", t, round(macro, 2), "macromedidor zona alta" if k == 0 else None])
+        f = SEASON[d.month]
+        well += 26.9 * f + (1.4 if d.weekday() in (5, 6) else -0.6)
+        macro += 3.1 * f + (0.2 if d.weekday() in (5, 6) else -0.08)
+    for y, m in MONTHS:  # presión y nivel horarios, 3 días por mes (registrador portátil)
+        for day in (5, 15, 25):
+            for h in range(24):
+                t = f"{y:04d}-{m:02d}-{day:02d} {h:02d}:00"
+                q = MOD[h] * SEASON[m]
+                kk = y * 1000 + m * 40 + day + h
+                meas.append(["nudo", "J-5", "presión", t, round(33.5 - 2.6 * q + 0.4 * _wave(kk), 2), None])
+                meas.append(["nudo", "J-11", "presión", t, round(23.0 - 4.2 * q + 0.5 * _wave(kk + 7), 2), None])
+                level = 2.5 + 1.1 * math.cos((h - 4) / 24 * 2 * math.pi) - 0.25 * (SEASON[m] - 1) * 4 + 0.08 * _wave(kk + 3)
+                meas.append(["nudo", "E-1", "nivel", t, round(min(3.95, max(0.4, level)), 2), None])
+    _sheet(wb, "Mediciones", ["Elemento", "ID", "Medición", "Fecha y hora", "Valor", "Nota"],
+           ["nudo, tramo, cliente o pozo", "ID del elemento", "medidor (m³), presión (m) o nivel (m)", "AAAA-MM-DD HH:MM",
+            "lectura", "opcional"], meas)
+    _sheet(wb, "Pérdidas", ["Tramo", "Fecha", "Tipo", "Caudal estimado", "Observación"],
+           ["ID del tramo", "AAAA-MM-DD", "fuga, rotura o reparación", "L/s (opcional)", "texto libre"],
+           [[link, day, kind, q, note] for day, link, kind, q, note in LEAKS])
+
+    # Energía: bomba B-1 (≈ 1,1 kW medidos en el tablero), horas según la temporada.
+    energy = []
+    for k, d in enumerate(_days()):
+        hours = round(min(20.0, 13.4 * SEASON[d.month] + 0.5 * _wave(k)), 1)
+        energy.append([d.isoformat(), "B-1", round(hours * 1.1 * (1 + 0.03 * _wave(k + 11)), 2), hours, None, None])
+    _sheet(wb, "Energía", ["Fecha", "Equipo", "Energía", "Horas de funcionamiento", "Volumen bombeado", "Observación"],
+           ["AAAA-MM-DD", "ID de la bomba", "kWh", "h", "m³ (vacío = medidor del pozo)", "(opcional)"], energy)
+
+    # Cloro residual libre: semanal en 4 puntos; algunas mediciones fuera de rango.
+    chlorine = []
+    points = ["E-1", "J-5", "J-9", "J-11"]
+    d = date(2025, 11, 3)
+    k = 0
+    while d <= date(2026, 10, 31):
+        for i, pt in enumerate(points):
+            k += 1
+            v = (1.1 - 0.22 * i) + 0.15 * _wave(k)
+            if k % 37 == 0:
+                v = 0.12  # bajo el mínimo: falla del dosificador
+            chlorine.append([f"{d.isoformat()} {9 + i:02d}:30", pt, round(max(0.05, v), 2),
+                             "Dosificador revisado" if k % 37 == 0 else None])
+        d += timedelta(days=7)
+    _sheet(wb, "Cloro", ["Fecha y hora", "Punto", "Cloro libre", "Observación"],
+           ["AAAA-MM-DD HH:MM", "ID del elemento o punto de muestreo", "mg/L", "(opcional)"], chlorine)
+
+    # Cortes: uno programado al mes en un cuartel y los de emergencia por roturas (tramo).
+    cuts = []
+    for i, (y, m) in enumerate(MONTHS):
+        start = datetime(y, m, 10 + i % 8, 9, 0)
+        cuts.append(["programado", start.strftime("%Y-%m-%d %H:%M"), (start + timedelta(hours=2 + i % 4)).strftime("%Y-%m-%d %H:%M"),
+                     f"C-0{1 + i % 4}", None, None, "Mantención de válvulas y lavado de red"])
+    for day, link, kind, _q, note in LEAKS:
+        if kind == "rotura":
+            st = datetime.fromisoformat(day + " 07:30")
+            cuts.append(["emergencia", st.strftime("%Y-%m-%d %H:%M"), (st + timedelta(hours=6)).strftime("%Y-%m-%d %H:%M"),
+                         None, link, None, note])
+    _sheet(wb, "Cortes", ["Tipo", "Inicio", "Fin", "Cuartel", "Tramo", "Clientes afectados", "Motivo"],
+           ["programado / emergencia", "AAAA-MM-DD HH:MM", "AAAA-MM-DD HH:MM", "C-01…", "ID del tramo",
+            "vacío = se calculan con los cuarteles", "(opcional)"], cuts)
+
+    # Reclamos: 2 a 4 por mes; los del último mes, algunos abiertos.
+    kinds = ["presion", "calidad", "corte", "fuga", "facturacion", "medidor"]
+    complaints = []
+    n = 0
+    for i, (y, m) in enumerate(MONTHS):
+        for j in range(2 + (i % 3)):
+            n += 1
+            rec_at = datetime(y, m, 3 + 8 * j, 10 + j, 15)
+            kind = kinds[(i + j) % len(kinds)]
+            open_ = (y, m) == (2026, 10) and j > 0
+            resp = None if open_ else (rec_at + timedelta(hours=4 + 9 * ((n * 7) % 9))).strftime("%Y-%m-%d %H:%M")
+            complaints.append([rec_at.strftime("%Y-%m-%d %H:%M"), str(1000 + 1 + (n * 7) % 30), kind,
+                               "abierto" if open_ and j == 1 else "en proceso" if open_ else "cerrado", resp,
+                               {"presion": "Baja presión en la tarde", "calidad": "Agua con olor a cloro",
+                                "corte": "Sin agua sin aviso", "fuga": "Agua en la vereda", "facturacion": "Consumo alto",
+                                "medidor": "Medidor empañado"}[kind]])
+    _sheet(wb, "Reclamos", ["Fecha", "Cliente", "Tipo", "Estado", "Respuesta", "Detalle"],
+           ["AAAA-MM-DD HH:MM", "ID o N° de cliente", "presion / calidad / corte / fuga / facturacion / medidor / otro",
+            "abierto / en proceso / cerrado", "AAAA-MM-DD HH:MM", "(opcional)"], complaints)
+
+    # Mantenciones periódicas (algunas atrasadas al 11-11-2026) y tareas únicas cumplidas durante el año.
+    maint = [
+        ["ejercitar valvulas", "V-1", "Abrir y cerrar 3 vueltas", 180, "2026-12-15", "Juan Pérez", None, "2026-06-15"],
+        ["ejercitar valvulas", "V-2", "Abrir y cerrar 3 vueltas", 180, "2026-10-20", "Juan Pérez", None, "2026-04-20"],
+        ["ejercitar valvulas", "V-3", "Abrir y cerrar 3 vueltas", 180, "2027-01-10", "Juan Pérez", None, "2026-07-10"],
+        ["ejercitar valvulas", "V-4", "Abrir y cerrar 3 vueltas", 180, "2026-11-30", "Juan Pérez", None, "2026-05-30"],
+        ["probar grifos", "G-1", "Prueba de caudal y presión", 90, "2026-11-05", "Comité de emergencia", None, "2026-08-05"],
+        ["lavar estanque", "E-1", "Vaciado, lavado y desinfección", 180, "2027-03-01", "Juan Pérez", None, "2026-09-01"],
+        ["revisar bomba", "B-1", "Corriente, vibración y empaquetadura", 30, "2026-11-20", "Técnico eléctrico", None, "2026-10-20"],
+        ["cloracion", "E-1", "Revisar dosificador y stock de hipoclorito", 7, "2026-11-02", "Operador", None, "2026-10-26"],
+        ["reparacion", "P-13", "Reemplazar tramo PVC 63 de 1979", None, "2026-12-01", "Contratista", None, None],
+        ["reparacion", "P-08", "Cambiar uniones con filtración", None, "2026-10-15", "Operador", None, None],
+    ]
+    for i, (day, link, kind, _q, note) in enumerate(LEAKS):
+        if kind == "reparacion" or kind == "rotura":
+            maint.append(["reparacion", link, note or "Reparación de fuga", None, day, "Operador", day, None])
+    for i, (y, m) in enumerate(MONTHS[:-1]):  # revisión mensual de la bomba (historial de cumplimiento)
+        maint.append(["revisar bomba", "B-1", f"Revisión mensual {m:02d}/{y}", None, f"{y:04d}-{m:02d}-20", "Técnico eléctrico",
+                      f"{y:04d}-{m:02d}-{20 + i % 3:02d}", None])
+    _sheet(wb, "Mantenciones", ["Tipo", "Elemento", "Descripción", "Frecuencia", "Próxima fecha", "Responsable", "Hecha el",
+                                "Última vez"],
+           ["ejercitar valvulas / probar grifos / lavar estanque / revisar bomba / cloracion / reparacion / otra",
+            "ID del elemento", "(opcional)", "días (vacío = tarea única)", "AAAA-MM-DD", "(opcional)",
+            "tareas únicas (opcional)", "(opcional)"], maint)
+
+    # Lecturas mensuales de clientes (N° cliente): consumo del catastro con temporada; altas y bajas.
+    reads = []
+    for k, node in enumerate(CLIENT_NODES, start=1):
+        status = "suspendido" if k == 29 else "proyectado" if k in PROJECTED else "activo"
+        if status == "proyectado":
+            continue
+        ctype = "comercial" if k == 5 else "industrial" if k == 17 else "publico" if k == 11 else "residencial"
+        base = 120.0 if ctype == "industrial" else 18.0 if ctype == "residencial" else 45.0
+        for i, (y, m) in enumerate(MONTHS):
+            if k == 28 and (y, m) < (2026, 2):
+                continue  # alta en febrero de 2026
+            if k == 29 and (y, m) > (2026, 4):
+                continue  # suspendido desde mayo de 2026
+            v = base * SEASON[m] * (0.8 + 0.08 * (k % 6)) * (1 + 0.06 * _wave(k * 13 + i))
+            reads.append([str(1000 + k), f"{y:04d}-{m:02d}", round(v, 1)])
+    _sheet(wb, "Lecturas", ["N° cliente", "Período", "Consumo"], ["ID o N° de cliente", "AAAA-MM", "m³ del mes"], reads)
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

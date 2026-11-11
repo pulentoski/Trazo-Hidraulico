@@ -1,5 +1,7 @@
 import type { ReactElement } from "react";
+import { useState } from "react";
 import type { Tool } from "../state/store";
+import { CoordInputDialog, POINT_TOOLS } from "./Coordinates";
 import { useEditor, writePref } from "../state/store";
 import { Icon } from "./Icons";
 
@@ -25,6 +27,8 @@ export function ToolPanel() {
   const setTool = useEditor((s) => s.setTool);
   const current = TOOLS.find((t) => t.id === tool);
   const collapsed = useEditor((s) => s.toolsCollapsed);
+  const readOnly = useEditor((s) => s.readOnly);
+  const [coordOpen, setCoordOpen] = useState(false);
   const fold = () => { useEditor.getState().set({ toolsCollapsed: !collapsed }); writePref("toolsCollapsed", !collapsed); };
   return (
     <aside className={`tools ${collapsed ? "collapsed" : ""}`} aria-label="Herramientas">
@@ -42,6 +46,14 @@ export function ToolPanel() {
         </button>
       ))}
       {!collapsed && <div className="tool-hint">{current?.hint}</div>}
+      {current && POINT_TOOLS.has(current.id) && !readOnly && (
+        <button className="coord-tool" onClick={() => setCoordOpen(true)} title={`${current.label}: crear en una coordenada (lat/lon, GMS o UTM)`}
+          aria-label={`Ingresar coordenadas (${current.label})`}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v3M8 12v3M1 8h3M12 8h3" /><circle cx="8" cy="8" r="3.5" /></svg>
+          <span>Ingresar coordenadas</span>
+        </button>
+      )}
+      {coordOpen && current && <CoordInputDialog tool={current.id} label={current.label} onClose={() => setCoordOpen(false)} />}
     </aside>
   );
 }

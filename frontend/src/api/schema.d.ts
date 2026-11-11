@@ -864,6 +864,281 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{project_id}/gestion/capacity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capacidad remanente: clientes nuevos que caben manteniendo la presión mínima */
+        get: operations["capacity_api_projects__project_id__gestion_capacity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sectores, rutas y rango de fechas con datos */
+        get: operations["get_filters_api_projects__project_id__gestion_filters_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Especificación de los registros (campos y ayudas) */
+        get: operations["record_specs_api_projects__project_id__gestion_records_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records/mantenciones/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Registro de cumplimiento */
+        get: operations["maintenance_logs_api_projects__project_id__gestion_records_mantenciones_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records/mantenciones/{rid}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cumplir una mantención */
+        post: operations["complete_task_api_projects__project_id__gestion_records_mantenciones__rid__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Filas de un registro */
+        get: operations["list_records_api_projects__project_id__gestion_records__kind__get"];
+        put?: never;
+        /** Agregar filas a un registro */
+        post: operations["add_records_api_projects__project_id__gestion_records__kind__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records/{kind}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Eliminar filas */
+        post: operations["delete_records_api_projects__project_id__gestion_records__kind__delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records/{kind}/export.{fmt}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar el registro (Excel o CSV) */
+        get: operations["record_export_api_projects__project_id__gestion_records__kind__export__fmt__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records/{kind}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Importar desde Excel o CSV: vista previa o aplicación */
+        post: operations["import_records_api_projects__project_id__gestion_records__kind__import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records/{kind}/template.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plantilla Excel del registro */
+        get: operations["record_template_api_projects__project_id__gestion_records__kind__template_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/records/{kind}/{rid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Editar una fila */
+        put: operations["edit_record_api_projects__project_id__gestion_records__kind___rid__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/report.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Informe mensual imprimible (HTML) */
+        get: operations["report_html_api_projects__project_id__gestion_report_html_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/report.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Informe mensual (Excel) */
+        get: operations["report_xlsx_api_projects__project_id__gestion_report_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Metas e indicadores del proyecto */
+        get: operations["get_settings_api_projects__project_id__gestion_settings_get"];
+        /** Editar metas e indicadores */
+        put: operations["put_settings_api_projects__project_id__gestion_settings_put"];
+        post?: never;
+        /** Volver a las metas sugeridas */
+        delete: operations["reset_settings_api_projects__project_id__gestion_settings_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/tabs/{tab}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Indicadores, gráficos y tablas de una pestaña */
+        get: operations["get_tab_api_projects__project_id__gestion_tabs__tab__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{project_id}/gestion/tabs/{tab}/tables/{key}.{fmt}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar una tabla de detalle (Excel o CSV) */
+        get: operations["export_table_api_projects__project_id__gestion_tabs__tab__tables__key___fmt__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{project_id}/hydrants/fire": {
         parameters: {
             query?: never;
@@ -1940,6 +2215,11 @@ export interface components {
             /** Name */
             name?: string | null;
         };
+        /** Body_import_records_api_projects__project_id__gestion_records__kind__import_post */
+        Body_import_records_api_projects__project_id__gestion_records__kind__import_post: {
+            /** File */
+            file: string;
+        };
         /** Body_import_trazo_api_projects_import_trazo_post */
         Body_import_trazo_api_projects_import_trazo_post: {
             /**
@@ -1973,6 +2253,60 @@ export interface components {
              * @description Archivo world (.jgw/.pgw/.wld)
              */
             world?: string | null;
+        };
+        /** CapacityResult */
+        CapacityResult: {
+            /**
+             * Bottleneck Link
+             * @description Tramo con mayor pérdida unitaria en ese momento
+             */
+            bottleneck_link?: string | null;
+            /**
+             * Bottleneck Node
+             * @description Primer nudo que baja de la presión mínima
+             */
+            bottleneck_node?: string | null;
+            /** Bottleneck Pressure */
+            bottleneck_pressure?: number | null;
+            /** By Node */
+            by_node: {
+                [key: string]: number;
+            };
+            /**
+             * Capacity
+             * @description Clientes nuevos que caben manteniendo la presión mínima
+             */
+            capacity: number;
+            /**
+             * Limited By Cap
+             * @description Se alcanzó el tope de clientes a probar sin violar la presión mínima
+             */
+            limited_by_cap: boolean;
+            /** Model Version */
+            model_version: number;
+            /** Note */
+            note: string;
+            /** Pmin */
+            pmin: number;
+            /** Simulations */
+            simulations: number;
+            /** Steps */
+            steps: components["schemas"]["CapacityStep"][];
+            /** Typical Lps */
+            typical_lps: number;
+            /** Typical M3 Month */
+            typical_m3_month: number;
+        };
+        /** CapacityStep */
+        CapacityStep: {
+            /** Clients */
+            clients: number;
+            /** Min Node */
+            min_node: string;
+            /** Min Pressure */
+            min_pressure: number;
+            /** Node */
+            node: string;
         };
         /** CatalogPipeOut */
         CatalogPipeOut: {
@@ -2021,6 +2355,32 @@ export interface components {
              * @description Nombre de la hoja
              */
             sheet: string;
+        };
+        /** Chart */
+        Chart: {
+            /**
+             * Reference
+             * @description Línea de referencia (p. ej. caudal autorizado)
+             */
+            reference?: number | null;
+            /** Reference Label */
+            reference_label?: string | null;
+            /** Series */
+            series: components["schemas"]["Series"][];
+            /**
+             * Stacked
+             * @default false
+             */
+            stacked: boolean;
+            /** Title */
+            title: string;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+            /** X */
+            x: string[];
         };
         /** ClientFeature */
         ClientFeature: {
@@ -2206,6 +2566,20 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** Column */
+        Column: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /**
+             * Num
+             * @default false
+             */
+            num: boolean;
+            /** Unit */
+            unit?: string | null;
+        };
         /** ComparePoint */
         ComparePoint: {
             /** Diff */
@@ -2296,6 +2670,18 @@ export interface components {
             tolerance: number;
             /** Unit */
             unit: string;
+        };
+        /** CompleteTask */
+        CompleteTask: {
+            /** By */
+            by?: string | null;
+            /**
+             * Done On
+             * Format: date
+             */
+            done_on: string;
+            /** Note */
+            note?: string | null;
         };
         /** Condition */
         Condition: {
@@ -2740,6 +3126,21 @@ export interface components {
              */
             type: "node" | "link" | "client" | "shutoff" | "hydrant" | "well";
         };
+        /** EmptyState */
+        EmptyState: {
+            /**
+             * How
+             * @description Cómo cargarlo (manual o planilla)
+             */
+            how: string;
+            /**
+             * Missing
+             * @description Qué dato falta
+             */
+            missing: string;
+            /** Record */
+            record?: ("energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas") | null;
+        };
         /** EngineInfo */
         EngineInfo: {
             /** En Getversion */
@@ -2888,6 +3289,42 @@ export interface components {
             /** Old */
             old?: string | number | boolean | null;
         };
+        /** FieldSpec */
+        FieldSpec: {
+            /** Choices */
+            choices?: string[];
+            /** Element Types */
+            element_types?: string[];
+            /**
+             * Help
+             * @default
+             */
+            help: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Required */
+            required: boolean;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "date" | "datetime" | "month" | "float" | "int" | "str" | "choice" | "element";
+        };
+        /** Filters */
+        Filters: {
+            /** Data End */
+            data_end: string | null;
+            /** Data Start */
+            data_start: string | null;
+            /** Model Version */
+            model_version: number | null;
+            /** Routes */
+            routes: string[];
+            /** Sectors */
+            sectors: string[];
+        };
         /** FireResult */
         FireResult: {
             /** Hydrants */
@@ -2994,6 +3431,57 @@ export interface components {
              * @default false
              */
             save: boolean;
+        };
+        /** GestionSettings */
+        GestionSettings: {
+            /**
+             * Capacity Max Clients
+             * @description Tope de clientes a probar en la capacidad remanente
+             * @default 400
+             */
+            capacity_max_clients: number;
+            /**
+             * Chlorine Max
+             * @description Cloro residual libre máximo (mg/L)
+             * @default 2
+             */
+            chlorine_max: number;
+            /**
+             * Chlorine Min
+             * @description Cloro residual libre mínimo (mg/L)
+             * @default 0.2
+             */
+            chlorine_min: number;
+            /**
+             * Chlorine Verified
+             * @default false
+             */
+            chlorine_verified: boolean;
+            /**
+             * Tank Reserve Pct
+             * @description Volumen de regulación exigido (% del consumo diario)
+             * @default 25
+             */
+            tank_reserve_pct: number;
+            /** Targets */
+            targets?: {
+                [key: string]: components["schemas"]["Target"];
+            };
+            /**
+             * Typical Client M3 Month
+             * @description Consumo típico de un cliente nuevo (m³/mes). Vacío = promedio de los clientes residenciales activos
+             */
+            typical_client_m3_month?: number | null;
+            /**
+             * Water Right Lps
+             * @description Derecho de agua (L/s). Vacío = caudal autorizado del pozo
+             */
+            water_right_lps?: number | null;
+            /**
+             * Water Right M3 Year
+             * @description Volumen anual del derecho (m³). Vacío = derecho × año
+             */
+            water_right_m3_year?: number | null;
         };
         /** Group */
         Group: {
@@ -3272,6 +3760,38 @@ export interface components {
             project: components["schemas"]["ProjectOut"];
             /** Version */
             version: number;
+        };
+        /** Indicator */
+        Indicator: {
+            chart?: components["schemas"]["Chart"] | null;
+            /** Delta Pct */
+            delta_pct?: number | null;
+            empty?: components["schemas"]["EmptyState"] | null;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            map?: components["schemas"]["MapRef"] | null;
+            /** Note */
+            note?: string | null;
+            /** Previous */
+            previous?: number | null;
+            /** Status */
+            status?: ("bueno" | "regular" | "malo") | null;
+            /**
+             * Table
+             * @description Clave de la tabla de detalle
+             */
+            table?: string | null;
+            /**
+             * Target Verified
+             * @default false
+             */
+            target_verified: boolean;
+            /** Unit */
+            unit: string;
+            /** Value */
+            value: number | null;
         };
         /** InvitationAccept */
         InvitationAccept: {
@@ -3715,6 +4235,29 @@ export interface components {
             prices_verified: boolean;
             unknown_year: components["schemas"]["ElementList"];
         };
+        /** MaintenanceLogOut */
+        MaintenanceLogOut: {
+            /** By */
+            by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Done On
+             * Format: date
+             */
+            done_on: string;
+            /** Id */
+            id: number;
+            /** Note */
+            note: string | null;
+            /** Scheduled For */
+            scheduled_for: string | null;
+            /** Task Id */
+            task_id: number;
+        };
         /** MapLoadOut */
         MapLoadOut: {
             /** Allowed */
@@ -3723,6 +4266,23 @@ export interface components {
             count: number;
             /** Limit */
             limit: number | null;
+        };
+        /** MapRef */
+        MapRef: {
+            /** Ids */
+            ids: string[];
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "node" | "link" | "client" | "shutoff" | "hydrant" | "well";
+            /**
+             * Weights
+             * @description Intensidad por elemento (mapa de calor)
+             */
+            weights?: {
+                [key: string]: number;
+            } | null;
         };
         /** MapsConfig */
         MapsConfig: {
@@ -4428,6 +4988,31 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** Period */
+        Period: {
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Months */
+            months: string[];
+            /**
+             * Prev End
+             * Format: date
+             */
+            prev_end: string;
+            /**
+             * Prev Start
+             * Format: date
+             */
+            prev_start: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+        };
         /** PipeClients */
         PipeClients: {
             /** Clients */
@@ -4506,6 +5091,17 @@ export interface components {
             /** Pmin */
             pmin: number;
             unsupplied: components["schemas"]["ElementList"];
+        };
+        /** PreviewRow */
+        PreviewRow: {
+            /** Errors */
+            errors: string[];
+            /** Row */
+            row: number;
+            /** Values */
+            values: {
+                [key: string]: unknown;
+            };
         };
         /** PriceRow */
         PriceRow: {
@@ -4826,6 +5422,63 @@ export interface components {
              */
             total: number;
         };
+        /** RecordImportPreview */
+        RecordImportPreview: {
+            /**
+             * Applied
+             * @default false
+             */
+            applied: boolean;
+            /**
+             * Created
+             * @default 0
+             */
+            created: number;
+            /** Invalid */
+            invalid: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+            /** Rows */
+            rows: components["schemas"]["PreviewRow"][];
+            /**
+             * Updated
+             * @default 0
+             */
+            updated: number;
+            /** Valid */
+            valid: number;
+        };
+        /** RecordList */
+        RecordList: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** RecordSpec */
+        RecordSpec: {
+            /** Computed */
+            computed?: components["schemas"]["Column"][];
+            /** Fields */
+            fields: components["schemas"]["FieldSpec"][];
+            /** Help */
+            help: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+            /** Title */
+            title: string;
+        };
         /** RecoverIn */
         RecoverIn: {
             /** Email */
@@ -5089,6 +5742,19 @@ export interface components {
             project_id: string;
             /** Sectors */
             sectors: components["schemas"]["Sector"][];
+        };
+        /** Series */
+        Series: {
+            /**
+             * Kind
+             * @default line
+             * @enum {string}
+             */
+            kind: "line" | "bar";
+            /** Name */
+            name: string;
+            /** Values */
+            values: (number | null)[];
         };
         /** SessionOut */
         SessionOut: {
@@ -5441,6 +6107,46 @@ export interface components {
              */
             top_n: 10 | 20;
         };
+        /** TabResult */
+        TabResult: {
+            /** Charts */
+            charts?: components["schemas"]["Chart"][];
+            /** Extra */
+            extra?: {
+                [key: string]: unknown;
+            };
+            /** Indicators */
+            indicators: components["schemas"]["Indicator"][];
+            /** Notes */
+            notes?: string[];
+            period: components["schemas"]["Period"];
+            /** Route */
+            route: string | null;
+            /** Sector */
+            sector: string | null;
+            /**
+             * Tab
+             * @enum {string}
+             */
+            tab: "operacion" | "clientes" | "perdidas" | "activos" | "cumplimiento" | "planificacion" | "equipo";
+            /** Tables */
+            tables: components["schemas"]["Table"][];
+            /** Title */
+            title: string;
+        };
+        /** Table */
+        Table: {
+            /** Columns */
+            columns: components["schemas"]["Column"][];
+            /** Key */
+            key: string;
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
+            /** Title */
+            title: string;
+        };
         /** TankInfo */
         TankInfo: {
             /** Autonomy H */
@@ -5465,6 +6171,34 @@ export interface components {
             tanks: components["schemas"]["TankInfo"][];
             /** Wells */
             wells: components["schemas"]["WellInfo"][];
+        };
+        /** Target */
+        Target: {
+            /**
+             * Bad
+             * @description Umbral «malo»
+             */
+            bad: number;
+            /**
+             * Good
+             * @description Umbral «bueno»
+             */
+            good: number;
+            /**
+             * Higher Is Better
+             * @default false
+             */
+            higher_is_better: boolean;
+            /** Label */
+            label: string;
+            /** Unit */
+            unit: string;
+            /**
+             * Verified
+             * @description Meta revisada por el usuario (si no, valor sugerido «no verificado»)
+             * @default false
+             */
+            verified: boolean;
         };
         /** TrazoImportResult */
         TrazoImportResult: {
@@ -7694,6 +8428,695 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SimulationBlocked"];
+                };
+            };
+        };
+    };
+    capacity_api_projects__project_id__gestion_capacity_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapacityResult"];
+                };
+            };
+            /** @description La red tiene errores bloqueantes */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationBlocked"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_filters_api_projects__project_id__gestion_filters_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Filters"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_specs_api_projects__project_id__gestion_records_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordSpec"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    maintenance_logs_api_projects__project_id__gestion_records_mantenciones_logs_get: {
+        parameters: {
+            query?: {
+                task_id?: number | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceLogOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_task_api_projects__project_id__gestion_records_mantenciones__rid__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                rid: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteTask"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_records_api_projects__project_id__gestion_records__kind__get: {
+        parameters: {
+            query?: {
+                /** @description Inicio del período (vacío = 12 meses hasta el último dato) */
+                desde?: string | null;
+                /** @description Fin del período */
+                hasta?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_records_api_projects__project_id__gestion_records__kind__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                }[];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_records_api_projects__project_id__gestion_records__kind__delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdList"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_export_api_projects__project_id__gestion_records__kind__export__fmt__get: {
+        parameters: {
+            query?: {
+                /** @description Inicio del período (vacío = 12 meses hasta el último dato) */
+                desde?: string | null;
+                /** @description Fin del período */
+                hasta?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+                fmt: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_records_api_projects__project_id__gestion_records__kind__import_post: {
+        parameters: {
+            query?: {
+                /** @description false = solo vista previa con errores por fila */
+                apply?: boolean;
+                /** @description Al aplicar, importar solo las filas válidas */
+                only_valid?: boolean;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_records_api_projects__project_id__gestion_records__kind__import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordImportPreview"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordImportPreview"];
+                };
+            };
+        };
+    };
+    record_template_api_projects__project_id__gestion_records__kind__template_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_record_api_projects__project_id__gestion_records__kind___rid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                kind: "energia" | "cloro" | "cortes" | "reclamos" | "mantenciones" | "lecturas";
+                rid: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_html_api_projects__project_id__gestion_report_html_get: {
+        parameters: {
+            query?: {
+                /** @description Inicio del período (vacío = 12 meses hasta el último dato) */
+                desde?: string | null;
+                /** @description Fin del período */
+                hasta?: string | null;
+                sector?: string | null;
+                ruta?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_xlsx_api_projects__project_id__gestion_report_xlsx_get: {
+        parameters: {
+            query?: {
+                /** @description Inicio del período (vacío = 12 meses hasta el último dato) */
+                desde?: string | null;
+                /** @description Fin del período */
+                hasta?: string | null;
+                sector?: string | null;
+                ruta?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_projects__project_id__gestion_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GestionSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_settings_api_projects__project_id__gestion_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GestionSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GestionSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_settings_api_projects__project_id__gestion_settings_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GestionSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tab_api_projects__project_id__gestion_tabs__tab__get: {
+        parameters: {
+            query?: {
+                /** @description Inicio del período (vacío = 12 meses hasta el último dato) */
+                desde?: string | null;
+                /** @description Fin del período */
+                hasta?: string | null;
+                sector?: string | null;
+                ruta?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                tab: "operacion" | "clientes" | "perdidas" | "activos" | "cumplimiento" | "planificacion" | "equipo";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TabResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_table_api_projects__project_id__gestion_tabs__tab__tables__key___fmt__get: {
+        parameters: {
+            query?: {
+                /** @description Inicio del período (vacío = 12 meses hasta el último dato) */
+                desde?: string | null;
+                /** @description Fin del período */
+                hasta?: string | null;
+                sector?: string | null;
+                ruta?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                tab: "operacion" | "clientes" | "perdidas" | "activos" | "cumplimiento" | "planificacion" | "equipo";
+                key: string;
+                fmt: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

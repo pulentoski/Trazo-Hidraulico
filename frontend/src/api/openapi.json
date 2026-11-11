@@ -520,6 +520,20 @@
         "title": "Body_import_project_api_projects_import_post",
         "type": "object"
       },
+      "Body_import_records_api_projects__project_id__gestion_records__kind__import_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_records_api_projects__project_id__gestion_records__kind__import_post",
+        "type": "object"
+      },
       "Body_import_trazo_api_projects_import_trazo_post": {
         "properties": {
           "file": {
@@ -618,6 +632,135 @@
           "file"
         ],
         "title": "Body_upload_orthophoto_api_projects__project_id__orthophotos_post",
+        "type": "object"
+      },
+      "CapacityResult": {
+        "properties": {
+          "bottleneck_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tramo con mayor pérdida unitaria en ese momento",
+            "title": "Bottleneck Link"
+          },
+          "bottleneck_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Primer nudo que baja de la presión mínima",
+            "title": "Bottleneck Node"
+          },
+          "bottleneck_pressure": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bottleneck Pressure"
+          },
+          "by_node": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Node",
+            "type": "object"
+          },
+          "capacity": {
+            "description": "Clientes nuevos que caben manteniendo la presión mínima",
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "limited_by_cap": {
+            "description": "Se alcanzó el tope de clientes a probar sin violar la presión mínima",
+            "title": "Limited By Cap",
+            "type": "boolean"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "integer"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "pmin": {
+            "title": "Pmin",
+            "type": "number"
+          },
+          "simulations": {
+            "title": "Simulations",
+            "type": "integer"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/CapacityStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "typical_lps": {
+            "title": "Typical Lps",
+            "type": "number"
+          },
+          "typical_m3_month": {
+            "title": "Typical M3 Month",
+            "type": "number"
+          }
+        },
+        "required": [
+          "model_version",
+          "typical_lps",
+          "typical_m3_month",
+          "pmin",
+          "capacity",
+          "limited_by_cap",
+          "simulations",
+          "by_node",
+          "steps",
+          "note"
+        ],
+        "title": "CapacityResult",
+        "type": "object"
+      },
+      "CapacityStep": {
+        "properties": {
+          "clients": {
+            "title": "Clients",
+            "type": "integer"
+          },
+          "min_node": {
+            "title": "Min Node",
+            "type": "string"
+          },
+          "min_pressure": {
+            "title": "Min Pressure",
+            "type": "number"
+          },
+          "node": {
+            "title": "Node",
+            "type": "string"
+          }
+        },
+        "required": [
+          "clients",
+          "node",
+          "min_pressure",
+          "min_node"
+        ],
+        "title": "CapacityStep",
         "type": "object"
       },
       "CatalogPipeOut": {
@@ -754,6 +897,68 @@
           "id"
         ],
         "title": "ChangeItem",
+        "type": "object"
+      },
+      "Chart": {
+        "properties": {
+          "reference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Línea de referencia (p. ej. caudal autorizado)",
+            "title": "Reference"
+          },
+          "reference_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Label"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/Series"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "stacked": {
+            "default": false,
+            "title": "Stacked",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "unit": {
+            "default": "",
+            "title": "Unit",
+            "type": "string"
+          },
+          "x": {
+            "items": {
+              "type": "string"
+            },
+            "title": "X",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "x",
+          "series"
+        ],
+        "title": "Chart",
         "type": "object"
       },
       "ClientFeature": {
@@ -1209,6 +1414,40 @@
         "title": "CodeIn",
         "type": "object"
       },
+      "Column": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "num": {
+            "default": false,
+            "title": "Num",
+            "type": "boolean"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "Column",
+        "type": "object"
+      },
       "ComparePoint": {
         "properties": {
           "diff": {
@@ -1477,6 +1716,45 @@
           "message"
         ],
         "title": "CompareSeries",
+        "type": "object"
+      },
+      "CompleteTask": {
+        "additionalProperties": false,
+        "properties": {
+          "by": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
+          },
+          "done_on": {
+            "format": "date",
+            "title": "Done On",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "done_on"
+        ],
+        "title": "CompleteTask",
         "type": "object"
       },
       "Condition": {
@@ -2604,6 +2882,45 @@
         "title": "ElementList",
         "type": "object"
       },
+      "EmptyState": {
+        "properties": {
+          "how": {
+            "description": "Cómo cargarlo (manual o planilla)",
+            "title": "How",
+            "type": "string"
+          },
+          "missing": {
+            "description": "Qué dato falta",
+            "title": "Missing",
+            "type": "string"
+          },
+          "record": {
+            "anyOf": [
+              {
+                "enum": [
+                  "energia",
+                  "cloro",
+                  "cortes",
+                  "reclamos",
+                  "mantenciones",
+                  "lecturas"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record"
+          }
+        },
+        "required": [
+          "missing",
+          "how"
+        ],
+        "title": "EmptyState",
+        "type": "object"
+      },
       "EngineInfo": {
         "properties": {
           "en_getversion": {
@@ -3066,6 +3383,125 @@
         "title": "FieldChange",
         "type": "object"
       },
+      "FieldSpec": {
+        "properties": {
+          "choices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "element_types": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Element Types",
+            "type": "array"
+          },
+          "help": {
+            "default": "",
+            "title": "Help",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "type": {
+            "enum": [
+              "date",
+              "datetime",
+              "month",
+              "float",
+              "int",
+              "str",
+              "choice",
+              "element"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "type",
+          "required"
+        ],
+        "title": "FieldSpec",
+        "type": "object"
+      },
+      "Filters": {
+        "properties": {
+          "data_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data End"
+          },
+          "data_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Start"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Routes",
+            "type": "array"
+          },
+          "sectors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sectors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sectors",
+          "routes",
+          "data_start",
+          "data_end",
+          "model_version"
+        ],
+        "title": "Filters",
+        "type": "object"
+      },
       "FireResult": {
         "properties": {
           "hydrants": {
@@ -3310,6 +3746,94 @@
           "gcps"
         ],
         "title": "GcpRequest",
+        "type": "object"
+      },
+      "GestionSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "capacity_max_clients": {
+            "default": 400,
+            "description": "Tope de clientes a probar en la capacidad remanente",
+            "maximum": 5000.0,
+            "minimum": 1.0,
+            "title": "Capacity Max Clients",
+            "type": "integer"
+          },
+          "chlorine_max": {
+            "default": 2.0,
+            "description": "Cloro residual libre máximo (mg/L)",
+            "minimum": 0.0,
+            "title": "Chlorine Max",
+            "type": "number"
+          },
+          "chlorine_min": {
+            "default": 0.2,
+            "description": "Cloro residual libre mínimo (mg/L)",
+            "minimum": 0.0,
+            "title": "Chlorine Min",
+            "type": "number"
+          },
+          "chlorine_verified": {
+            "default": false,
+            "title": "Chlorine Verified",
+            "type": "boolean"
+          },
+          "tank_reserve_pct": {
+            "default": 25.0,
+            "description": "Volumen de regulación exigido (% del consumo diario)",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Tank Reserve Pct",
+            "type": "number"
+          },
+          "targets": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Target"
+            },
+            "title": "Targets",
+            "type": "object"
+          },
+          "typical_client_m3_month": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Consumo típico de un cliente nuevo (m³/mes). Vacío = promedio de los clientes residenciales activos",
+            "title": "Typical Client M3 Month"
+          },
+          "water_right_lps": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Derecho de agua (L/s). Vacío = caudal autorizado del pozo",
+            "title": "Water Right Lps"
+          },
+          "water_right_m3_year": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Volumen anual del derecho (m³). Vacío = derecho × año",
+            "title": "Water Right M3 Year"
+          }
+        },
+        "title": "GestionSettings",
         "type": "object"
       },
       "Group": {
@@ -3923,6 +4447,137 @@
           "link_count"
         ],
         "title": "ImportResult",
+        "type": "object"
+      },
+      "Indicator": {
+        "properties": {
+          "chart": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Chart"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delta_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Pct"
+          },
+          "empty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmptyState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "map": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MapRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "bueno",
+                  "regular",
+                  "malo"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "table": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Clave de la tabla de detalle",
+            "title": "Table"
+          },
+          "target_verified": {
+            "default": false,
+            "title": "Target Verified",
+            "type": "boolean"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "unit",
+          "value"
+        ],
+        "title": "Indicator",
         "type": "object"
       },
       "InvitationAccept": {
@@ -5063,6 +5718,73 @@
         "title": "MaintenanceBlock",
         "type": "object"
       },
+      "MaintenanceLogOut": {
+        "properties": {
+          "by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "done_on": {
+            "format": "date",
+            "title": "Done On",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "scheduled_for": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled For"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "done_on",
+          "scheduled_for",
+          "by",
+          "note",
+          "created_at"
+        ],
+        "title": "MaintenanceLogOut",
+        "type": "object"
+      },
       "MapLoadOut": {
         "properties": {
           "allowed": {
@@ -5091,6 +5813,50 @@
           "limit"
         ],
         "title": "MapLoadOut",
+        "type": "object"
+      },
+      "MapRef": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "node",
+              "link",
+              "client",
+              "shutoff",
+              "hydrant",
+              "well"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "weights": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Intensidad por elemento (mapa de calor)",
+            "title": "Weights"
+          }
+        },
+        "required": [
+          "type",
+          "ids"
+        ],
+        "title": "MapRef",
         "type": "object"
       },
       "MapsConfig": {
@@ -6989,6 +7755,46 @@
         "title": "PasswordChange",
         "type": "object"
       },
+      "Period": {
+        "properties": {
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "months": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "prev_end": {
+            "format": "date",
+            "title": "Prev End",
+            "type": "string"
+          },
+          "prev_start": {
+            "format": "date",
+            "title": "Prev Start",
+            "type": "string"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "prev_start",
+          "prev_end",
+          "months"
+        ],
+        "title": "Period",
+        "type": "object"
+      },
       "PipeClients": {
         "properties": {
           "clients": {
@@ -7273,6 +8079,33 @@
           "unsupplied"
         ],
         "title": "PressureBlock",
+        "type": "object"
+      },
+      "PreviewRow": {
+        "properties": {
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          },
+          "values": {
+            "additionalProperties": true,
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "row",
+          "values",
+          "errors"
+        ],
+        "title": "PreviewRow",
         "type": "object"
       },
       "PriceRow": {
@@ -8088,6 +8921,136 @@
         "title": "QueryResult",
         "type": "object"
       },
+      "RecordImportPreview": {
+        "properties": {
+          "applied": {
+            "default": false,
+            "title": "Applied",
+            "type": "boolean"
+          },
+          "created": {
+            "default": 0,
+            "title": "Created",
+            "type": "integer"
+          },
+          "invalid": {
+            "title": "Invalid",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "energia",
+              "cloro",
+              "cortes",
+              "reclamos",
+              "mantenciones",
+              "lecturas"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/PreviewRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "updated": {
+            "default": 0,
+            "title": "Updated",
+            "type": "integer"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "rows",
+          "valid",
+          "invalid"
+        ],
+        "title": "RecordImportPreview",
+        "type": "object"
+      },
+      "RecordList": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "energia",
+              "cloro",
+              "cortes",
+              "reclamos",
+              "mantenciones",
+              "lecturas"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "RecordList",
+        "type": "object"
+      },
+      "RecordSpec": {
+        "properties": {
+          "computed": {
+            "items": {
+              "$ref": "#/components/schemas/Column"
+            },
+            "title": "Computed",
+            "type": "array"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldSpec"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "help": {
+            "title": "Help",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "energia",
+              "cloro",
+              "cortes",
+              "reclamos",
+              "mantenciones",
+              "lecturas"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "help",
+          "fields"
+        ],
+        "title": "RecordSpec",
+        "type": "object"
+      },
       "RecoverIn": {
         "additionalProperties": false,
         "properties": {
@@ -8711,6 +9674,43 @@
           "sectors"
         ],
         "title": "SectorsResult",
+        "type": "object"
+      },
+      "Series": {
+        "properties": {
+          "kind": {
+            "default": "line",
+            "enum": [
+              "line",
+              "bar"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "values"
+        ],
+        "title": "Series",
         "type": "object"
       },
       "SessionOut": {
@@ -9504,6 +10504,131 @@
         "title": "SummarySettings",
         "type": "object"
       },
+      "TabResult": {
+        "properties": {
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/Chart"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "extra": {
+            "additionalProperties": true,
+            "title": "Extra",
+            "type": "object"
+          },
+          "indicators": {
+            "items": {
+              "$ref": "#/components/schemas/Indicator"
+            },
+            "title": "Indicators",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "sector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector"
+          },
+          "tab": {
+            "enum": [
+              "operacion",
+              "clientes",
+              "perdidas",
+              "activos",
+              "cumplimiento",
+              "planificacion",
+              "equipo"
+            ],
+            "title": "Tab",
+            "type": "string"
+          },
+          "tables": {
+            "items": {
+              "$ref": "#/components/schemas/Table"
+            },
+            "title": "Tables",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab",
+          "title",
+          "period",
+          "sector",
+          "route",
+          "indicators",
+          "tables"
+        ],
+        "title": "TabResult",
+        "type": "object"
+      },
+      "Table": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/Column"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "columns",
+          "rows"
+        ],
+        "title": "Table",
+        "type": "object"
+      },
       "TankInfo": {
         "properties": {
           "autonomy_h": {
@@ -9598,6 +10723,48 @@
           "wells"
         ],
         "title": "TankWellBlock",
+        "type": "object"
+      },
+      "Target": {
+        "additionalProperties": false,
+        "properties": {
+          "bad": {
+            "description": "Umbral «malo»",
+            "title": "Bad",
+            "type": "number"
+          },
+          "good": {
+            "description": "Umbral «bueno»",
+            "title": "Good",
+            "type": "number"
+          },
+          "higher_is_better": {
+            "default": false,
+            "title": "Higher Is Better",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "verified": {
+            "default": false,
+            "description": "Meta revisada por el usuario (si no, valor sugerido «no verificado»)",
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "unit",
+          "good",
+          "bad"
+        ],
+        "title": "Target",
         "type": "object"
       },
       "TrazoImportResult": {
@@ -13294,6 +14461,1490 @@
         "summary": "Informe de factibilidad en HTML imprimible",
         "tags": [
           "análisis"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/capacity": {
+      "get": {
+        "operationId": "capacity_api_projects__project_id__gestion_capacity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapacityResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationBlocked"
+                }
+              }
+            },
+            "description": "La red tiene errores bloqueantes"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Capacidad remanente: clientes nuevos que caben manteniendo la presión mínima",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/filters": {
+      "get": {
+        "operationId": "get_filters_api_projects__project_id__gestion_filters_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Filters"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sectores, rutas y rango de fechas con datos",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records": {
+      "get": {
+        "operationId": "record_specs_api_projects__project_id__gestion_records_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecordSpec"
+                  },
+                  "title": "Response Record Specs Api Projects  Project Id  Gestion Records Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Especificación de los registros (campos y ayudas)",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records/mantenciones/logs": {
+      "get": {
+        "operationId": "maintenance_logs_api_projects__project_id__gestion_records_mantenciones_logs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "task_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MaintenanceLogOut"
+                  },
+                  "title": "Response Maintenance Logs Api Projects  Project Id  Gestion Records Mantenciones Logs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Registro de cumplimiento",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records/mantenciones/{rid}/complete": {
+      "post": {
+        "operationId": "complete_task_api_projects__project_id__gestion_records_mantenciones__rid__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "rid",
+            "required": true,
+            "schema": {
+              "title": "Rid",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteTask"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cumplir una mantención",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records/{kind}": {
+      "get": {
+        "operationId": "list_records_api_projects__project_id__gestion_records__kind__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "energia",
+                "cloro",
+                "cortes",
+                "reclamos",
+                "mantenciones",
+                "lecturas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+            "in": "query",
+            "name": "desde",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+              "title": "Desde"
+            }
+          },
+          {
+            "description": "Fin del período",
+            "in": "query",
+            "name": "hasta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fin del período",
+              "title": "Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Filas de un registro",
+        "tags": [
+          "gestión"
+        ]
+      },
+      "post": {
+        "operationId": "add_records_api_projects__project_id__gestion_records__kind__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "energia",
+                "cloro",
+                "cortes",
+                "reclamos",
+                "mantenciones",
+                "lecturas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "title": "Body",
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Agregar filas a un registro",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records/{kind}/delete": {
+      "post": {
+        "operationId": "delete_records_api_projects__project_id__gestion_records__kind__delete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "energia",
+                "cloro",
+                "cortes",
+                "reclamos",
+                "mantenciones",
+                "lecturas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdList"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Delete Records Api Projects  Project Id  Gestion Records  Kind  Delete Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Eliminar filas",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records/{kind}/export.{fmt}": {
+      "get": {
+        "operationId": "record_export_api_projects__project_id__gestion_records__kind__export__fmt__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "energia",
+                "cloro",
+                "cortes",
+                "reclamos",
+                "mantenciones",
+                "lecturas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "fmt",
+            "required": true,
+            "schema": {
+              "title": "Fmt",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+            "in": "query",
+            "name": "desde",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+              "title": "Desde"
+            }
+          },
+          {
+            "description": "Fin del período",
+            "in": "query",
+            "name": "hasta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fin del período",
+              "title": "Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
+              "text/csv": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar el registro (Excel o CSV)",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records/{kind}/import": {
+      "post": {
+        "operationId": "import_records_api_projects__project_id__gestion_records__kind__import_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "energia",
+                "cloro",
+                "cortes",
+                "reclamos",
+                "mantenciones",
+                "lecturas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "description": "false = solo vista previa con errores por fila",
+            "in": "query",
+            "name": "apply",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "false = solo vista previa con errores por fila",
+              "title": "Apply",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Al aplicar, importar solo las filas válidas",
+            "in": "query",
+            "name": "only_valid",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Al aplicar, importar solo las filas válidas",
+              "title": "Only Valid",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_records_api_projects__project_id__gestion_records__kind__import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordImportPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordImportPreview"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Importar desde Excel o CSV: vista previa o aplicación",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records/{kind}/template.xlsx": {
+      "get": {
+        "operationId": "record_template_api_projects__project_id__gestion_records__kind__template_xlsx_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "energia",
+                "cloro",
+                "cortes",
+                "reclamos",
+                "mantenciones",
+                "lecturas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plantilla Excel del registro",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/records/{kind}/{rid}": {
+      "put": {
+        "operationId": "edit_record_api_projects__project_id__gestion_records__kind___rid__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "energia",
+                "cloro",
+                "cortes",
+                "reclamos",
+                "mantenciones",
+                "lecturas"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "rid",
+            "required": true,
+            "schema": {
+              "title": "Rid",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Body",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar una fila",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/report.html": {
+      "get": {
+        "operationId": "report_html_api_projects__project_id__gestion_report_html_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+            "in": "query",
+            "name": "desde",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+              "title": "Desde"
+            }
+          },
+          {
+            "description": "Fin del período",
+            "in": "query",
+            "name": "hasta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fin del período",
+              "title": "Hasta"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ruta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ruta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Informe mensual imprimible (HTML)",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/report.xlsx": {
+      "get": {
+        "operationId": "report_xlsx_api_projects__project_id__gestion_report_xlsx_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+            "in": "query",
+            "name": "desde",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+              "title": "Desde"
+            }
+          },
+          {
+            "description": "Fin del período",
+            "in": "query",
+            "name": "hasta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fin del período",
+              "title": "Hasta"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ruta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ruta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Informe mensual (Excel)",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/settings": {
+      "delete": {
+        "operationId": "reset_settings_api_projects__project_id__gestion_settings_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GestionSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Volver a las metas sugeridas",
+        "tags": [
+          "gestión"
+        ]
+      },
+      "get": {
+        "operationId": "get_settings_api_projects__project_id__gestion_settings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GestionSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Metas e indicadores del proyecto",
+        "tags": [
+          "gestión"
+        ]
+      },
+      "put": {
+        "operationId": "put_settings_api_projects__project_id__gestion_settings_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GestionSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GestionSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar metas e indicadores",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/tabs/{tab}": {
+      "get": {
+        "operationId": "get_tab_api_projects__project_id__gestion_tabs__tab__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tab",
+            "required": true,
+            "schema": {
+              "enum": [
+                "operacion",
+                "clientes",
+                "perdidas",
+                "activos",
+                "cumplimiento",
+                "planificacion",
+                "equipo"
+              ],
+              "title": "Tab",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+            "in": "query",
+            "name": "desde",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+              "title": "Desde"
+            }
+          },
+          {
+            "description": "Fin del período",
+            "in": "query",
+            "name": "hasta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fin del período",
+              "title": "Hasta"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ruta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ruta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TabResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Indicadores, gráficos y tablas de una pestaña",
+        "tags": [
+          "gestión"
+        ]
+      }
+    },
+    "/api/projects/{project_id}/gestion/tabs/{tab}/tables/{key}.{fmt}": {
+      "get": {
+        "operationId": "export_table_api_projects__project_id__gestion_tabs__tab__tables__key___fmt__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tab",
+            "required": true,
+            "schema": {
+              "enum": [
+                "operacion",
+                "clientes",
+                "perdidas",
+                "activos",
+                "cumplimiento",
+                "planificacion",
+                "equipo"
+              ],
+              "title": "Tab",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "fmt",
+            "required": true,
+            "schema": {
+              "title": "Fmt",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+            "in": "query",
+            "name": "desde",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inicio del período (vacío = 12 meses hasta el último dato)",
+              "title": "Desde"
+            }
+          },
+          {
+            "description": "Fin del período",
+            "in": "query",
+            "name": "hasta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fin del período",
+              "title": "Hasta"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ruta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ruta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
+              "text/csv": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exportar una tabla de detalle (Excel o CSV)",
+        "tags": [
+          "gestión"
         ]
       }
     },

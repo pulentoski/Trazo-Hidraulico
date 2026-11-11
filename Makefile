@@ -92,13 +92,13 @@ E2E_ADMIN_EMAIL ?= e2e-plataforma@trazo.local
 # E2E_SHOTS: carpeta de capturas (por defecto docs/capturas).
 BASE_URL ?= http://localhost:8080
 E2E_SHOTS ?= docs/capturas
-test-e2e: ## Recorrido visual y mapa al volver a entrar (Playwright) contra la pila levantada (make up; o BASE_URL=https://IP en una instancia)
+test-e2e: ## Recorrido visual, mapa al volver a entrar, Gestión y coordenadas (Playwright) contra la pila levantada (make up; o BASE_URL=https://IP en una instancia)
 	$(COMPOSE) exec -T api python -m app.cli ensure-user --email $(E2E_EMAIL) --password $(E2E_PASSWORD) --org "Recorrido e2e" --role admin
 	$(COMPOSE) exec -T api python -m app.cli ensure-user --email $(E2E_ADMIN_EMAIL) --password $(E2E_PASSWORD) --org "Recorrido e2e" --role admin --superadmin
 	docker build -q -t trazo-hidraulico/e2e:local e2e >/dev/null
 	docker run --rm --network host --ipc=host -u $(HOST_UID):$(HOST_GID) -e HOME=/tmp -v $(CURDIR):/repo -w /repo \
 	  -e E2E_EMAIL=$(E2E_EMAIL) -e E2E_ADMIN_EMAIL=$(E2E_ADMIN_EMAIL) -e E2E_PASSWORD=$(E2E_PASSWORD) -e BASE_URL=$(BASE_URL) -e E2E_SHOTS=$(E2E_SHOTS) \
-	  trazo-hidraulico/e2e:local sh -c 'python3 e2e/recorrido.py && python3 e2e/mapa_reentrada.py'
+	  trazo-hidraulico/e2e:local sh -c 'python3 e2e/recorrido.py && python3 e2e/mapa_reentrada.py && python3 e2e/gestion.py'
 
 test-ortho-grande: ## Ortofoto de ~800 MB: subida por partes, procesamiento, teselas, tiempos y memoria (docs/validation/ortofoto-grande.md)
 	@e2e/ortofoto-grande.sh

@@ -13,6 +13,7 @@ import { PumpOperation } from "./PumpOperation";
 import { useAuth } from "../state/auth";
 import { useSections } from "../state/sections";
 import { ExpandAll, Section } from "./Section";
+import { CoordinatesSection } from "./Coordinates";
 
 const ID_RE = /^[^\s;"]{1,31}$/;
 const KIND_LABEL = { junction: "Nudo de consumo", reservoir: "Reservorio", tank: "Estanque", pipe: "Tubería", pump: "Bomba", valve: "Válvula" };
@@ -546,12 +547,15 @@ export function PropertiesPanel() {
   else if (selection.length === 1 && net.nodes[selection[0]]) body = <NodePanel node={net.nodes[selection[0]]} />;
   else if (selection.length === 1 && net.links[selection[0]]) body = <LinkPanel link={net.links[selection[0]]} />;
   else body = <ProjectPanel />;
+  const one = selection.length === 1 ? selection[0] : null;
+  const pointLike = one && (net.nodes[one] || net.clients[one] || net.hydrants[one] || net.wells[one] || net.shutoffs[one]);
   return (
     <aside className="props" aria-label="Propiedades">
       <div className="props-bar">
         <ExpandAll />
       </div>
       {body}
+      {pointLike && <CoordinatesSection key={one} uid={one!} />}
     </aside>
   );
 }

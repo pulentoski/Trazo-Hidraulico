@@ -2,6 +2,8 @@
 from app.models.auth import (AuditLog, Membership, OneTimeToken, Organization, PlatformSetting, UsageCounter, User,
                              UserSession, VersionReview)
 from app.models.catalog import CatalogPipe, DesignProfile
+from app.models.gestion import (ChlorineRecord, ClientReading, Complaint, EnergyRecord, FeasibilityRecord,
+                                MaintenanceLog, MaintenanceTask, ServiceOutage)
 from app.models.network import NetworkClient, NetworkHydrant, NetworkLink, NetworkNode, NetworkShutoff, NetworkWell
 from app.models.project import Project, ProjectVersion
 from app.models.sig import LeakEvent, Measurement, Orthophoto, SavedQuery
@@ -12,4 +14,6 @@ __all__ = [
     "CatalogPipe", "DesignProfile", "NetworkClient", "NetworkLink", "NetworkNode", "NetworkShutoff",
     "NetworkHydrant", "NetworkWell", "Orthophoto", "SavedQuery", "Measurement", "LeakEvent",
     "Project", "ProjectVersion", "ResultLink", "ResultNode", "SimulationRun",
+    "ChlorineRecord", "ClientReading", "Complaint", "EnergyRecord", "FeasibilityRecord", "MaintenanceLog",
+    "MaintenanceTask", "ServiceOutage",
 ]
