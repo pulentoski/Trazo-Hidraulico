@@ -27,7 +27,7 @@ export function UserMenu() {
       <button className="ghost" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" aria-label="Menú de usuario" title={me.email}>
         <span className="avatar">{initial}</span>
         <span className="user-org">{cur ? `${cur.name} · ${ROLE_LABEL[cur.role]}` : me.email}</span>
-        <span className="caret" aria-hidden>▾</span>
+        <span className="caret" aria-hidden><Icon.chevronDown /></span>
       </button>
       {open && (
         <div className="menu-pop right user-pop" role="menu">
@@ -47,7 +47,7 @@ export function UserMenu() {
           {me.is_superadmin && <Link className="menu-item" role="menuitem" to={PATHS.ajustes("organizaciones")} onClick={() => setOpen(false)}><Icon.gear /> Plataforma</Link>}
           <div className="menu-sep" />
           <button className="menu-item" role="menuitem" onClick={async () => { await api.logout().catch(() => undefined); window.location.assign(PATHS.login); }}>
-            <Icon.back /> Cerrar sesión</button>
+            <Icon.logout /> Cerrar sesión</button>
         </div>
       )}
     </div>

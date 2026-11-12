@@ -34,7 +34,13 @@ DEMO = ROOT / "examples" / "apr-demo.xlsx"
 ORTHO = ROOT / "e2e" / "fixtures" / "ortofoto.tif"
 PLANO = ROOT / "e2e" / "fixtures" / "plano-referencia.png"  # foto sin coordenadas (make_plano_referencia.py)
 PLANO_REF = ROOT / "e2e" / "fixtures" / "plano-referencia.json"
-TOOLS = ["V", "B", "N", "T", "E", "R", "M", "X", "D", "C", "L", "G", "W", "F"]
+TOOLS = ["V", "B", "M", "N", "T", "E", "R", "W", "L", "G", "C", "F", "D", "X"]  # orden de la barra de herramientas
+TOOL_GROUPS = {"Selección": ["Seleccionar", "Selección múltiple", "Mover"],
+               "Red": ["Nudo", "Tubería", "Estanque", "Reservorio", "Pozo", "Válvula de corte", "Grifo"],
+               "Clientes": ["Cliente"], "Análisis": ["Factibilidad", "Medir"], "Edición": ["Eliminar"]}
+TOPBAR_GROUPS = ["Navegación", "Archivo", "Vistas", "Análisis", "Datos", "Usuario"]
+BOTTOM_TABS = ["Resumen", "Alertas", "Nudos", "Tramos", "Clientes", "Simulación", "Gráficos", "Diagnóstico", "Escenarios",
+               "Cuarteles", "Demanda", "Mediciones", "Consultas", "Capas"]
 IGNORED = [
     re.compile(r"/tiles/.+\.png"),  # teselas fuera de los límites de la ortofoto: 404 esperado
     re.compile(r"maps\.googleapis|gstatic"),
@@ -70,9 +76,14 @@ def watch(page: Page) -> None:
             else problems.append(f"falló: {r.url} {r.failure}"))
 
 
+EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
+
+
 def shot(page: Page, name: str, theme: str, width: int) -> None:
+    """Captura sin correos a la vista (p. ej. «última modificación» de la key del mapa): van al repositorio."""
     page.wait_for_timeout(250)
-    page.screenshot(path=str(SHOTS / f"{name}-{theme}-{width}.png"), full_page=False)
+    page.screenshot(path=str(SHOTS / f"{name}-{theme}-{width}.png"), full_page=False,
+                    mask=[page.get_by_text(EMAIL_RE)], mask_color="#8a9aa8")
 
 
 def set_theme(page: Page, theme: str) -> None:
@@ -101,6 +112,21 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
     expect(page.get_by_text("APR Demo (e2e)").first).to_be_visible()
     card = page.get_by_role("article", name="APR Demo (e2e)")
     expect(card).to_contain_text("30 clientes")
+    # Inicio: accesos rápidos, miniatura del trazado, ubicación, indicadores y alertas de la organización.
+    quick = page.get_by_role("region", name="Accesos rápidos")
+    expect(quick.get_by_role("button")).to_have_count(4)
+    expect(quick.get_by_role("button").nth(0)).to_contain_text("Nuevo proyecto")
+    expect(quick.get_by_role("button").nth(3)).to_contain_text("Abrir el último proyecto")
+    expect(card.get_by_role("img", name=re.compile("Trazado de la red")).locator("polyline").first).to_be_attached()
+    expect(card).to_contain_text("° S")
+    expect(card.locator(".project-actions button").last).to_have_text("Abrir")  # acción principal a la derecha
+    org = page.get_by_role("complementary", name="Indicadores de la organización")
+    expect(org).to_contain_text("Proyectos")
+    expect(org.get_by_role("region", name="Alertas pendientes")).to_be_visible()
+    order = page.get_by_role("group", name="Ordenar proyectos")
+    order.get_by_role("button", name="Nombre").click()
+    expect(order.get_by_role("button", name="Nombre")).to_have_attribute("aria-pressed", "true")
+    order.get_by_role("button", name="Recientes").click()
     page.get_by_label("Buscar proyecto").fill("zzz-no-existe")
     expect(page.get_by_text("Ningún proyecto coincide")).to_be_visible()
     page.get_by_label("Buscar proyecto").fill("demo (e2e")
@@ -118,6 +144,18 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
     expect(page.locator(".net-layer")).to_be_visible()
     wait_sim(page)
     shot(page, "editor", theme, width)
+    if full:
+        log("orden de las botoneras")
+        groups = page.locator(".topbar > [aria-label]").evaluate_all("els => els.map(e => e.getAttribute('aria-label'))")
+        assert groups == TOPBAR_GROUPS, f"grupos de la barra superior: {groups}"
+        tool_groups = page.locator(".tools .tool-group").evaluate_all(
+            "els => els.map(g => [g.getAttribute('aria-label'), [...g.querySelectorAll('.tool-label')].map(s => s.textContent)])")
+        assert dict(tool_groups) == TOOL_GROUPS and [g for g, _ in tool_groups] == list(TOOL_GROUPS), f"herramientas: {tool_groups}"
+        tabs_order = page.locator(".bottom .tabs-measure > button").evaluate_all("els => els.map(b => b.textContent.replace(/\\s*\\d+$/, '').trim())")
+        assert tabs_order[:len(BOTTOM_TABS)] == BOTTOM_TABS, f"pestañas: {tabs_order}"
+        views = page.get_by_role("navigation", name="Vistas")
+        expect(views.get_by_role("button")).to_have_count(3)
+        expect(views.get_by_role("button", name="Editor")).to_have_attribute("aria-current", "page")
 
     log("resumen")
     summary = page.locator(".summary-tab")
@@ -177,6 +215,7 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         losses.get_by_label("Observación").fill("Recorrido e2e")
         losses.get_by_role("button", name="Agregar").click()
         expect(losses).to_contain_text("9 eventos")
+        page.once("dialog", lambda d: d.accept())  # eliminar pide confirmación
         losses.get_by_role("row", name=re.compile("Recorrido e2e")).get_by_role("button").last.click()
         expect(losses).to_contain_text("8 eventos")
         for path in ("summary.xlsx", "summary.html", "summary/area.geojson", "summary/zones.geojson", "leaks/template.xlsx"):
@@ -216,6 +255,7 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         for k in TOOLS:
             page.keyboard.press(k)
             expect(page.locator(".tools button[aria-pressed=true] kbd")).to_have_text(k)
+            expect(page.locator(".tools button[aria-pressed=true]")).to_have_attribute("aria-keyshortcuts", k)
         page.keyboard.press("V")
         # Agregar un nudo con la herramienta y deshacer
         box = page.locator(".net-layer").bounding_box()
@@ -226,8 +266,8 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         page.keyboard.press("V")
 
         log("importar Excel (vista previa)")
-        page.get_by_role("button", name=re.compile("Planilla y SIG")).click()
-        page.get_by_role("button", name="Importar Excel o CSV…").click()
+        page.get_by_role("button", name="Importar / Exportar").click()
+        page.get_by_role("menuitem", name="Importar Excel o CSV…").click()
         page.locator(".imp-form input[type=file]").set_input_files(str(DEMO))
         page.get_by_role("button", name="Vista previa").click()
         expect(page.locator(".imp-preview")).to_be_visible(timeout=20000)
@@ -395,7 +435,10 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         for path in ("sig/export.xlsx", "export.dxf", "export.gpkg", "export.trazo", "export.inp", "report.html"):
             r = page.request.get(f"{BASE}/api/projects/{pid}/{path}")
             assert r.ok, f"{path}: {r.status}"
-        page.get_by_role("button", name=re.compile("Planilla y SIG")).click()
+        page.get_by_role("button", name="Importar / Exportar").click()
+        menu = page.get_by_role("menu", name="Importar y exportar")
+        expect(menu.locator(".menu-title")).to_have_text(["Importar", "Modelo", "Planilla", "SIG, CAD e informe"])
+        expect(menu.get_by_role("menuitem", name="Exportar .inp (EPANET)")).to_have_attribute("href", re.compile(r"/export\.inp"))
         shot(page, "menu-exportar", theme, width)
         page.keyboard.press("Escape")
 
@@ -419,6 +462,12 @@ def config_tour(browser, state: dict, theme: str, width: int) -> None:
     page.goto(f"{BASE}/ajustes/mapa-base")
     sec = page.get_by_label("Proveedor y key del mapa base")
     expect(sec.get_by_text("Administración de la plataforma")).to_be_visible()
+    in_use = sec.get_by_label("En uso ahora")
+    expect(in_use).to_contain_text(re.compile(r"(Automático|Google Maps|OpenStreetMap).*se usa|elegido"))
+    cards = sec.locator(".choice-card")
+    expect(cards).to_have_count(3)
+    expect(sec.locator(".choice-card.on")).to_have_count(1)
+    expect(sec.locator(".choice-card.on")).to_contain_text("Seleccionado")
     had = sec.get_by_text("Key guardada").count() and sec.locator(".kv.compact dd").first.inner_text().strip() not in ("—", "")
     if not had:  # solo si la plataforma no tiene una key real: se guarda una de prueba y se borra al final
         sec.get_by_label("API key de Google Maps").fill("AIzaSyE2E-prueba-0000000000000000000")

@@ -75,6 +75,7 @@ interface Props {
 }
 
 const FLASH_MS = 1800;
+const BORN_MS = 400;
 
 export function NetworkLayer({ camera, size, setCamera, passThrough = false }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -131,6 +132,16 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
     const t = window.setTimeout(() => setFlashOn(null), FLASH_MS);
     return () => window.clearTimeout(t);
   }, [flash]);
+
+  // Aparición breve de los elementos recién creados (trazo animado en las tuberías).
+  const born = s.born;
+  const [bornOn, setBornOn] = useState<number | null>(null);
+  useEffect(() => {
+    if (!born) return;
+    setBornOn(born.nonce);
+    const t = window.setTimeout(() => setBornOn(null), BORN_MS);
+    return () => window.clearTimeout(t);
+  }, [born]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -680,6 +691,27 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
     );
   })() : null;
 
+  // Aparición de lo recién creado: la tubería se traza de inicio a fin y los puntos crecen con un anillo.
+  const bornEls: React.ReactNode[] = [];
+  if (born && bornOn === born.nonce && animationsOn()) {
+    for (const u of born.uids) {
+      const l = net.links[u];
+      if (l) {
+        const pts = linkCoords(net, l);
+        if (pts.some((c) => !c)) continue;
+        bornEls.push(<polyline key={`bn-${u}-${born.nonce}`} className="born-link" pathLength={1}
+          points={pts.map(proj).map((q) => q.join(",")).join(" ")} />);
+        continue;
+      }
+      const sh = net.shutoffs[u];
+      const pos = net.nodes[u]?.pos ?? net.clients[u]?.pos ?? net.hydrants[u]?.pos ?? net.wells[u]?.pos
+        ?? (sh && net.links[sh.link] ? pointAlong(linkCoords(net, net.links[sh.link]), sh.position) : undefined);
+      if (!pos) continue;
+      const [x, y] = proj(pos);
+      bornEls.push(<circle key={`bn-${u}-${born.nonce}`} className="born-ring" cx={x} cy={y} r={12} />);
+    }
+  }
+
   // Anillo del resaltado breve
   const flashEls: React.ReactNode[] = [];
   if (flash && flashOn === flash.nonce) {
@@ -791,6 +823,7 @@ export function NetworkLayer({ camera, size, setCamera, passThrough = false }: P
       <g>{nodeEls}</g>
       <g>{assetEls}</g>
       {pinEl}
+      <g className="born">{bornEls}</g>
       <g className="flash" data-flash={flashEls.length ? flash?.uids.join(" ") : undefined}>{flashEls}</g>
       {feasEl}
       <g>{handleEls}</g>

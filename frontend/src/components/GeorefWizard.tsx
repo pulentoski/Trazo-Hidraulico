@@ -8,6 +8,7 @@ import { fmt, parseNum } from "../lib/format";
 import type { LngLat } from "../lib/geo";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
+import { Icon } from "./Icons";
 
 type CoordMode = "latlon" | "utm";
 interface Pt { px: number; py: number; lon: number | null; lat: number | null; e?: number | null; n?: number | null; zone?: number | null; south?: boolean }
@@ -155,7 +156,7 @@ export function GeorefWizard({ ortho, onClose }: { ortho: OrthophotoOut; onClose
           <li className={!guide && step === 2 ? "on" : step === 3 ? "done" : ""}>2. Marcar puntos</li>
           <li className={!guide && step === 3 ? "on" : ""}>3. Revisar y aplicar</li>
         </ol>
-        <button className="ghost" onClick={onClose} aria-label="Cerrar asistente">✕</button>
+        <button className="ghost" onClick={onClose} aria-label="Cerrar asistente"><Icon.close /></button>
       </header>
       {guide ? (
         <div className="wizard-guide">
@@ -224,7 +225,7 @@ export function GeorefWizard({ ortho, onClose }: { ortho: OrthophotoOut; onClose
                   <td className="right">
                     <button className="small ghost" onClick={() => setAwaiting({ kind: "photo", index: i })} title="Volver a marcar en la foto">Foto</button>
                     <button className="small ghost" onClick={() => { setAwaiting({ kind: "map", index: i }); setTyped({ ...typed, a: "", b: "" }); }} title="Volver a marcar en el mapa o escribir coordenadas">Mapa</button>
-                    <button className="small ghost" onClick={() => remove(i)} aria-label={`Borrar punto ${i + 1}`}>✕</button>
+                    <button className="small ghost" onClick={() => remove(i)} aria-label={`Borrar punto ${i + 1}`}><Icon.close /></button>
                   </td>
                 </tr>
               );

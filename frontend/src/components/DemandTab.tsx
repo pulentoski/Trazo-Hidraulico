@@ -7,6 +7,7 @@ import { flushPending } from "../state/live";
 import { errorText, openProject } from "../state/projects";
 import { useEditor } from "../state/store";
 import { Help, NumField } from "./Fields";
+import { Skeleton } from "./Skeleton";
 
 export function DemandTab() {
   const { project, toast, options } = useEditor();
@@ -15,7 +16,7 @@ export function DemandTab() {
   useEffect(() => {
     if (project) api.demandProjection(project.id).then(setRes).catch((e) => toast(errorText(e), "error"));
   }, [project, toast]);
-  if (!project || !res) return <p className="muted pad">Cargando…</p>;
+  if (!project || !res) return <div className="pad"><Skeleton /></div>;
   const inp = res.inputs;
   const save = async (patch: Partial<DemandInputs>) => {
     try { setRes(await api.saveDemandProjection(project.id, { ...inp, ...patch })); } catch (e) { toast(errorText(e), "error"); }

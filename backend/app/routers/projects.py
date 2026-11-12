@@ -24,11 +24,16 @@ def list_projects(session: SessionDep,
     orgs = [o for o in p.roles if org is None or o == org]
     out = []
     rows = projects_repo.list_projects(session, orgs)
-    stats = projects_repo.latest_stats(session, [p.id for p, _, _ in rows])
+    ids = [p.id for p, _, _ in rows]
+    stats = projects_repo.latest_stats(session, ids)
+    outlines = projects_repo.latest_outlines(session, ids)
+    overdue = projects_repo.overdue_tasks(session, ids)
     for project, latest, count in rows:
         item = ProjectOut.model_validate(project)
         item.latest_version, item.version_count = latest, count
         item.client_count, item.network_km = stats.get(project.id, (0, 0.0))
+        item.center, item.outline = outlines.get(project.id, (None, None))
+        item.overdue_tasks = overdue.get(project.id, 0)
         out.append(item)
     return out
 

@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { allOpen, useSections } from "../state/sections";
+import { Icon } from "./Icons";
 
 export function Section({ id, title, extra, primary = false, className = "", children }: {
   /** Identificador estable («ámbito.sección»): el estado se recuerda por usuario. */
@@ -22,7 +23,7 @@ export function Section({ id, title, extra, primary = false, className = "", chi
     <section className={`sec ${open ? "open" : ""} ${className}`} data-section={id}>
       <div className="sec-head">
         <button type="button" className="sec-toggle" aria-expanded={open} aria-controls={bodyId} onClick={() => toggle(id, primary)}>
-          <svg className="sec-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1.5 7 5 3 8.5" /></svg>
+          <span className="sec-arrow"><Icon.chevronRight /></span>
           <span>{title}</span>
         </button>
         {extra}

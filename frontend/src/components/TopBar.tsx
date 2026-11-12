@@ -7,7 +7,7 @@ import { flushPending, saveNow, simulateNow } from "../state/live";
 import { useEditor, writePref } from "../state/store";
 import { Modal } from "./Dialogs";
 import { Icon } from "./Icons";
-import { Brand } from "./PageHeader";
+import { Logo } from "./PageHeader";
 import { UserMenu } from "./UserMenu";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -70,27 +70,45 @@ function StatusDetail({ onClose }: { onClose: () => void }) {
   );
 }
 
-function SigMenu({ dirty }: { dirty: boolean }) {
+/** Menú «Datos»: importar y exportar (.inp, .trazo, planilla y SIG), agrupado por formato. */
+function DataMenu({ dirty }: { dirty: boolean }) {
   const s = useEditor();
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("mousedown", down);
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("mousedown", down); window.removeEventListener("keydown", key); };
+  }, [open]);
   const pid = s.project?.id;
   if (!pid) return null;
   const item = (href: string, text: string, title: string) => (
-    <a className={`menu-item ${dirty ? "disabled" : ""}`} href={href} title={title} onClick={() => setOpen(false)}>{text}</a>
+    <a role="menuitem" className={`menu-item ${dirty ? "disabled" : ""}`} href={href} title={dirty ? "Esperando el guardado de los cambios" : title}
+      aria-disabled={dirty} onClick={() => setOpen(false)}><Icon.download /><span>{text}</span></a>
   );
   return (
-    <div className="menu-wrap">
-      <button onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Planilla y SIG" title="Planillas Excel y exportaciones SIG/CAD"><Icon.table /><span>Planilla y SIG ▾</span></button>
+    <div className="menu-wrap" ref={ref}>
+      <button onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" aria-label="Importar / Exportar"
+        title="Importar y exportar: .inp, .trazo, planilla Excel y SIG/CAD"><Icon.fileUp /><span>Datos</span><Icon.chevronDown /></button>
       {open && (
-        <div className="menu-pop" onMouseLeave={() => setOpen(false)}>
-          <button className="menu-item" onClick={() => { setOpen(false); s.set({ importOpen: true }); }}>Importar Excel o CSV…</button>
-          {item(api.excelUrl(pid), "Exportar Excel (planilla completa)", "Misma estructura de la plantilla: se puede editar y volver a importar")}
-          {item(api.templateUrl, "Descargar plantilla vacía", "Una hoja por tipo de elemento, con instrucciones y listas")}
-          {item(api.reportUrl(pid), "Informe técnico (HTML imprimible)", "Proyecto, criterios, resultados, gráficos y diagnóstico")}
+        <div className="menu-pop data-menu" role="menu" aria-label="Importar y exportar">
+          <p className="menu-title">Importar</p>
+          <button role="menuitem" className="menu-item" onClick={() => { setOpen(false); s.set({ importOpen: true }); }}
+            title="Actualiza el proyecto desde una planilla (con vista previa de los cambios)"><Icon.upload /><span>Importar Excel o CSV…</span></button>
+          <p className="menu-title">Modelo</p>
+          {item(api.exportUrl(pid, s.serverVersion ?? undefined), "Exportar .inp (EPANET)", "La versión actual como archivo de EPANET")}
           {item(api.trazoUrl(pid), "Exportar proyecto .trazo", "Zip con el .inp y todos los datos propios (clientes, llaves, escenarios, atributos…)")}
           {item(api.trazoUrl(pid, true), "Exportar .trazo con ortofotos", "Igual que el .trazo, más los archivos de las ortofotos (puede pesar mucho)")}
+          <p className="menu-title">Planilla</p>
+          {item(api.excelUrl(pid), "Exportar Excel (planilla completa)", "Misma estructura de la plantilla: se puede editar y volver a importar")}
+          {item(api.templateUrl, "Descargar plantilla vacía", "Una hoja por tipo de elemento, con instrucciones y listas")}
+          <p className="menu-title">SIG, CAD e informe</p>
           {item(api.dxfUrl(pid), "Exportar DXF (UTM, por capas)", "Red por diámetro, válvulas, clientes, estanques…")}
           {item(api.gpkgUrl(pid), "Exportar GeoPackage (QGIS)", "Una capa por tipo de elemento, más los cuarteles de corta")}
+          {item(api.reportUrl(pid), "Informe técnico (HTML imprimible)", "Proyecto, criterios, resultados, gráficos y diagnóstico")}
           {dirty && <p className="muted small pad">Esperando el guardado de los cambios…</p>}
         </div>
       )}
@@ -130,48 +148,52 @@ export function TopBar() {
     else s.toast("No se pudieron guardar los últimos cambios; revise el estado antes de salir.", "error");
   };
 
+  const summaryOn = s.bottomTab === "summary" && !s.bottomCollapsed;
   return (
     <header className="topbar">
-      <button className="ghost back-btn" onClick={() => void back()} disabled={leaving} title="Volver al menú principal (guarda los cambios pendientes)">
-        <Icon.back /><span>{leaving ? "Guardando…" : "Menú"}</span>
-      </button>
-      <Brand />
-      <div className="project-name" title={s.project?.name ?? ""}>{s.project?.name ?? "…"}</div>
+      <div className="tb-group nav" role="group" aria-label="Navegación">
+        <button className="ghost back-btn" onClick={() => void back()} disabled={leaving} title="Volver al menú principal (guarda los cambios pendientes)">
+          <Icon.menu /><span>{leaving ? "Guardando…" : "Menú"}</span>
+        </button>
+        <Logo size={26} />
+        <div className="project-name" title={s.project?.name ?? ""}>{s.project?.name ?? "…"}</div>
+      </div>
       <div className="tb-group" role="group" aria-label="Archivo">
         <button onClick={() => { setLabel(""); setSaveOpen(true); }} disabled={!s.project} title="Guardar versión con nombre (Ctrl+S)"><Icon.save /><span>Guardar</span></button>
-        <button onClick={() => s.set({ versionsOpen: true })} disabled={!s.project} title="Versiones del modelo" aria-label="Versiones"><Icon.history /></button>
-      </div>
-      <div className="tb-group" role="group" aria-label="Edición">
+        <button onClick={() => s.set({ versionsOpen: true })} disabled={!s.project} title="Historial de versiones del modelo" aria-label="Historial"><Icon.history /></button>
         <button onClick={s.undo} disabled={!s.past.length} title="Deshacer (Ctrl+Z)" aria-label="Deshacer"><Icon.undo /></button>
         <button onClick={s.redo} disabled={!s.future.length} title="Rehacer (Ctrl+Y)" aria-label="Rehacer"><Icon.redo /></button>
       </div>
-      <div className="tb-group" role="group" aria-label="Vista">
-        <button onClick={() => s.set({ bottomTab: "summary", bottomCollapsed: false })} disabled={!s.project} title="Panel general del proyecto (Resumen)"
-          aria-label="Resumen" className="summary-btn"><Icon.summary /><span>Resumen</span></button>
-        <button onClick={() => void toGestion()} disabled={!s.project || leaving} title="Gestión: indicadores, registros de operación e informe mensual (guarda los cambios pendientes)"
-          aria-label="Gestión" className="summary-btn"><Icon.table /><span>Gestión</span></button>
-      </div>
-      <div className="tb-group" role="group" aria-label="Simulación">
-        <button className="primary" onClick={simulateNow} disabled={!s.project} title="Simular ahora (F5)"><Icon.play /><span>Simular</span></button>
+      <nav className="tb-group views" aria-label="Vistas">
+        <button className="on" aria-current="page" onClick={() => s.fitAll()} disabled={!s.project} title="Editor del mapa (clic: encuadrar toda la red)">
+          <Icon.pin /><span>Editor</span></button>
+        <button className={`summary-btn ${summaryOn ? "on-soft" : ""}`} onClick={() => s.set({ bottomTab: "summary", bottomCollapsed: false })} disabled={!s.project}
+          title="Panel general del proyecto (pestaña Resumen)" aria-label="Resumen"><Icon.summary /><span>Resumen</span></button>
+        <button className="summary-btn" onClick={() => void toGestion()} disabled={!s.project || leaving}
+          title="Gestión: indicadores, registros de operación e informe mensual (guarda los cambios pendientes)" aria-label="Gestión"><Icon.gestion /><span>Gestión</span></button>
+      </nav>
+      <div className="tb-group" role="group" aria-label="Análisis">
+        <button className="cta" onClick={simulateNow} disabled={!s.project} title="Simular ahora (F5)"><Icon.play /><span>Simular</span></button>
         <div className="status-wrap">
-          <button className={`status ${st.cls}`} onClick={() => setDetail(!detail)} aria-expanded={detail} title="Ver detalle del cálculo">
-            <i />{st.label}
+          <button className={`status ${st.cls}`} onClick={() => setDetail(!detail)} aria-expanded={detail} title="Estado del cálculo (clic: detalle)">
+            <i /><span className="status-text">{st.label}</span>
           </button>
           {detail && <StatusDetail onClose={() => setDetail(false)} />}
         </div>
       </div>
-      <div className="tb-group" role="group" aria-label="Exportar">
-        <a className={`btn ${!s.project || dirty ? "disabled" : ""}`} href={s.project ? api.exportUrl(s.project.id, s.serverVersion ?? undefined) : undefined}
-          aria-disabled={!s.project || dirty} title={dirty ? "Esperando guardado" : "Exportar la versión actual como .inp"}><Icon.download /><span>.inp</span></a>
-        <SigMenu dirty={dirty} />
+      <div className="tb-group" role="group" aria-label="Datos">
+        <DataMenu dirty={dirty} />
       </div>
       <div className="tb-spacer" />
       <div className="version-info" title="Cada guardado crea una versión inmutable">
         {s.serverVersion !== null && <>v{s.serverVersion} · {dirty ? "cambios sin guardar" : `${s.lastSaveKind === "manual" ? "guardado" : "autoguardado"} ${time}`}</>}
       </div>
       {s.readOnly && <span className="badge warn" title="Su rol en esta organización no permite editar">solo lectura</span>}
-      <UserMenu />
-      <button className="ghost" onClick={toggleTheme} title={s.theme === "dark" ? "Tema claro" : "Tema oscuro"}>{s.theme === "dark" ? <Icon.sun /> : <Icon.moon />}</button>
+      <div className="tb-group user" role="group" aria-label="Usuario">
+        <button className="ghost icon-btn" onClick={toggleTheme} title={s.theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+          aria-label={s.theme === "dark" ? "Tema claro" : "Tema oscuro"}>{s.theme === "dark" ? <Icon.sun /> : <Icon.moon />}</button>
+        <UserMenu />
+      </div>
       {saveOpen && (
         <Modal title="Guardar versión" onClose={() => setSaveOpen(false)}>
           <form onSubmit={(e) => { e.preventDefault(); saveNow(label.trim() || "Guardado manual"); setSaveOpen(false); }}>

@@ -38,3 +38,11 @@ export function parseNum(s: string): number | null {
   const v = Number(t);
   return Number.isFinite(v) ? v : null;
 }
+
+/** Ubicación legible del centro [lon, lat] de una red: «33,45° S · 70,66° O». */
+export function placeText(c: number[] | null | undefined): string {
+  if (!c || c.length < 2) return "Sin ubicación";
+  const [lon, lat] = c;
+  const f = (v: number) => Math.abs(v).toLocaleString("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${f(lat)}° ${lat < 0 ? "S" : "N"} · ${f(lon)}° ${lon < 0 ? "O" : "E"}`;
+}

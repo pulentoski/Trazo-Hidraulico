@@ -14,6 +14,7 @@ import { PATHS } from "../paths";
 import { saveNow, simulateNow, startLive, stopLive } from "../state/live";
 import { errorText, openProject } from "../state/projects";
 import { useEditor } from "../state/store";
+import { Skeleton } from "../components/Skeleton";
 
 function useShortcuts() {
   useEffect(() => {
@@ -100,7 +101,7 @@ export function EditorPage() {
     <div className={`app ${toolsCollapsed ? "tools-collapsed" : ""}`}>
       <TopBar />
       <ToolPanel />
-      <main className="center">{loaded ? <MapView key={id} /> : <div className="loading">{failed ? "" : "Abriendo proyecto…"}</div>}</main>
+      <main className="center">{loaded ? <MapView key={id} /> : (failed ? <div className="loading" /> : <Skeleton kind="map" label="Abriendo proyecto…" />)}</main>
       <PropertiesPanel />
       <BottomPanel />
       <VersionsDialog />

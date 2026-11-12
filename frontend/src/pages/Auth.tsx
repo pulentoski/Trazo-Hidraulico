@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { api, ApiError } from "../api/client";
 import type { InvitationInfo } from "../api/types";
+import { NetPattern } from "../components/NetPattern";
 import { Brand } from "../components/PageHeader";
 import { PATHS } from "../paths";
 import { ROLE_LABEL, useAuth } from "../state/auth";
@@ -11,8 +12,10 @@ import { errorText } from "../state/projects";
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="auth-page">
+      <NetPattern />
       <div className="auth-card">
-        <Brand />
+        <Brand big />
+        <p className="auth-tagline">Diseño, simulación y gestión de redes de agua potable</p>
         <h1>{title}</h1>
         {children}
       </div>

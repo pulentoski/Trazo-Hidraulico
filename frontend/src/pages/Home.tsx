@@ -1,5 +1,7 @@
-// Menú principal: saludo, formas de crear un proyecto (nuevo, importar .inp/.trazo, desde Excel) y proyectos con búsqueda.
-import { useEffect, useState } from "react";
+// Menú principal: encabezado con identidad, accesos rápidos (nuevo, importar .inp/.trazo, desde Excel, último
+// proyecto), proyectos como tarjetas con miniatura del trazado, búsqueda y orden, e indicadores y alertas de la
+// organización.
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { api } from "../api/client";
 import type { ImportPreview, ProjectOut } from "../api/types";
@@ -7,12 +9,13 @@ import { PreviewView } from "../components/ExcelImport";
 import { Icon } from "../components/Icons";
 import { Modal } from "../components/Dialogs";
 import { PageFooter } from "../components/PageFooter";
-import { PageHeader } from "../components/PageHeader";
-import { fmt, fmtDate } from "../lib/format";
+import { NetPattern } from "../components/NetPattern";
+import { Logo, PageHeader } from "../components/PageHeader";
+import { fmt, fmtDate, placeText } from "../lib/format";
 import { PATHS } from "../paths";
 import { ROLE_LABEL, useAuth } from "../state/auth";
 import { errorText } from "../state/projects";
-import { useEditor } from "../state/store";
+import { readPref, useEditor } from "../state/store";
 
 /** Límite de subida de .inp (igual al de la API y de Caddy). */
 export const MAX_INP_MB = 20;
@@ -149,84 +152,174 @@ function ImportExcel() {
 }
 
 type Create = "new" | "import" | "excel" | null;
+type Order = "recent" | "name";
 
-const CREATE: { id: Exclude<Create, null>; icon: () => React.ReactElement; title: string; text: string }[] = [
-  { id: "new", icon: Icon.plus, title: "Nuevo proyecto", text: "Empiece con un mapa en blanco y dibuje la red." },
-  { id: "import", icon: Icon.upload, title: "Importar .inp o .trazo", text: "Abra un modelo de EPANET o un proyecto guardado." },
-  { id: "excel", icon: Icon.table, title: "Desde Excel", text: "Cargue nudos, tramos y clientes desde una planilla." },
+const CREATE: { id: Exclude<Create, null>; icon: () => React.ReactElement; title: string; text: string; cls?: string }[] = [
+  { id: "new", icon: Icon.plus, title: "Nuevo proyecto", text: "Mapa en blanco: dibuje la red.", cls: "cta" },
+  { id: "import", icon: Icon.upload, title: "Importar .inp o .trazo", text: "Modelo de EPANET o proyecto guardado." },
+  { id: "excel", icon: Icon.csv, title: "Desde Excel", text: "Nudos, tramos y clientes desde una planilla." },
 ];
+
+/** Miniatura del trazado de la red (SVG generado desde el listado: coordenadas 0–1000). */
+export function NetThumb({ outline, name }: { outline: number[][] | null | undefined; name: string }) {
+  return (
+    <svg className="net-thumb" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" role="img"
+      aria-label={outline?.length ? `Trazado de la red de «${name}»` : `«${name}» todavía no tiene tramos`}>
+      {outline?.length ? outline.map((l, i) => {
+        const pts: string[] = [];
+        for (let k = 0; k + 1 < l.length; k += 2) pts.push(`${l[k]},${l[k + 1]}`);
+        return <polyline key={i} points={pts.join(" ")} />;
+      }) : <g className="net-thumb-empty"><circle cx="500" cy="500" r="60" /><path d="M300 640 L440 520 M560 480 L700 360" /></g>}
+    </svg>
+  );
+}
 
 function ProjectCard({ p, onDelete }: { p: ProjectOut; onDelete: (p: ProjectOut) => Promise<void> }) {
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!menu) return;
-    const close = (e: MouseEvent) => { if (!(e.target as Element).closest?.(`[data-card="${p.id}"] .card-menu`)) setMenu(false); };
+    const close = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(false); };
+    const key = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
     window.addEventListener("mousedown", close);
-    return () => window.removeEventListener("mousedown", close);
-  }, [menu, p.id]);
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", key); };
+  }, [menu]);
+  const overdue = p.overdue_tasks ?? 0;
   return (
     <article className={`project-card ${confirm ? "confirming" : ""}`} data-card={p.id} aria-label={p.name}>
-      <Link className="project-main" to={PATHS.project(p.id)} title={`Abrir «${p.name}»`}>
-        <span className="project-icon" aria-hidden><Icon.pipe /></span>
+      <Link className="project-main" to={PATHS.project(p.id)} title={`Abrir «${p.name}» en el editor`}>
+        <span className="project-thumb"><NetThumb outline={p.outline} name={p.name} />
+          {overdue > 0 && <span className="thumb-badge" title={`${overdue} mantenciones atrasadas`}><Icon.wrench />{overdue}</span>}</span>
         <span className="project-title">{p.name}</span>
-        <span className="project-meta">v{p.latest_version ?? "—"} · {fmtDate(p.updated_at)}</span>
+        <span className="project-place"><Icon.pin />{placeText(p.center)}</span>
         <span className="project-stats">
           <span><b>{p.client_count ?? 0}</b> clientes</span>
           <span><b>{fmt(p.network_km ?? 0, 2)}</b> km de red</span>
         </span>
+        <span className="project-meta"><Icon.clock />v{p.latest_version ?? "—"} · {fmtDate(p.updated_at)}</span>
       </Link>
       {confirm ? (
         <div className="confirm-inline" role="alert">
-          ¿Eliminar «{p.name}» y sus {p.version_count} versiones?
-          <button className="danger small" disabled={busy} autoFocus onClick={async () => { setBusy(true); await onDelete(p); setBusy(false); setConfirm(false); }}>Eliminar</button>
-          <button className="ghost small" disabled={busy} onClick={() => setConfirm(false)}>Cancelar</button>
+          <span>¿Eliminar «{p.name}» y sus {p.version_count} versiones? No se puede deshacer.</span>
+          <span className="confirm-actions">
+            <button className="ghost small" disabled={busy} onClick={() => setConfirm(false)}>Cancelar</button>
+            <button className="danger small" disabled={busy} autoFocus onClick={async () => { setBusy(true); await onDelete(p); setBusy(false); setConfirm(false); }}>
+              <Icon.trash /><span>Eliminar</span></button>
+          </span>
         </div>
       ) : (
         <div className="project-actions">
-          <button className="small primary" onClick={() => navigate(PATHS.project(p.id))}>Abrir</button>
-          <button className="small" onClick={() => navigate(PATHS.gestion(p.id))} title="Indicadores, registros de operación e informe mensual">Gestión</button>
-          <div className="card-menu menu-wrap">
-            <button className="small ghost" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-label={`Más acciones de «${p.name}»`} title="Más acciones">⋯</button>
+          <button className="small ghost danger-text icon-btn" onClick={() => setConfirm(true)} aria-label={`Eliminar «${p.name}»`} title="Eliminar el proyecto (pide confirmación)">
+            <Icon.trash /></button>
+          <span className="spacer" />
+          <div className="card-menu menu-wrap" ref={menuRef}>
+            <button className="small" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-haspopup="menu" aria-label={`Exportar «${p.name}»`} title="Exportar el proyecto">
+              <Icon.download /><Icon.chevronDown /></button>
             {menu && (
               <div className="menu-pop right" role="menu">
-                <a className="menu-item" role="menuitem" href={api.trazoUrl(p.id)} onClick={() => setMenu(false)}>Descargar .trazo</a>
-                <a className="menu-item" role="menuitem" href={api.excelUrl(p.id)} onClick={() => setMenu(false)}>Exportar Excel</a>
-                <button className="menu-item danger-text" role="menuitem" onClick={() => { setMenu(false); setConfirm(true); }}>Eliminar…</button>
+                <a className="menu-item" role="menuitem" href={api.trazoUrl(p.id)} onClick={() => setMenu(false)}><Icon.download /><span>Proyecto .trazo</span></a>
+                <a className="menu-item" role="menuitem" href={api.exportUrl(p.id)} onClick={() => setMenu(false)}><Icon.download /><span>Modelo .inp (EPANET)</span></a>
+                <a className="menu-item" role="menuitem" href={api.excelUrl(p.id)} onClick={() => setMenu(false)}><Icon.download /><span>Planilla Excel</span></a>
               </div>
             )}
           </div>
+          <button className="small" onClick={() => navigate(PATHS.gestion(p.id))} title="Indicadores, registros de operación e informe mensual">
+            <Icon.gestion /><span>Gestión</span></button>
+          <button className="small primary" onClick={() => navigate(PATHS.project(p.id))} title="Abrir en el editor"><Icon.folder /><span>Abrir</span></button>
         </div>
       )}
     </article>
   );
 }
 
+function SkeletonCards() {
+  return (
+    <div className="project-grid" aria-busy="true" aria-label="Cargando proyectos">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="project-card skeleton-card" aria-hidden="true">
+          <span className="skel skel-thumb" /><span className="skel skel-line w70" /><span className="skel skel-line w50" />
+          <span className="skel skel-line w40" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function EmptyState({ onCreate }: { onCreate: (c: Create) => void }) {
   return (
     <div className="empty-state">
-      <svg viewBox="0 0 120 80" aria-hidden className="empty-art">
-        <path d="M10 62 L38 34 L62 50 L92 18" /><circle cx="10" cy="62" r="5" /><circle cx="38" cy="34" r="5" />
-        <circle cx="62" cy="50" r="5" /><circle cx="92" cy="18" r="5" /><path d="M100 50c0-6 6-12 6-12s6 6 6 12a6 6 0 0 1-12 0z" />
+      <svg viewBox="0 0 160 100" aria-hidden="true" className="empty-art">
+        <path className="ea-contour" d="M4 70 C 40 52, 70 84, 104 64 S 150 40, 158 52" />
+        <path className="ea-contour" d="M4 84 C 44 66, 74 98, 108 78 S 150 56, 158 66" />
+        <path className="ea-pipe" d="M22 66 L54 40 L86 56 L120 26" />
+        <circle cx="22" cy="66" r="5" /><circle cx="54" cy="40" r="5" /><circle cx="86" cy="56" r="5" /><circle className="warm" cx="120" cy="26" r="6" />
+        <path className="ea-drop" d="M138 54c-4 5-7 9-7 12.5a7 7 0 0 0 14 0c0-3.5-3-7.5-7-12.5z" />
       </svg>
       <h3>Todavía no hay proyectos</h3>
-      <p className="muted">Cree su primera red o importe un modelo existente. La demostración «APR Demo» está en <code>examples/apr-demo.xlsx</code>.</p>
+      <p className="muted">Tres pasos para tener su primera red simulada:</p>
+      <ol className="steps-guide">
+        <li><b>1</b><span><strong>Cree o importe</strong> la red: mapa en blanco, modelo .inp/.trazo o planilla Excel.</span></li>
+        <li><b>2</b><span><strong>Dibuje y complete</strong> nudos, tuberías, estanques y clientes con las herramientas.</span></li>
+        <li><b>3</b><span><strong>Simule</strong> (F5): presiones, velocidades y alertas al instante.</span></li>
+      </ol>
       <div className="inline">
-        <button className="primary" onClick={() => onCreate("new")}><Icon.plus /><span>Nuevo proyecto</span></button>
+        <button onClick={() => onCreate("excel")}><Icon.csv /><span>Desde Excel</span></button>
         <button onClick={() => onCreate("import")}><Icon.upload /><span>Importar</span></button>
-        <button onClick={() => onCreate("excel")}><Icon.table /><span>Desde Excel</span></button>
+        <button className="cta" onClick={() => onCreate("new")}><Icon.plus /><span>Nuevo proyecto</span></button>
       </div>
+      <p className="muted small">La demostración «APR Demo» está en <code>examples/apr-demo.xlsx</code>.</p>
     </div>
+  );
+}
+
+function OrgPanel({ list, orgName }: { list: ProjectOut[] | null; orgName: string }) {
+  const clients = (list ?? []).reduce((a, p) => a + (p.client_count ?? 0), 0);
+  const km = (list ?? []).reduce((a, p) => a + (p.network_km ?? 0), 0);
+  const late = (list ?? []).filter((p) => (p.overdue_tasks ?? 0) > 0).sort((a, b) => (b.overdue_tasks ?? 0) - (a.overdue_tasks ?? 0));
+  return (
+    <aside className="org-panel" aria-label="Indicadores de la organización">
+      <section className="org-card">
+        <h2><Icon.org />{orgName || "Organización"}</h2>
+        {list === null ? <div className="org-stats"><span className="skel skel-stat" /><span className="skel skel-stat" /><span className="skel skel-stat" /></div> : (
+          <dl className="org-stats">
+            <div><dt>Proyectos</dt><dd>{list.length}</dd></div>
+            <div><dt>Clientes</dt><dd>{fmt(clients, 0)}</dd></div>
+            <div><dt>Km de red</dt><dd>{fmt(km, 1)}</dd></div>
+          </dl>
+        )}
+      </section>
+      <section className="org-card" aria-label="Alertas pendientes">
+        <h2><Icon.alert />Alertas pendientes {late.length > 0 && <span className="count warn">{late.reduce((a, p) => a + (p.overdue_tasks ?? 0), 0)}</span>}</h2>
+        {list === null ? <span className="skel skel-line w70" /> : late.length === 0 ? (
+          <p className="all-clear"><Icon.check />Sin mantenciones atrasadas.</p>
+        ) : (
+          <ul className="alert-items">
+            {late.map((p) => (
+              <li key={p.id}>
+                <Link to={PATHS.gestion(p.id)} title={`Abrir Gestión de «${p.name}»`}>
+                  <Icon.wrench /><span><b>{p.name}</b><small>{p.overdue_tasks} {p.overdue_tasks === 1 ? "mantención atrasada" : "mantenciones atrasadas"}</small></span>
+                  <Icon.chevronRight />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </aside>
   );
 }
 
 export function Home() {
   const me = useAuth((s) => s.me);
   const toast = useEditor((s) => s.toast);
+  const navigate = useNavigate();
   const [list, setList] = useState<ProjectOut[] | null>(null);
   const [q, setQ] = useState("");
+  const [order, setOrder] = useState<Order>("recent");
   const [create, setCreate] = useState<Create>(null);
   const org = me?.orgs.find((o) => o.id === me.current_org);
   const refresh = () => api.listProjects()
@@ -237,43 +330,68 @@ export function Home() {
     try { await api.deleteProject(p.id); toast(`Proyecto «${p.name}» eliminado.`); await refresh(); } catch (e) { toast(errorText(e), "error"); }
   };
   const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const shown = (list ?? []).filter((p) => !q.trim() || norm(p.name).includes(norm(q.trim())));
+  const shown = useMemo(() => {
+    const f = (list ?? []).filter((p) => !q.trim() || norm(p.name).includes(norm(q.trim())));
+    return order === "name" ? [...f].sort((a, b) => a.name.localeCompare(b.name, "es", { numeric: true })) : f;
+  }, [list, q, order]);
+  const lastId = readPref<string | null>("lastProject", null);
+  const last = list?.find((p) => p.id === lastId) ?? list?.[0] ?? null;
   const hour = new Date().getHours();
   const hello = hour < 12 ? "Buenos días" : hour < 20 ? "Buenas tardes" : "Buenas noches";
   const firstName = (me?.name || me?.email || "").split(/[\s@]/)[0];
+  const today = new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="page">
       <PageHeader />
-      <main className="page-body home">
-        <section className="home-hero">
+      <section className="home-hero" aria-label="Bienvenida">
+        <NetPattern />
+        <div className="home-hero-inner">
+          <Logo size={52} />
           <div>
+            <p className="hero-date">{today}</p>
             <h1>{hello}{firstName ? `, ${firstName}` : ""}</h1>
-            <p className="muted">{org ? <>{org.name} · {ROLE_LABEL[org.role]}</> : "Diseño y simulación de redes de agua potable"}</p>
+            <p className="hero-org">{org ? <><Icon.org />{org.name} · {ROLE_LABEL[org.role]}</> : "Diseño y simulación de redes de agua potable"}</p>
           </div>
-        </section>
-        <section aria-label="Crear un proyecto" className="create-grid">
+        </div>
+      </section>
+      <main className="page-body home">
+        <section aria-label="Accesos rápidos" className="quick-grid">
           {CREATE.map((c) => (
-            <button key={c.id} className="create-card" onClick={() => setCreate(c.id)}>
-              <span className="create-icon" aria-hidden><c.icon /></span>
-              <span className="create-title">{c.title}</span>
-              <span className="create-text">{c.text}</span>
+            <button key={c.id} className={`quick-card ${c.cls ?? ""}`} onClick={() => setCreate(c.id)}>
+              <span className="quick-icon" aria-hidden="true"><c.icon /></span>
+              <span className="quick-title">{c.title}</span>
+              <span className="quick-text">{c.text}</span>
             </button>
           ))}
+          <button className="quick-card" disabled={!last} onClick={() => last && navigate(PATHS.project(last.id))}
+            title={last ? `Abrir «${last.name}»` : "Todavía no hay proyectos"}>
+            <span className="quick-icon" aria-hidden="true"><Icon.history /></span>
+            <span className="quick-title">Abrir el último proyecto</span>
+            <span className="quick-text">{last ? last.name : list === null ? "…" : "Todavía no hay proyectos."}</span>
+          </button>
         </section>
-        <section className="projects" aria-label="Proyectos">
-          <div className="projects-head">
-            <h2>Proyectos {list && list.length > 0 && <span className="count">{list.length}</span>}</h2>
-            {list && list.length > 0 && (
-              <label className="project-search"><Icon.search />
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar proyecto…" aria-label="Buscar proyecto" /></label>
-            )}
-          </div>
-          {list === null ? <p className="muted">Cargando…</p>
-            : list.length === 0 ? <EmptyState onCreate={setCreate} />
-              : shown.length === 0 ? <p className="muted pad">Ningún proyecto coincide con «{q}».</p>
-                : <div className="project-grid">{shown.map((p) => <ProjectCard key={p.id} p={p} onDelete={remove} />)}</div>}
-        </section>
+        <div className="home-layout">
+          <section className="projects" aria-label="Proyectos">
+            <div className="projects-head">
+              <h2>Proyectos {list && list.length > 0 && <span className="count">{list.length}</span>}</h2>
+              {list && list.length > 0 && (<>
+                <label className="project-search"><Icon.search />
+                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar proyecto…" aria-label="Buscar proyecto" /></label>
+                <div className="seg plain order-seg" role="group" aria-label="Ordenar proyectos">
+                  <Icon.sort />
+                  <button className={order === "recent" ? "on" : ""} aria-pressed={order === "recent"} onClick={() => setOrder("recent")} title="Los modificados más recientemente primero">Recientes</button>
+                  <button className={order === "name" ? "on" : ""} aria-pressed={order === "name"} onClick={() => setOrder("name")} title="Orden alfabético">Nombre</button>
+                </div>
+              </>)}
+            </div>
+            {list === null ? <SkeletonCards />
+              : list.length === 0 ? <EmptyState onCreate={setCreate} />
+                : shown.length === 0 ? <p className="muted pad">Ningún proyecto coincide con «{q}».</p>
+                  : <div className="project-grid">{shown.map((p) => <ProjectCard key={p.id} p={p} onDelete={remove} />)}</div>}
+          </section>
+          <OrgPanel list={list} orgName={org?.name ?? ""} />
+        </div>
       </main>
       <PageFooter />
       {create === "new" && <Modal title="Nuevo proyecto" onClose={() => setCreate(null)}><NewProject /></Modal>}

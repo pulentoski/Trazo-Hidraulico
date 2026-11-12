@@ -122,7 +122,10 @@ async function cycle(): Promise<void> {
     busy = false;
     if (again) {
       again = false;
-      scheduleLive();
+      // Un guardado manual o una simulación pedidos durante el ciclo se atienden aunque ya no haya cambios
+      // pendientes (scheduleLive solo reprograma cuando hay ediciones sin guardar).
+      if (pendingManual || forceSimulate) void cycle();
+      else scheduleLive();
     }
   }
 }

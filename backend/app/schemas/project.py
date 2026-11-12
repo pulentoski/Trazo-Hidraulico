@@ -40,6 +40,11 @@ class ProjectOut(BaseModel):
     version_count: int = 0
     client_count: int | None = Field(None, description="Clientes de la última versión (solo en el listado)")
     network_km: float | None = Field(None, description="Km de tuberías de la última versión (solo en el listado)")
+    center: list[float] | None = Field(None, description="Centro [lon, lat] de la red de la última versión (solo en el listado)")
+    outline: list[list[int]] | None = Field(
+        None, description="Trazado simplificado de los tramos para la miniatura (solo en el listado): una lista "
+                          "[x0, y0, x1, y1, …] por tramo, en 0–1000 dentro de la caja de la red (y hacia abajo)")
+    overdue_tasks: int | None = Field(None, description="Mantenciones atrasadas (solo en el listado)")
 
 
 class VersionOut(BaseModel):

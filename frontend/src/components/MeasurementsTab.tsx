@@ -8,6 +8,7 @@ import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
 import { Chart } from "./Chart";
 import { Help, NumField } from "./Fields";
+import { Icon } from "./Icons";
 
 const KIND = { meter: "Medidor (m³)", pressure: "Presión (m)", level: "Nivel (m)" } as const;
 const TYPE = { node: "Nudo / estanque", link: "Tramo / bomba", client: "Cliente", well: "Pozo" } as const;
@@ -98,7 +99,7 @@ export function MeasurementsTab() {
             <tbody>{list.slice(-200).map((m) => (
               <tr key={m.id}><td className="mono">{m.element_id}</td><td>{KIND[m.kind]}</td><td>{new Date(m.measured_at).toLocaleString("es-CL")}</td>
                 <td className="num">{fmt(m.value, 3)}</td>
-                <td><button className="small ghost" aria-label="Eliminar" onClick={async () => { await api.deleteMeasurements(project.id, [m.id]); await refresh(); }}>✕</button></td></tr>
+                <td><button className="small ghost danger-text" aria-label="Eliminar" title="Eliminar la medición (pide confirmación)" onClick={async () => { if (!window.confirm("¿Eliminar esta medición?")) return; await api.deleteMeasurements(project.id, [m.id]); await refresh(); }}><Icon.trash /></button></td></tr>
             ))}</tbody>
           </table>
         )}

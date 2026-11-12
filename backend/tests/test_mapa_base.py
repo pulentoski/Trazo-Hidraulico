@@ -1,5 +1,7 @@
 """Mapa base desde Configuración: la key de Google Maps se guarda cifrada, solo el superadministrador la gestiona y
 todo usuario con sesión la recibe en tiempo de ejecución (sin recompilar el frontend)."""
+import uuid
+
 import pytest
 from sqlalchemy import select
 
@@ -61,6 +63,31 @@ def test_listado_con_clientes_y_km(client):
     pid = create_demo(client, "APR listado")
     p = next(x for x in client.get("/api/projects").json() if x["id"] == pid)
     assert p["client_count"] == 30 and 2.0 < p["network_km"] < 2.6 and p["latest_version"] == 1
+    # Miniatura del trazado: un polilínea por tramo, dentro de la grilla 0–1000; centro en Chile central.
+    assert p["outline"] and all(len(line) >= 4 and len(line) % 2 == 0 for line in p["outline"])
+    assert all(0 <= v <= 1000 for line in p["outline"] for v in line)
+    lon, lat = p["center"]
+    assert -76 < lon < -66 and -56 < lat < -17
+    assert isinstance(p["overdue_tasks"], int) and p["overdue_tasks"] >= 0
+
+
+def test_mantenciones_atrasadas_por_proyecto(client):
+    from datetime import date
+
+    from app.models import MaintenanceTask
+    from app.repositories.projects import overdue_tasks
+    from tests.test_sig_excel import create_demo
+
+    pid = uuid.UUID(create_demo(client, "APR atrasos"))
+    with get_sessionmaker()() as s:
+        base = overdue_tasks(s, [pid], date(2026, 11, 12)).get(pid, 0)
+        s.add_all([
+            MaintenanceTask(project_id=pid, kind="otro", next_date=date(2026, 11, 1), frequency_days=30),  # atrasada
+            MaintenanceTask(project_id=pid, kind="otro", next_date=date(2026, 11, 1), done_on=date(2026, 11, 2)),  # única cumplida
+            MaintenanceTask(project_id=pid, kind="otro", next_date=date(2026, 11, 12), frequency_days=7),  # vence hoy: al día
+        ])
+        s.commit()
+        assert overdue_tasks(s, [pid], date(2026, 11, 12))[pid] == base + 1
 
 
 def test_proveedor_del_mapa_base(client, admin):

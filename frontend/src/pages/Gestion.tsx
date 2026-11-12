@@ -14,6 +14,8 @@ import { PATHS } from "../paths";
 import { canEdit, useAuth } from "../state/auth";
 import { errorText } from "../state/projects";
 import { animationsOn, useEditor } from "../state/store";
+import { Icon } from "../components/Icons";
+import { Skeleton } from "../components/Skeleton";
 
 export const GESTION_TABS: { id: GTab; label: string; records: RecordKind[] }[] = [
   { id: "operacion", label: "Operación", records: ["energia"] },
@@ -170,14 +172,14 @@ function IndicatorCard({ i, res, pid, q, onLoad }: { i: GIndicator; res: TabResu
       <p className="muted small kpi-note">{i.note ?? (i.value !== null ? `${num(i.value)} ${i.unit}` : " ")}</p>
       {i.empty ? (
         <div className="empty-hint" role="note">
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="empty-icon"><path d="M4 19h16M6 16V9m6 7V5m6 11v-4" /></svg>
+          <span className="empty-icon"><Icon.gestion /></span>
           <div>
             <p><b>Falta:</b> {i.empty.missing}.</p>
             <p className="small"><b>Cómo cargarlo:</b> {i.empty.how}.</p>
             {i.empty.record && (
               <div className="inline">
-                <button className="small primary" onClick={() => onLoad(i.empty!.record!, "import")}>Cargar planilla</button>
-                <button className="small" onClick={() => onLoad(i.empty!.record!, "add")}>Agregar registro</button>
+                <button className="small" onClick={() => onLoad(i.empty!.record!, "add")}><Icon.plus /><span>Agregar registro</span></button>
+                <button className="small primary" onClick={() => onLoad(i.empty!.record!, "import")}><Icon.upload /><span>Cargar planilla</span></button>
               </div>)}
           </div>
         </div>
@@ -208,9 +210,9 @@ function Calendar({ items }: { items: { date: string; kind: string; element?: st
   return (
     <section className="calendar-wrap" aria-label="Calendario de mantenciones">
       <div className="cal-head">
-        <button className="ghost small" onClick={() => setMonth(new Date(Date.UTC(y, m - 1, 1)))} aria-label="Mes anterior">◀</button>
+        <button className="ghost small" onClick={() => setMonth(new Date(Date.UTC(y, m - 1, 1)))} aria-label="Mes anterior"><Icon.chevronLeft /></button>
         <b>{label}</b>
-        <button className="ghost small" onClick={() => setMonth(new Date(Date.UTC(y, m + 1, 1)))} aria-label="Mes siguiente">▶</button>
+        <button className="ghost small" onClick={() => setMonth(new Date(Date.UTC(y, m + 1, 1)))} aria-label="Mes siguiente"><Icon.chevronRight /></button>
       </div>
       <div className="calendar">
         {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => <div key={i} className="cal-dow">{d}</div>)}
@@ -237,7 +239,7 @@ function TargetsDialog({ pid, onClose, onSaved }: { pid: string; onClose: () => 
   const toast = useEditor((s) => s.toast);
   const [st, setSt] = useState<GestionSettings | null>(null);
   useEffect(() => { api.gestionSettings(pid).then(setSt).catch((e) => toast(errorText(e), "error")); }, [pid, toast]);
-  if (!st) return <Modal title="Metas e indicadores" onClose={onClose}><p className="muted">Cargando…</p></Modal>;
+  if (!st) return <Modal title="Metas e indicadores" onClose={onClose}><Skeleton /></Modal>;
   type T = NonNullable<GestionSettings["targets"]>[string];
   const tg = st.targets ?? {};
   const setT = (k: string, patch: Partial<T>) => setSt({ ...st, targets: { ...tg, [k]: { ...tg[k], ...patch } } });
@@ -351,14 +353,14 @@ export function GestionPage() {
         <div className="gestion-sticky">
         <div className="gestion-head">
           <div className="gh-title">
-            <button className="ghost small" onClick={() => navigate(PATHS.project(id))} aria-label="Volver al editor">← Editor</button>
+            <button className="ghost small" onClick={() => navigate(PATHS.project(id))} aria-label="Volver al editor" title="Volver al editor del mapa"><Icon.back /><span>Editor</span></button>
             <h1 className="page-title">Gestión <span className="muted">· {project?.name ?? "…"}</span></h1>
             <p className="gestion-period"><b>{desde}</b> a <b>{hasta}</b>{sector ? ` · sector ${sector}` : ""}{ruta ? ` · ruta ${ruta}` : ""}</p>
           </div>
           <div className="inline">
-            <button onClick={() => setTargets(true)}>Metas</button>
-            <a className="btn primary" href={api.gestionReportUrl(id, "html", q)} target="_blank" rel="noopener">Informe mensual</a>
-            <a className="btn" href={api.gestionReportUrl(id, "xlsx", q)}>Informe Excel</a>
+            <button onClick={() => setTargets(true)} title="Metas e indicadores del APR"><Icon.activity /><span>Metas</span></button>
+            <a className="btn" href={api.gestionReportUrl(id, "xlsx", q)} title="Informe del período en Excel"><Icon.download /><span>Informe Excel</span></a>
+            <a className="btn primary" href={api.gestionReportUrl(id, "html", q)} target="_blank" rel="noopener" title="Informe mensual imprimible (se abre en otra pestaña)"><Icon.csv /><span>Informe mensual</span></a>
           </div>
         </div>
         <section className="gestion-filters" aria-label="Filtros">
@@ -387,7 +389,7 @@ export function GestionPage() {
         </nav>
         </div>
         <div className="gestion-body" role="tabpanel" aria-label={tabDef.label} aria-busy={loading}>
-          {!res ? <p className="muted">Cargando…</p> : (<>
+          {!res ? <Skeleton kind="tiles" rows={6} label="Calculando indicadores…" /> : (<>
             {(res.notes ?? []).map((n) => <p key={n} className="notice small">{n}</p>)}
             <section className="kpi-strip" aria-label="Indicadores clave">
               {res.indicators.map((i) => <KpiTile key={i.key} i={i} />)}

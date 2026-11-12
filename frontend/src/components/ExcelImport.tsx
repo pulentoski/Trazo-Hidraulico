@@ -6,6 +6,7 @@ import { flushPending } from "../state/live";
 import { errorText, openProject } from "../state/projects";
 import { useEditor } from "../state/store";
 import { Modal } from "./Dialogs";
+import { Icon } from "./Icons";
 
 const SHEETS = ["Nudos", "Tramos", "Estanques", "Reservorios", "Válvulas", "Grifos", "Pozos", "Bombas", "Clientes"];
 
@@ -20,7 +21,7 @@ function Group({ title, items, cls, details }: { title: string; items: ChangeIte
   if (!items.length) return null;
   return (
     <section className={`imp-group ${cls}`}>
-      <button className="ghost small" onClick={() => setOpen(!open)}>{open ? "▾" : "▸"} {title} <span className="count">{items.length}</span></button>
+      <button className="ghost small" onClick={() => setOpen(!open)}>{open ? <Icon.chevronDown /> : <Icon.chevronRight />} {title} <span className="count">{items.length}</span></button>
       {open && (
         <table className="tbl compact">
           <thead><tr><th>Hoja</th><th>Fila</th><th>ID</th>{details && <th>Campo</th>}{details && <th>Antes</th>}{details && <th>Después</th>}</tr></thead>

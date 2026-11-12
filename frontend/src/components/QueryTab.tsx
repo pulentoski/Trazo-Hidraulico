@@ -6,6 +6,7 @@ import { fmt } from "../lib/format";
 import { uidOf } from "../lib/sig";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
+import { Icon } from "./Icons";
 
 const OPS: { id: Condition["op"]; label: string; noValue?: boolean }[] = [
   { id: "eq", label: "=" }, { id: "ne", label: "≠" }, { id: "lt", label: "<" }, { id: "le", label: "≤" }, { id: "gt", label: ">" },
@@ -105,7 +106,7 @@ export function QueryTab() {
                 <input value={String(c.value ?? "")} placeholder="valor" onChange={(e) => upd(i, { value: e.target.value })}
                   onKeyDown={(e) => e.key === "Enter" && void run()} />
               ))}
-              <button className="small ghost" onClick={() => setConds(conds.filter((_, k) => k !== i))} aria-label="Quitar condición">✕</button>
+              <button className="small ghost" onClick={() => setConds(conds.filter((_, k) => k !== i))} aria-label="Quitar condición"><Icon.close /></button>
             </div>
           );
         })}

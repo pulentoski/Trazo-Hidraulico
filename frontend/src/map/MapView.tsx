@@ -20,6 +20,7 @@ import { hourLabel } from "../lib/patterns";
 import { NetworkLayer } from "./NetworkLayer";
 import { GcpPreviewLayer } from "./GcpPreviewLayer";
 import { OrthoLayer } from "./OrthoLayer";
+import { Icon } from "../components/Icons";
 
 const DEFAULT_CENTER: LngLat = [
   Number(import.meta.env.VITE_DEFAULT_MAP_CENTER_LNG || -70.6693),
@@ -271,7 +272,7 @@ function MapLayers({ wanted, googleFailed, size, host }: { wanted: BaseKind; goo
       <Legend />
       {(base === "blank" ? !hasOrtho : googleDown) && !noticeClosed && (
         <div className="map-notice" role="status">
-          <button className="ghost small notice-close" aria-label="Cerrar aviso" onClick={() => { setNoticeClosed(true); writePref("hideMapNotice", true); }}>✕</button>
+          <button className="ghost small notice-close" aria-label="Cerrar aviso" onClick={() => { setNoticeClosed(true); writePref("hideMapNotice", true); }}><Icon.close /></button>
           {base === "blank" ? <>
             <strong>Mapa base no disponible.</strong> Este navegador no pudo iniciar el mapa de OpenStreetMap (requiere
             WebGL). El editor y la simulación funcionan igual sobre este lienzo; también puede usar una ortofoto propia como
@@ -299,7 +300,7 @@ function MapNote() {
     <div className="map-note" role="status">
       <span>{note}</span>
       <button type="button" className="ghost small" aria-label="Quitar resaltado"
-        onClick={() => useEditor.getState().set({ mapNote: null, heat: null, highlight: [] })}>✕</button>
+        onClick={() => useEditor.getState().set({ mapNote: null, heat: null, highlight: [] })}><Icon.close /></button>
     </div>
   );
 }

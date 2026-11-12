@@ -5,6 +5,7 @@ import { canReview, useAuth } from "../state/auth";
 import { fmtDate } from "../lib/format";
 import { errorText, openProject } from "../state/projects";
 import { removeElements, useEditor } from "../state/store";
+import { Icon } from "./Icons";
 
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   useEffect(() => {
@@ -15,7 +16,7 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className={`modal ${wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label={title}>
-        <header><h2>{title}</h2><button className="ghost" onClick={onClose} aria-label="Cerrar">✕</button></header>
+        <header><h2>{title}</h2><button className="ghost" onClick={onClose} aria-label="Cerrar"><Icon.close /></button></header>
         <div className="modal-body">{children}</div>
       </div>
     </div>

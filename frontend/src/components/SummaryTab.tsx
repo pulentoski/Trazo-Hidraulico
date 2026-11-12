@@ -10,6 +10,7 @@ import { clp, hourLabel, polygonsOf, uidMaps, uidsOf, zoneColor } from "../lib/s
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
 import { SummarySettingsDialog } from "./SummarySettings";
+import { Icon } from "./Icons";
 
 interface Listing { title: string; type: ElType; ids: string[]; values?: Record<string, string> }
 
@@ -293,7 +294,7 @@ export function SummaryTab() {
           {listing && (
             <aside className="summary-list" aria-label={listing.title}>
               <header><b>{listing.title}</b> <span className="muted">({listing.ids.length} {TYPE_NAME[listing.type]})</span>
-                <button className="ghost small" onClick={() => { setListing(null); set({ highlight: [] }); }} aria-label="Cerrar lista">✕</button></header>
+                <button className="ghost small" onClick={() => { setListing(null); set({ highlight: [] }); }} aria-label="Cerrar lista"><Icon.close /></button></header>
               <ul>{listing.ids.map((id) => (
                 <li key={id}><button type="button" className="link" onClick={() => goto(listing.type, id)}>{id}</button>
                   {listing.values?.[id] && <span className="muted small"> {listing.values[id]}</span>}</li>))}</ul>
@@ -335,7 +336,7 @@ function LossesCard({ data, show, goto, reload, readOnly, pid, net, toast }: {
     if (!form.link_id) return toast("Elija el tramo del evento.", "error");
     try { await api.addLeaks(pid, [form]); setForm({ ...form, note: null, flow_lps: null }); await reload(); } catch (e) { toast(errorText(e), "error"); }
   };
-  const remove = async (id: number) => { try { await api.deleteLeaks(pid, [id]); await reload(); } catch (e) { toast(errorText(e), "error"); } };
+  const remove = async (id: number) => { if (!window.confirm("¿Eliminar este evento de fuga?")) return; try { await api.deleteLeaks(pid, [id]); await reload(); } catch (e) { toast(errorText(e), "error"); } };
   const upload = async (f: File | undefined) => {
     if (!f) return;
     try {
@@ -395,7 +396,7 @@ function LossesCard({ data, show, goto, reload, readOnly, pid, net, toast }: {
                   <tr key={ev.id}>
                     <td>{ev.event_date}</td><td><button type="button" className="link" onClick={() => goto("link", ev.link_id)}>{ev.link_id}</button></td>
                     <td>{KIND_TXT[ev.kind]}</td><td className="num">{fmt(ev.flow_lps, 2)}</td><td>{ev.note ?? ""}</td>
-                    {!readOnly && <td className="right"><button className="ghost small" title="Eliminar evento" aria-label={`Eliminar evento ${ev.id}`} onClick={() => void remove(ev.id)}>✕</button></td>}
+                    {!readOnly && <td className="right"><button className="ghost small" title="Eliminar evento (pide confirmación)" aria-label={`Eliminar evento ${ev.id}`} onClick={() => void remove(ev.id)}><Icon.trash /></button></td>}
                   </tr>))}</tbody>
               </table>
             </div>

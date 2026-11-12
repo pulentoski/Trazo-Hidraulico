@@ -36,7 +36,7 @@ const DEFAULT_OPTIONS: HydraulicOptions = {
   duration_h: null, hydraulic_step_min: 60, pattern_step_min: 60, report_step_min: 60, demand_multiplier: 1, demand_scenario: null,
 };
 
-function readPref<T>(key: string, fallback: T): T {
+export function readPref<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(`trazo.${key}`);
     return raw ? (JSON.parse(raw) as T) : fallback;
@@ -92,6 +92,8 @@ export interface EditorState {
   cameraRequest: { points: LngLat[]; nonce: number; coverLeft?: number; maxZoom?: number } | null;
   /** Elementos resaltados brevemente tras «ir al elemento» (anillo animado). */
   flash: { uids: string[]; nonce: number } | null;
+  /** Elementos recién creados (aparición breve en el mapa). */
+  born: { uids: string[]; nonce: number } | null;
   /** Punto marcado al buscar una coordenada. */
   pin: LngLat | null;
   /** Crear un elemento con la herramienta activa en una coordenada ingresada (en vez de un clic). */
@@ -197,6 +199,16 @@ export function criteriaOf(profile: DesignProfile | undefined, params?: DesignPa
   };
 }
 
+/** Elementos que están en `next` y no en `prev` (los creados por una edición). */
+export function bornUids(prev: Network, next: Network): string[] {
+  const out: string[] = [];
+  for (const k of ["nodes", "links", "clients", "shutoffs", "hydrants", "wells"] as const) {
+    if (prev[k] === next[k]) continue;
+    for (const u of Object.keys(next[k])) if (!(u in prev[k])) out.push(u);
+  }
+  return out;
+}
+
 function exists(net: Network, u: string): boolean {
   return Boolean(net.nodes[u] || net.links[u] || net.clients[u] || net.shutoffs[u] || net.hydrants[u] || net.wells[u]);
 }
@@ -268,6 +280,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
   pendingDelete: null,
   cameraRequest: null,
   flash: null,
+  born: null,
   pin: null,
   placeRequest: null,
   heat: null,
@@ -305,7 +318,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     past: [], future: [], selection: [], simStatus: "idle", simError: null, versionsOpen: false, pendingDelete: null,
     scenarios: [], designParams: null, scenarioView: null, clientDraft: null, feasibilityDraft: null,
     orthos: [], sectors: null, sectorFocus: null, highlight: [], mapPick: null, overlay: EMPTY_OVERLAY, gcpPreview: null,
-    cameraRequest: null, flash: null, pin: null, placeRequest: null, heat: null, mapNote: null,
+    cameraRequest: null, flash: null, born: null, pin: null, placeRequest: null, heat: null, mapNote: null,
   }),
 
   commit: (fn, options) => {
@@ -316,9 +329,11 @@ export const useEditor = create<EditorState>()((set, get) => ({
     }
     const next = fn(s.net);
     if (next === s.net && !options) return;
+    const born = bornUids(s.net, next);
     set({
       past: [...s.past.slice(-HISTORY_LIMIT + 1), { net: s.net, options: s.options }], future: [],
       net: next, options: options ?? s.options, revision: s.revision + 1,
+      ...(born.length && born.length <= 6 ? { born: { uids: born, nonce: Date.now() } } : {}),
     });
   },
   setOptions: (options, fn) => get().commit(fn ?? ((n) => n), options),

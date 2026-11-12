@@ -18,6 +18,7 @@ import { PATHS } from "./paths";
 import { Shell } from "./pages/Shell";
 import { useAuth } from "./state/auth";
 import { useEditor } from "./state/store";
+import { Skeleton } from "./components/Skeleton";
 
 /** Guardián de rutas: sin sesión → /login?volver=…; con TOTP obligatorio sin configurar → /ajustes/seguridad. */
 export function RequireAuth() {
@@ -34,7 +35,7 @@ export function RequireAuth() {
       .then(([catalog, profiles, engine]) => set({ catalog, profiles, engine }))
       .catch(() => undefined);
   }, [status, me, set]);
-  if (status === "loading") return <div className="loading">Cargando…</div>;
+  if (status === "loading") return <Skeleton kind="page" />;
   const back = encodeURIComponent(location.pathname + location.search);
   if (status === "anon" || !me || me.mfa_pending) return <Navigate to={`${PATHS.login}?volver=${back}`} replace />;
   if (me.mfa_setup_required && location.pathname !== PATHS.ajustes("seguridad")) return <Navigate to={`${PATHS.ajustes("seguridad")}?mfa=1`} replace />;

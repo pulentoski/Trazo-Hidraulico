@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { errorText } from "../../state/projects";
 import { useEditor } from "../../state/store";
+import { Icon } from "../../components/Icons";
 
 export function Panel({ title, description, children, id }: { title: string; description: string; children: ReactNode; id?: string }) {
   return (
@@ -37,9 +38,9 @@ export function SaveButton({ dirty, onSave, label = "Guardar" }: { dirty: boolea
   };
   return (
     <div className="save-bar">
+      {state === "saved" && <span className="saved" role="status"><Icon.check /> Guardado</span>}
       <button type="button" className="primary" disabled={!dirty || state === "saving"} onClick={() => void click()}>
-        {state === "saving" ? "Guardando…" : label}</button>
-      {state === "saved" && <span className="saved" role="status">✓ Guardado</span>}
+        <Icon.save /><span>{state === "saving" ? "Guardando…" : label}</span></button>
     </div>
   );
 }

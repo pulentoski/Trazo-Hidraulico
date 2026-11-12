@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { LINK_MODES, legendClasses, linkScale, linkValue, pressureScale } from "../lib/colors";
 import { criteriaOf, useEditor, writePref } from "../state/store";
+import { Icon } from "./Icons";
 
 function initialOpen(): boolean {
   try { return JSON.parse(localStorage.getItem("trazo.legendOpen") ?? "true") !== false; } catch { return true; }
@@ -21,7 +22,7 @@ export function Legend() {
 
   return (
     <div className={`legend ${open ? "" : "collapsed"}`} aria-label="Leyenda">
-      <button className="legend-toggle" onClick={() => setOpen(!open)} aria-expanded={open} title={open ? "Plegar la leyenda" : "Mostrar la leyenda"}>{open ? "Leyenda ▾" : "Leyenda ▸"}</button>
+      <button className="legend-toggle" onClick={() => setOpen(!open)} aria-expanded={open} title={open ? "Plegar la leyenda" : "Mostrar la leyenda"}>Leyenda {open ? <Icon.chevronDown /> : <Icon.chevronRight />}</button>
       {open && (
         <>
           <label className="legend-row">

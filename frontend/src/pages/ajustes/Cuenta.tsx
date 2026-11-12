@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { api } from "../../api/client";
 import type { MfaSetup, SessionOut } from "../../api/types";
+import { Icon } from "../../components/Icons";
 import { PATHS } from "../../paths";
 import { ROLE_LABEL, useAuth } from "../../state/auth";
 import { errorText } from "../../state/projects";
@@ -72,9 +73,9 @@ export function Seguridad() {
       <h3>Segundo factor (TOTP)</h3>
       {me.mfa_enabled ? (<>
         <p className="ok-text">Activo.</p>
-        <form className="form-grid" onSubmit={(e) => { e.preventDefault(); const f = e.currentTarget.elements.namedItem("pw") as HTMLInputElement; void run(() => api.mfaDisable(f.value), "Segundo factor desactivado."); }}>
+        <form className="form-grid" onSubmit={(e) => { e.preventDefault(); if (!window.confirm("¿Desactivar el segundo factor? Su cuenta quedará protegida solo por la contraseña.")) return; const f = e.currentTarget.elements.namedItem("pw") as HTMLInputElement; void run(() => api.mfaDisable(f.value), "Segundo factor desactivado."); }}>
           <label className="field stacked"><span>Contraseña para desactivarlo</span><input name="pw" type="password" required /></label>
-          <div><button>Desactivar</button></div>
+          <div><button className="danger-outline">Desactivar</button></div>
         </form>
       </>) : setup ? (
         <form className="mfa-setup" onSubmit={(e) => { e.preventDefault(); void run(async () => { await api.mfaEnable(code); setSetup(null); }, "Segundo factor activado."); }}>
@@ -96,7 +97,7 @@ export function Seguridad() {
           ))}</tbody>
         </table>
       </div>
-      <button onClick={async () => { await api.logoutAll(); window.location.assign(PATHS.login); }}>Cerrar todas las sesiones</button>
+      <button className="danger-outline" onClick={async () => { if (!window.confirm("¿Cerrar todas las sesiones, incluida esta?")) return; await api.logoutAll(); window.location.assign(PATHS.login); }}><Icon.logout /><span>Cerrar todas las sesiones</span></button>
     </Panel>
   );
 }

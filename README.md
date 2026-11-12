@@ -117,6 +117,11 @@ trifásica, velocidades; reproduce BombaPozo1) con ficha imprimible y curva de b
 comparación contra el modelo, diagnóstico automático con sugerencias verificadas por simulación e informe
 técnico imprimible. `make test-e2e` hace el recorrido visual con Playwright (capturas en [docs/capturas/](docs/capturas/)).
 
+## Identidad visual
+
+Colores, tipografía (Sora + IBM Plex), íconos Lucide, logo, orden de las botoneras del editor y animaciones en
+[docs/estilo.md](docs/estilo.md); capturas antes y después en [docs/capturas/estilo/](docs/capturas/estilo/).
+
 ## Panel general («Resumen») y paneles plegables
 
 Detalle en [docs/resumen.md](docs/resumen.md): pestaña **Resumen** (primera al abrir un proyecto y botón en la barra

@@ -87,6 +87,10 @@ def tour_gestion(page: Page, pid: str, theme: str, width: int, full: bool) -> No
     page.get_by_label("Ruta").select_option("1")
     wait_tab(page)
     expect(page).to_have_url(re.compile(r"ruta=1"))
+    for _ in range(40):  # el valor cambia cuando termina el recálculo del filtro
+        if value_of(page, "Consumo facturado") < total:
+            break
+        page.wait_for_timeout(250)
     assert value_of(page, "Consumo facturado") < total, "el filtro de ruta no redujo el consumo"
     page.get_by_label("Ruta").select_option("")
     page.get_by_role("group", name="Período").get_by_role("button", name="Trimestre").click()

@@ -7,6 +7,7 @@ import { fmt, parseNum } from "../lib/format";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
 import { Modal } from "./Dialogs";
+import { Icon } from "./Icons";
 
 export function SummarySettingsDialog({ pid, materials, onClose, onSaved }: { pid: string; materials: string[]; onClose: () => void; onSaved: () => void }) {
   const toast = useEditor((s) => s.toast);
@@ -58,7 +59,7 @@ export function SummarySettingsDialog({ pid, materials, onClose, onSaved }: { pi
               <select value={m.element_type} onChange={(e) => setSt({ ...st, production_meters: meters.map((x, k) => (k === i ? { ...x, element_type: e.target.value as "well" | "link" } : x)) })} aria-label="Tipo de medidor">
                 <option value="well">Pozo</option><option value="link">Macromedidor (tramo)</option></select>
               <input value={m.element_id} onChange={(e) => setSt({ ...st, production_meters: meters.map((x, k) => (k === i ? { ...x, element_id: e.target.value } : x)) })} aria-label="ID" placeholder="ID" />
-              <button className="ghost small" onClick={() => setSt({ ...st, production_meters: meters.filter((_, k) => k !== i) })} aria-label="Quitar medidor">✕</button>
+              <button className="ghost small" onClick={() => setSt({ ...st, production_meters: meters.filter((_, k) => k !== i) })} aria-label="Quitar medidor"><Icon.close /></button>
             </div>))}
           <button className="small" onClick={() => setSt({ ...st, production_meters: [...meters, { sector: "Total", element_type: "well", element_id: "" }] })}>+ Medidor</button>
         </section>
@@ -87,7 +88,7 @@ export function SummarySettingsDialog({ pid, materials, onClose, onSaved }: { pi
                   onBlur={(e) => setSt({ ...st, prices: prices.map((x, k) => (k === i ? { ...x, dn_max: Math.round(num(e.target.value, p.dn_max)) } : x)) })} /></td>
                 <td className="num"><input className="cell-input" inputMode="numeric" defaultValue={p.price_m} aria-label="Precio por metro"
                   onBlur={(e) => setSt({ ...st, prices: prices.map((x, k) => (k === i ? { ...x, price_m: num(e.target.value, p.price_m) } : x)) })} /></td>
-                <td><button className="ghost small" onClick={() => setSt({ ...st, prices: prices.filter((_, k) => k !== i) })} aria-label="Quitar precio">✕</button></td>
+                <td><button className="ghost small" onClick={() => setSt({ ...st, prices: prices.filter((_, k) => k !== i) })} aria-label="Quitar precio"><Icon.close /></button></td>
               </tr>))}</tbody>
           </table>
           <button className="small" onClick={() => setSt({ ...st, prices: [...prices, { material: "*", dn_max: 110, price_m: 60000 }] })}>+ Precio</button>

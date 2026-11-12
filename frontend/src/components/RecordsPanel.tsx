@@ -6,6 +6,7 @@ import { api } from "../api/client";
 import type { RecordFieldSpec, RecordImportPreview, RecordSpec } from "../api/types";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
+import { Icon } from "./Icons";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -109,8 +110,8 @@ export function RecordsPanel({ pid, spec, readOnly, onChanged, openNonce, openAc
       <summary><b>{spec.title}</b> <span className="muted small">{rows ? `${rows.length} filas` : "…"}</span></summary>
       <p className="muted small">{spec.help}</p>
       <div className="toolbar plain">
-        {!readOnly && <button className="small" onClick={() => setAdding(!adding)} aria-expanded={adding}>{adding ? "Cerrar formulario" : "Agregar"}</button>}
-        {!readOnly && <button className="small" onClick={() => fileRef.current?.click()} disabled={busy}>Importar planilla…</button>}
+        {!readOnly && <button className="small" onClick={() => setAdding(!adding)} aria-expanded={adding}>{adding ? <><Icon.close /><span>Cerrar formulario</span></> : <><Icon.plus /><span>Agregar</span></>}</button>}
+        {!readOnly && <button className="small" onClick={() => fileRef.current?.click()} disabled={busy}><Icon.upload /><span>Importar planilla…</span></button>}
         <input ref={fileRef} type="file" accept=".xlsx,.csv" hidden aria-label={`Importar ${spec.title}`} onChange={(e) => void pick(e.target.files?.[0])} />
         <a className="btn small ghost" href={api.recordTemplateUrl(pid, spec.kind)}>Plantilla Excel</a>
         <a className="btn small ghost" href={api.recordExportUrl(pid, spec.kind, "xlsx")}>Exportar Excel</a>
@@ -133,7 +134,7 @@ export function RecordsPanel({ pid, spec, readOnly, onChanged, openNonce, openAc
             </label>
           ))}
           {errors.length > 0 && <ul className="bad-text small">{errors.map((x) => <li key={x}>{x}</li>)}</ul>}
-          <div className="modal-actions left"><button className="primary small" disabled={busy}>Guardar fila</button></div>
+          <div className="modal-actions"><button type="button" className="ghost small" onClick={() => setAdding(false)}>Cancelar</button><button className="primary small" disabled={busy}><Icon.save /><span>Guardar fila</span></button></div>
         </form>
       )}
       {preview && (
@@ -151,9 +152,9 @@ export function RecordsPanel({ pid, spec, readOnly, onChanged, openNonce, openAc
             </table>
           </div>
           {preview.rows.length > 60 && <p className="muted small">… {preview.rows.length - 60} filas más.</p>}
-          <div className="modal-actions left">
-            <button className="primary small" disabled={busy || !preview.valid} onClick={() => void applyImport()}>Importar {preview.valid} filas válidas</button>
+          <div className="modal-actions">
             <button className="ghost small" onClick={() => { setPreview(null); setFile(null); }}>Cancelar</button>
+            <button className="primary small" disabled={busy || !preview.valid} onClick={() => void applyImport()}>Importar {preview.valid} filas válidas</button>
           </div>
         </div>
       )}
@@ -167,7 +168,7 @@ export function RecordsPanel({ pid, spec, readOnly, onChanged, openNonce, openAc
                 <td className="row-actions">
                   {spec.kind === "mantenciones" && !readOnly && r.status !== "hecha" &&
                     <button className="ghost small" onClick={() => void complete(Number(r.id))}>Cumplir</button>}
-                  {!readOnly && <button className="ghost small" aria-label="Eliminar fila" onClick={() => void remove(Number(r.id))}>✕</button>}
+                  {!readOnly && <button className="ghost small danger-text" title="Eliminar la fila (pide confirmación)" aria-label="Eliminar fila" onClick={() => void remove(Number(r.id))}><Icon.close /></button>}
                 </td>
               </tr>))}</tbody>
           </table>

@@ -47,7 +47,7 @@ export function Organizaciones() {
             <tr key={o.id} className={o.suspended ? "muted" : ""}><td>{o.name}</td><td>{PLAN_LABEL[o.plan as Plan] ?? o.plan}</td>
               <td className="num">{o.members}</td><td className="num">{o.usage.projects}</td>
               <td>{o.suspended ? <span className="badge warn">suspendida</span> : "activa"}</td>
-              <td className="right"><button className="small ghost" onClick={() => void act(() => api.adminUpdateOrg(o.id, { suspended: !o.suspended }))}>{o.suspended ? "Reactivar" : "Suspender"}</button></td></tr>
+              <td className="right"><button className={`small ghost ${o.suspended ? "" : "danger-text"}`} onClick={() => { if (!o.suspended && !window.confirm(`¿Suspender la organización «${o.name}»? Sus miembros no podrán ingresar.`)) return; void act(() => api.adminUpdateOrg(o.id, { suspended: !o.suspended })); }}>{o.suspended ? "Reactivar" : "Suspender"}</button></td></tr>
           ))}</tbody>
         </table>
       </div>
@@ -62,7 +62,7 @@ export function Organizaciones() {
               <td>{u.mfa_enabled ? "sí" : "no"}</td>
               <td>{u.active ? (u.locked ? "bloqueada" : "activa") : "suspendida"}</td>
               <td className="right">
-                <button className="small ghost" onClick={() => void act(() => api.adminUpdateUser(u.id, !u.active))}>{u.active ? "Suspender" : "Reactivar"}</button>
+                <button className={`small ghost ${u.active ? "danger-text" : ""}`} onClick={() => { if (u.active && !window.confirm(`¿Suspender la cuenta ${u.email}?`)) return; void act(() => api.adminUpdateUser(u.id, !u.active)); }}>{u.active ? "Suspender" : "Reactivar"}</button>
                 <button className="small ghost" onClick={async () => { try { setLink((await api.adminResetLink(u.id)).link); } catch (e) { toast(errorText(e), "error"); } }}>Enlace de contraseña</button>
               </td>
             </tr>

@@ -5250,6 +5250,11 @@ export interface components {
         /** ProjectOut */
         ProjectOut: {
             /**
+             * Center
+             * @description Centro [lon, lat] de la red de la última versión (solo en el listado)
+             */
+            center?: number[] | null;
+            /**
              * Client Count
              * @description Clientes de la última versión (solo en el listado)
              */
@@ -5284,6 +5289,16 @@ export interface components {
              * Format: uuid
              */
             org_id: string;
+            /**
+             * Outline
+             * @description Trazado simplificado de los tramos para la miniatura (solo en el listado): una lista [x0, y0, x1, y1, …] por tramo, en 0–1000 dentro de la caja de la red (y hacia abajo)
+             */
+            outline?: number[][] | null;
+            /**
+             * Overdue Tasks
+             * @description Mantenciones atrasadas (solo en el listado)
+             */
+            overdue_tasks?: number | null;
             /**
              * Updated At
              * Format: date-time

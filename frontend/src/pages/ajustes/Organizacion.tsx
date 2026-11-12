@@ -8,6 +8,8 @@ import { ROLE_LABEL, useAuth } from "../../state/auth";
 import { errorText } from "../../state/projects";
 import { useEditor } from "../../state/store";
 import { Panel, SaveButton } from "./common";
+import { Icon } from "../../components/Icons";
+import { Skeleton } from "../../components/Skeleton";
 
 const ROLES: Role[] = ["admin", "proyectista", "revisor", "lector"];
 // Valores sugeridos (los mismos del servidor): «no verificado» hasta revisarlos.
@@ -72,7 +74,7 @@ export function Miembros() {
               <td>{m.mfa_enabled ? "sí" : "no"}</td>
               <td className="small">{m.last_login_at ? new Date(m.last_login_at).toLocaleString("es-CL") : "—"}</td>
               <td className="right">
-                {m.user_id !== me?.id && <button className="small ghost" onClick={() => void act(() => api.updateMember(org.id, m.user_id, { active: !m.active }))}>{m.active ? "Desactivar" : "Activar"}</button>}
+                {m.user_id !== me?.id && <button className={`small ghost ${m.active ? "danger-text" : ""}`} onClick={() => { if (m.active && !window.confirm(`¿Desactivar a ${m.email}? No podrá ingresar a esta organización.`)) return; void act(() => api.updateMember(org.id, m.user_id, { active: !m.active })); }}>{m.active ? "Desactivar" : "Activar"}</button>}
                 <button className="small ghost" onClick={async () => { try { setLink((await api.memberResetLink(org.id, m.user_id)).link); } catch (e) { toast(errorText(e), "error"); } }}>Enlace de contraseña</button>
               </td>
             </tr>
@@ -111,7 +113,7 @@ export function Criterios() {
   const org = useAdminOrg();
   const profiles = useEditor((s) => s.profiles);
   const { st, setSt, dirty, save } = useOrgSettings(org?.id);
-  if (!org || !st) return <p className="muted">Cargando…</p>;
+  if (!org || !st) return <Skeleton />;
   const fallback = profiles.find((p) => p.id === st.default_profile_id) ?? profiles[0];
   return (
     <Panel id="criterios" title="Criterios de diseño por defecto" description="Perfil que reciben los proyectos nuevos de la organización. Cada proyecto conserva el suyo.">
@@ -143,7 +145,7 @@ export function Catalogos() {
   const [mat, setMat] = useState("");
   useEffect(() => { api.catalog().then(setPipes).catch(() => undefined); }, []);
   const materials = useMemo(() => [...new Set(pipes.map((p) => p.material))].sort(), [pipes]);
-  if (!org || !st) return <p className="muted">Cargando…</p>;
+  if (!org || !st) return <Skeleton />;
   const life = st.service_life ?? DEFAULT_LIFE;
   const prices = st.prices ?? DEFAULT_PRICES;
   const mats = [...new Set([...Object.keys(DEFAULT_LIFE), ...materials, ...Object.keys(life)])].sort();
@@ -171,11 +173,11 @@ export function Catalogos() {
               onBlur={(e) => setSt({ ...st, prices: prices.map((x, k) => (k === i ? { ...x, dn_max: Math.round(n(e.target.value, p.dn_max)) } : x)) })} /></td>
             <td className="num"><input className="cell-input" inputMode="numeric" defaultValue={p.price_m} aria-label={`Precio por metro ${i + 1}`}
               onBlur={(e) => setSt({ ...st, prices: prices.map((x, k) => (k === i ? { ...x, price_m: n(e.target.value, p.price_m) } : x)) })} /></td>
-            <td><button className="ghost small" onClick={() => setSt({ ...st, prices: prices.filter((_, k) => k !== i) })} aria-label="Quitar precio">✕</button></td>
+            <td><button className="ghost small" onClick={() => setSt({ ...st, prices: prices.filter((_, k) => k !== i) })} aria-label="Quitar precio"><Icon.close /></button></td>
           </tr>))}</tbody>
       </table>
       <div className="toolbar plain">
-        <button className="small" onClick={() => setSt({ ...st, prices: [...prices, { material: "*", dn_max: 110, price_m: 60000 }] })}>+ Precio</button>
+        <button className="small" onClick={() => setSt({ ...st, prices: [...prices, { material: "*", dn_max: 110, price_m: 60000 }] })}><Icon.plus /><span>Precio</span></button>
         <label className="check small"><input type="checkbox" checked={!!st.prices_verified} onChange={(e) => setSt({ ...st, prices, prices_verified: e.target.checked })} />
           Precios revisados</label>
       </div>
@@ -205,7 +207,7 @@ export function UsoPlan() {
   if (!org) return null;
   return (
     <Panel id="uso" title="Uso y plan" description="Consumo del mes de la organización contra los límites de su plan. El plan lo cambia el superadministrador.">
-      {usage ? <UsageCard u={usage} /> : <p className="muted">Cargando…</p>}
+      {usage ? <UsageCard u={usage} /> : <Skeleton kind="tiles" rows={3} />}
     </Panel>
   );
 }

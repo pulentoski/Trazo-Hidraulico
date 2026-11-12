@@ -1,7 +1,8 @@
 // Barra de pestañas sin desplazamiento horizontal: las pestañas que no caben (las últimas, menos usadas) pasan a
-// un menú «Más ▾». Los anchos se miden con una copia oculta de los botones.
+// un menú «Más». Los anchos se miden con una copia oculta de los botones.
 import type { ReactNode } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Icon } from "./Icons";
 
 export interface TabDef { id: string; label: string; count?: number; countCls?: string }
 
@@ -73,7 +74,7 @@ export function TabBar({ tabs, active, onPick, controls }: { tabs: TabDef[]; act
         {hidden.length > 0 && (
           <div className="tabs-more-wrap">
             <button className={`tabs-more ${activeHidden ? "on" : ""}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}
-              title="Más pestañas">{activeHidden ? <>Más: <TabLabel t={activeHidden} /></> : "Más"} ▾</button>
+              title="Más pestañas">{activeHidden ? <>Más: <TabLabel t={activeHidden} /></> : "Más"} <Icon.chevronDown /></button>
             {open && (
               <div className="menu-pop tabs-more-pop" role="menu">
                 {hidden.map((t) => (
@@ -90,8 +91,8 @@ export function TabBar({ tabs, active, onPick, controls }: { tabs: TabDef[]; act
       </div>
       <div className="tabs-measure" ref={measureRef} aria-hidden="true">
         {tabs.map((t) => <button key={t.id} tabIndex={-1}><TabLabel t={t} /></button>)}
-        <button tabIndex={-1}>Más ▾</button>
-        <button tabIndex={-1}>Más: Mediciones ▾</button>
+        <button tabIndex={-1}>Más <Icon.chevronDown /></button>
+        <button tabIndex={-1}>Más: Mediciones <Icon.chevronDown /></button>
       </div>
     </>
   );

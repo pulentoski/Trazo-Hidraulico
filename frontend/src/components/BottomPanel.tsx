@@ -5,6 +5,7 @@ import { useEditor } from "../state/store";
 import { DEFAULT_H, MIN_H, clampH, maxH, usePanelSize } from "./panelSize";
 import type { TabDef } from "./TabBar";
 import { TabBar } from "./TabBar";
+import { Icon } from "./Icons";
 import { SummaryTab } from "./SummaryTab";
 import { ChartsTab } from "./ChartsTab";
 import { ClientsTab } from "./ClientsTab";
@@ -74,7 +75,7 @@ export function BottomPanel() {
   });
   const th = (col: string, label: string, num = false) => (
     <th className={num ? "num" : ""} onClick={() => setSort({ col, dir: sort.col === col ? (-sort.dir as 1 | -1) : 1 })}>
-      {label}{sort.col === col ? (sort.dir === 1 ? " ▴" : " ▾") : ""}
+      {label}{sort.col === col ? <span className="sort-ind" aria-label={sort.dir === 1 ? "ascendente" : "descendente"}>{sort.dir === 1 ? "▴" : "▾"}</span> : ""}
     </th>
   );
 
@@ -91,6 +92,7 @@ export function BottomPanel() {
   }), [net.links, result, period]);
 
   const errors = alerts.filter((a) => a.sev === "error").length;
+  // Orden de uso: lo que se mira siempre primero; la configuración y las capas al final.
   const tabList: TabDef[] = [
     { id: "summary", label: "Resumen" },
     { id: "alerts", label: "Alertas", count: alerts.length, countCls: errors ? "bad" : alerts.length ? "warn" : "" },
@@ -98,15 +100,15 @@ export function BottomPanel() {
     { id: "links", label: "Tramos", count: linkRows.length },
     { id: "clients", label: "Clientes", count: Object.keys(net.clients).length },
     { id: "simulation", label: "Simulación" },
-    { id: "demand", label: "Demanda" },
     { id: "charts", label: "Gráficos" },
     { id: "diagnosis", label: "Diagnóstico" },
-    { id: "measurements", label: "Mediciones" },
     { id: "scenarios", label: "Escenarios" },
     { id: "sectors", label: "Cuarteles" },
+    { id: "demand", label: "Demanda" },
+    { id: "measurements", label: "Mediciones" },
     { id: "query", label: "Consultas" },
-    { id: "hydrants", label: "Grifos", count: Object.keys(net.hydrants).length },
     { id: "layers", label: "Capas" },
+    { id: "hydrants", label: "Grifos", count: Object.keys(net.hydrants).length },
     { id: "engine", label: "Corrida" },
   ];
   const kindTxt: Record<string, string> = { junction: "nudo", reservoir: "reservorio", tank: "estanque", pipe: "tubería", pump: "bomba", valve: "válvula" };
@@ -129,13 +131,13 @@ export function BottomPanel() {
           <div className="panel-size" role="group" aria-label="Tamaño del panel inferior">
             <button className={`ghost small ${collapsed ? "on" : ""}`} onClick={() => setSize({ collapsed: !collapsed, maximized: false })} aria-pressed={collapsed}
               aria-label={collapsed ? "Desplegar el panel inferior" : "Plegar el panel inferior"} title={collapsed ? "Desplegar el panel inferior" : "Plegar el panel inferior (más espacio para el mapa)"}>
-              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 9h8" /></svg></button>
+              <Icon.minus /></button>
             <button className={`ghost small ${!collapsed && !maximized ? "on" : ""}`} onClick={() => setSize({ collapsed: false, maximized: false })}
               aria-label="Tamaño normal del panel inferior" title="Tamaño normal">
-              <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5.5" width="8" height="4" rx="1" /></svg></button>
+              <Icon.square /></button>
             <button className={`ghost small ${maximized && !collapsed ? "on" : ""}`} onClick={() => setSize({ collapsed: false, maximized: !maximized || collapsed })}
               aria-label="Maximizar el panel inferior" title="Maximizar (deja el mapa visible arriba)">
-              <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="7.5" rx="1" /></svg></button>
+              <Icon.maximize /></button>
           </div>
         )} />
       {!collapsed && (
