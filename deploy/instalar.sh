@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instalación de Trazo Hidráulico en Ubuntu 22.04 / 24.04 limpio.
+# Instalación de Trazo Hidráulico en Ubuntu 22.04 / 24.04 / 26.04 limpio.
 #
 #   curl -fsSL https://raw.githubusercontent.com/pulentoski/Trazo-Hidraulico/main/deploy/instalar.sh -o instalar.sh
 #   sudo bash instalar.sh
@@ -73,7 +73,7 @@ set_env() {  # set_env CLAVE VALOR  (reemplaza o agrega en .env; valores con $ e
 
 [ "$(id -u)" -eq 0 ] || die "Ejecute con sudo: sudo bash instalar.sh"
 . /etc/os-release
-case "${VERSION_ID:-}" in 22.04|24.04) ;; *) warn "Probado en Ubuntu 22.04 y 24.04 (detectado: ${PRETTY_NAME:-desconocido})." ;; esac
+case "${VERSION_ID:-}" in 22.04|24.04|26.04) ;; *) warn "Probado en Ubuntu 22.04, 24.04 y 26.04 (detectado: ${PRETTY_NAME:-desconocido})." ;; esac
 
 say "Paquetes base"
 export DEBIAN_FRONTEND=noninteractive

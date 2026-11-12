@@ -7,7 +7,7 @@
 | Una APR, pocas ortofotos | 2 | 4 GB | 40 GB SSD |
 | Consultora con varias organizaciones y ortofotos | 4 | 8 GB | 100 GB SSD + disco de respaldos |
 
-Ubuntu 22.04 o 24.04 LTS limpio. Las ortofotos (COG) y los respaldos son lo que más disco ocupa.
+Ubuntu 22.04, 24.04 o 26.04 LTS limpio. Las ortofotos (COG) y los respaldos son lo que más disco ocupa.
 
 ### Ortofotos grandes (cientos de MB a 2 GB)
 
@@ -200,6 +200,62 @@ Primera prueba de `deploy/instalar.sh` en una instancia AWS limpia (Ubuntu, acce
 - **Verificación**: el instalador comprueba `/healthz` al terminar e indica los comandos de cuentas.
 - **e2e contra una instancia**: `make test-e2e BASE_URL=https://IP E2E_SHOTS=/tmp/capturas` acepta el
   certificado interno y no ensucia `docs/capturas` del servidor.
+
+## Instalación en Ubuntu 26.04 (AWS m7i-flex.large, noviembre 2026)
+
+Instancia nueva: 2 vCPU, 8 GiB de RAM, 50 GiB de disco, Ubuntu 26.04.1 LTS (`resolute`), acceso por IP con
+certificado interno (`TRAZO_MODE=2`), sin dominio, sin SMTP. El instalador funcionó sin cambios de código:
+
+```bash
+git clone https://github.com/pulentoski/Trazo-Hidraulico.git /tmp/trazo-src && cd /tmp/trazo-src
+sudo TRAZO_MODE=2 TRAZO_MFA_ADMINS=false TRAZO_GOOGLE_KEY= TRAZO_SMTP_HOST= \
+     TRAZO_ADMIN_EMAIL=correo@dominio bash deploy/instalar.sh --no-interactivo
+```
+
+Lo que hubo que ajustar o tener en cuenta:
+
+- **Ubuntu 26.04**: Docker publica paquetes para `resolute` y todo se construyó y quedó sano. El instalador
+  ahora lo da por probado (antes mostraba la advertencia «Probado en Ubuntu 22.04 y 24.04»).
+- **`.env` después del instalador**: el instalador no pregunta por los límites de ortofotos ni la memoria del
+  worker. Se editaron en el servidor y se aplicaron con `make up-public`:
+  `ORTHO_MAX_MB=2048`, `ORTHO_CHUNK_MB=32`, `WORKER_MEMORY=2G` (8 GiB de RAM; ver «Ortofotos grandes»),
+  `RATE_LIMIT_USER_PER_MINUTE=1200`, `MFA_REQUIRED_FOR_ADMINS=false` (temporal). `make env` genera
+  `SETTINGS_SECRET_KEY`, `POSTGRES_PASSWORD` y `REDIS_PASSWORD` aleatorias. El mapa queda en proveedor
+  automático (OpenStreetMap mientras no se guarde una key de Google en Ajustes → Plataforma → Mapa base).
+- **Organizaciones creadas por la API**: `POST /api/admin/orgs` no hace miembro al superadministrador que la
+  crea; para trabajar dentro de ella hay que invitarse como administrador o agregar la membresía por consola.
+  `make create-admin` solo lo vincula a la primera organización («Organización inicial», creada por las migraciones).
+- **Pruebas con curl en el servidor**: use la IP pública (`https://IP/...`), no `https://127.0.0.1`: Caddy solo
+  atiende la dirección de `SITE_ADDRESS` y a otro host le responde 200 vacío sin pasar a la API. Para no salir por
+  la red: `curl -k --resolve IP:443:127.0.0.1 https://IP/healthz`.
+- **ufw**: el paquete está instalado pero el cortafuegos queda inactivo en la AMI; el filtrado lo hace el grupo de
+  seguridad de AWS (22 desde la IP del administrador, 80 y 443 abiertos).
+- **Medidas**: ortofoto GeoTIFF de 204 MB (8200×8200 RGB) subida en partes de 16 MB en ~1 s desde la misma
+  instancia, procesada en 33 s; pico de memoria del worker ~570 MiB (límite 2 GiB) y de la API ~165 MiB.
+  Respaldo manual (`make backup-now`) y `make restore-test` correctos.
+
+### Repositorio privado: deploy key de solo lectura
+
+El repositorio es público y se clona por HTTPS sin credenciales. Si pasa a privado, no use credenciales
+personales en el servidor; use una *deploy key* de solo lectura:
+
+```bash
+sudo ssh-keygen -t ed25519 -N '' -C "trazo-servidor" -f /root/.ssh/trazo_deploy
+sudo cat /root/.ssh/trazo_deploy.pub   # GitHub → repositorio → Settings → Deploy keys → Add (sin «Allow write access»)
+sudo tee -a /root/.ssh/config >/dev/null <<'CFG'
+Host github-trazo
+  HostName github.com
+  User git
+  IdentityFile /root/.ssh/trazo_deploy
+  IdentitiesOnly yes
+CFG
+cd /opt/trazo-hidraulico && sudo git remote set-url origin git@github-trazo:pulentoski/Trazo-Hidraulico.git
+sudo git pull --ff-only
+```
+
+Para la primera instalación sin acceso al repositorio se puede usar un *git bundle* desde un equipo que sí lo
+tenga: `git bundle create trazo.bundle main`, copiarlo con `scp`, instalar con
+`TRAZO_REPO_URL=/ruta/trazo.bundle` y después `git remote set-url origin <url>` para actualizar normalmente.
 
 ## Actualización
 

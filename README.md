@@ -157,7 +157,7 @@ defecto), edición de las coordenadas de un elemento y barra con la coordenada d
 
 ## Publicar en un dominio con HTTPS
 
-Lo más simple es el instalador para Ubuntu 22.04/24.04 (`deploy/instalar.sh`); la guía completa (instancia
+Lo más simple es el instalador para Ubuntu 22.04/24.04/26.04 (`deploy/instalar.sh`); la guía completa (instancia
 mínima, puertos 22/80/443, DNS, modo sin dominio, actualización, respaldos y restauración en otra instancia) está
 en [docs/despliegue.md](docs/despliegue.md). A mano:
 
