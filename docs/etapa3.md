@@ -11,7 +11,8 @@ Referencia: [docs/referencias/analisis-planillas.md](referencias/analisis-planil
 - `trazo.json` (`format: "trazo"`, `format_version: 1`): proyecto (nombre, SRID, perfil, parámetros de diseño,
   proyección de demanda), opciones y secciones del modelo, escenarios de llaves, red completa en GeoJSON
   (clientes, llaves, grifos, pozos, atributos de gestión y libres, origen de las cotas, vértices), consultas
-  guardadas, cuarteles de corta (informativo), eventos de pérdidas, configuración del Resumen (rangos de presión,
+  guardadas, cuarteles de corta (informativo), eventos de pérdidas, mediciones (`measurements`: lecturas de medidor,
+  presiones y niveles; opcional al importar), registros de Gestión, configuración del Resumen (rangos de presión,
   margen del área operacional, vida útil, precios, sectores y medidores) y las ortofotos (nombre, fecha, fuente,
   georreferencia, archivo world, puntos de control, opacidad, visibilidad y resolución pedida).
 - Con `?ortofotos=true` (menú «Exportar .trazo con ortofotos») también los archivos originales en

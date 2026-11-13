@@ -1,7 +1,7 @@
 """Formato de proyecto .trazo: zip con el .inp completo (compatibilidad EPANET) y `trazo.json` con los datos
 propios de Trazo Hidráulico (clientes, llaves, escenarios, atributos de gestión, cuarteles, consultas
 guardadas, parámetros de diseño, proyección de demanda, origen de las cotas, vértices, eventos de pérdidas,
-configuración del Resumen y ortofotos: referencia, georreferencia y puntos de control, y opcionalmente el
+configuración del Resumen, mediciones (medidores, presiones y niveles) y ortofotos: referencia, georreferencia y puntos de control, y opcionalmente el
 archivo de imagen en `ortofotos/<id>/`). La importación usa el JSON (sin pérdida); el .inp solo si el JSON falta.
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from app.services.auth import new_project_org
 
 from app.core.config import get_settings
-from app.models import LeakEvent, Orthophoto, Project, SavedQuery
+from app.models import LeakEvent, Measurement, Orthophoto, Project, SavedQuery
 from app.repositories import catalog as catalog_repo
 from app.schemas.network import HydraulicOptions, NetworkFeatureCollection, NetworkModel, ValveScenario
 from app.services.errors import NotFound
@@ -94,6 +94,7 @@ def export(session: Session, project: Project, number: int | None, *, include_or
         "sectors": compute_sectors(model).model_dump(mode="json")["sectors"],
         "leak_events": [{"link_id": e.link_id, "event_date": e.event_date.isoformat(), "kind": e.kind,
                          "flow_lps": e.flow_lps, "note": e.note} for e in leaks],
+        "measurements": _measurements_doc(session, project),
         "orthophotos": ortho_docs,
         **_gestion_doc(session, project),
     }
@@ -193,12 +194,45 @@ def import_file(session: Session, filename: str, content: bytes | str, *,
             skipped += 1
     if skipped:
         notes.append(f"{skipped} eventos de pérdidas no válidos se omitieron.")
+    notes += _import_measurements(session, project, doc.get("measurements") or [])
     project.gestion_settings = _gestion_settings(p.get("gestion_settings"))
     session.flush()
     notes += _import_gestion(session, project, doc)
     session.commit()
     notes += _import_orthos(session, project, content, doc.get("orthophotos") or [])
     return project, version.number, notes
+
+
+def _measurements_doc(session: Session, project: Project) -> list[dict]:
+    """Registro de funcionamiento: lecturas de medidor (m³ acumulados), presiones y niveles medidos."""
+    rows = session.scalars(select(Measurement).where(Measurement.project_id == project.id)
+                           .order_by(Measurement.element_type, Measurement.element_id, Measurement.kind,
+                                     Measurement.measured_at, Measurement.id))
+    return [{"element_type": m.element_type, "element_id": m.element_id, "kind": m.kind,
+             "measured_at": m.measured_at.isoformat(), "value": m.value, "note": m.note} for m in rows]
+
+
+def _import_measurements(session: Session, project: Project, items: list) -> list[str]:
+    """Mediciones del .trazo (clave opcional: los .trazo anteriores no la traen). Las filas no válidas se omiten."""
+    from app.schemas.measurement import MeasurementIn
+    from app.services.measurements import MAX_ROWS
+
+    good, bad = [], 0
+    for raw in items[:MAX_ROWS] if isinstance(items, list) else []:
+        try:
+            m = MeasurementIn.model_validate(raw)
+            if m.measured_at.tzinfo is None:
+                m.measured_at = m.measured_at.replace(tzinfo=timezone.utc)
+            good.append(Measurement(project_id=project.id, **m.model_dump()))
+        except (ValueError, TypeError):
+            bad += 1
+    session.add_all(good)
+    notes = []
+    if bad:
+        notes.append(f"{bad} mediciones no válidas se omitieron.")
+    if isinstance(items, list) and len(items) > MAX_ROWS:
+        notes.append(f"Se importaron las primeras {MAX_ROWS} mediciones de {len(items)}.")
+    return notes
 
 
 def _gestion_doc(session: Session, project: Project) -> dict:

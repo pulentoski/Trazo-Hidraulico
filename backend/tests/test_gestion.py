@@ -265,6 +265,11 @@ def test_factibilidad_queda_en_el_historial_y_trazo(client, demo):
     la = client.get(f"/api/projects/{demo}/gestion/records/mantenciones/logs").json()
     lb = client.get(f"/api/projects/{pid2}/gestion/records/mantenciones/logs").json()
     assert len(la) == len(lb)
+    # Mediciones (medidor del pozo, presiones y niveles): viajan completas
+    ma = client.get(f"/api/projects/{demo}/measurements").json()
+    mb = client.get(f"/api/projects/{pid2}/measurements").json()
+    key = lambda m: (m["element_type"], m["element_id"], m["kind"], m["measured_at"], m["value"])  # noqa: E731
+    assert len(ma) > 1000 and sorted(map(key, ma)) == sorted(map(key, mb))
     _, _, tab2 = _tab(client, pid2, "planificacion", desde="2026-01-01", hasta=date.today().isoformat())
     assert tab2["factibilidades"]["rows"][0]["nombre"] == "Loteo"
     assert client.get(f"/api/projects/{pid2}/gestion/settings").json()["targets"]["nrw"]["good"] == 15

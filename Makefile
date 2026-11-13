@@ -13,7 +13,7 @@ CADDY_CONFIG_HASH := $(shell cat infra/caddy/Caddyfile infra/caddy/entrypoint.sh
 export CADDY_CONFIG_HASH
 
 .PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend test-e2e test-ortho-grande reset-db gen-types backup \
-        create-admin unlock-user reset-password actualizar-ip demo restore-test backup-now
+        create-admin unlock-user reset-password actualizar-ip demo ejemplo restore-test backup-now
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -92,16 +92,17 @@ E2E_ADMIN_EMAIL ?= e2e-plataforma@trazo.local
 # E2E_SHOTS: carpeta de capturas (por defecto docs/capturas).
 BASE_URL ?= http://localhost:8080
 E2E_SHOTS ?= docs/capturas
-test-e2e: ## Recorrido visual, mapa al volver a entrar, Gestión, coordenadas, Ajustes por rol y capturas de estilo (Playwright) contra la pila levantada (make up; o BASE_URL=https://IP en una instancia)
+test-e2e: ## Recorrido visual, mapa al volver a entrar, Gestión, coordenadas, Ajustes por rol, capturas de estilo y proyecto de ejemplo (Playwright) contra la pila levantada (make up; o BASE_URL=https://IP en una instancia)
 	$(COMPOSE) exec -T api python -m app.cli ensure-user --email $(E2E_EMAIL) --password $(E2E_PASSWORD) --org "Recorrido e2e" --role admin
 	$(COMPOSE) exec -T api python -m app.cli ensure-user --email $(E2E_ADMIN_EMAIL) --password $(E2E_PASSWORD) --org "Recorrido e2e" --role admin --superadmin
+	$(COMPOSE) exec -T api python -m app.cli ensure-user --email e2e-ejemplo@trazo.local --password $(E2E_PASSWORD) --org "Ejemplo e2e (limpia)" --role admin
 	for r in proyectista revisor lector; do \
 	  $(COMPOSE) exec -T api python -m app.cli ensure-user --email e2e-$$r@trazo.local --password $(E2E_PASSWORD) --org "Recorrido e2e" --role $$r; \
 	done
 	docker build -q -t trazo-hidraulico/e2e:local e2e >/dev/null
 	docker run --rm --network host --ipc=host -u $(HOST_UID):$(HOST_GID) -e HOME=/tmp -v $(CURDIR):/repo -w /repo \
 	  -e E2E_EMAIL=$(E2E_EMAIL) -e E2E_ADMIN_EMAIL=$(E2E_ADMIN_EMAIL) -e E2E_PASSWORD=$(E2E_PASSWORD) -e BASE_URL=$(BASE_URL) -e E2E_SHOTS=$(E2E_SHOTS) \
-	  trazo-hidraulico/e2e:local sh -c 'python3 e2e/recorrido.py && python3 e2e/mapa_reentrada.py && python3 e2e/gestion.py && python3 e2e/ajustes.py && python3 e2e/estilo.py'
+	  trazo-hidraulico/e2e:local sh -c 'python3 e2e/recorrido.py && python3 e2e/mapa_reentrada.py && python3 e2e/gestion.py && python3 e2e/ajustes.py && python3 e2e/estilo.py && python3 e2e/ejemplo.py'
 
 test-ortho-grande: ## Ortofoto de ~800 MB: subida por partes, procesamiento, teselas, tiempos y memoria (docs/validation/ortofoto-grande.md)
 	@e2e/ortofoto-grande.sh
@@ -118,6 +119,13 @@ unlock-user: ## Quita el bloqueo por intentos fallidos (423) de una cuenta: make
 reset-password: ## Contraseña nueva para una cuenta (pedida por consola, sin eco): make reset-password EMAIL=...
 	@[ -n "$(EMAIL)" ] || { echo "Uso: make reset-password EMAIL=correo@dominio" >&2; exit 2; }
 	@t=; [ -t 0 ] || t=-T; $(COMPOSE) exec $$t -e TRAZO_NEW_PASSWORD api python -m app.cli reset-password --email "$(EMAIL)"
+
+EJEMPLO_HASTA ?= $(shell date -d yesterday +%F)
+ejemplo: ## Regenera examples/apr-ejemplo-valle-elqui.trazo (scripts/generar_apr_ejemplo.py, semilla fija; EJEMPLO_HASTA=AAAA-MM-DD)
+	$(COMPOSE) exec -T api python - --hasta $(EJEMPLO_HASTA) < scripts/generar_apr_ejemplo.py > examples/apr-ejemplo-valle-elqui.trazo.tmp
+	mv examples/apr-ejemplo-valle-elqui.trazo.tmp examples/apr-ejemplo-valle-elqui.trazo
+	mkdir -p frontend/public/ejemplos && cp examples/apr-ejemplo-valle-elqui.trazo frontend/public/ejemplos/
+	@echo "Escrito examples/apr-ejemplo-valle-elqui.trazo (copiado a frontend/public/ejemplos/)."
 
 demo: ## Organización «Demo APR» con un usuario por rol y el proyecto APR Demo (solo entorno local; docs/demo.md)
 	$(COMPOSE) exec -T api python -m app.cli seed-demo

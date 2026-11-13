@@ -64,3 +64,39 @@ de cada pestaña y sus tablas principales, con fecha de emisión, período y ver
 - **Barra inferior** con la coordenada del cursor (lat/lon y UTM) y botón para copiarla.
 - Funciona igual con Google Maps, OpenStreetMap y el lienzo neutro. Conversión UTM con las series de Krüger (WGS84),
   probada contra PROJ al centímetro.
+
+## Proyecto de ejemplo
+
+`examples/apr-ejemplo-valle-elqui.trazo` («APR Ejemplo Valle de Elqui») trae un APR completo para recorrer la página
+con datos. **Todo es ficticio** (nombres, derecho de agua, mediciones); las cotas son aproximadas al valle de Elqui.
+
+- **Importar**: Inicio → **Importar** → elegir el `.trazo`; o, en una organización sin proyectos, **Cargar proyecto
+  de ejemplo** en el inicio (el mismo archivo, servido como `ejemplos/apr-ejemplo-valle-elqui.trazo`).
+- **Red** (EPSG:32719, sector de Diaguitas): pozo junto al río con bomba sumergible (curva de 3 puntos, horario fuera de
+  la punta de 18 a 22 h y control por nivel), impulsión HDPE 110 a un estanque elevado de 150 m³ en la ladera y tres
+  sectores con macromedidor a la salida: **Centro** (pueblo, escuela y posta), **La Vega** (aguas abajo, PVC de
+  1984–1990 en estado regular o malo) y **El Arrayán** (loma, HDPE 2016). ~6,8 km de PVC y HDPE DN 63 a 160 de
+  distintos años y estados, 8 llaves (dos interconexiones entre sectores cerradas) con sus cuarteles de corta, 3
+  grifos y ~180 clientes (residenciales, comercios, escuela, posta, sede e iglesia) en 3 rutas de lectura, con
+  altas, bajas y un loteo proyectado.
+- **Parámetros**: proyección de demanda (arranques, 3,2 hab/vivienda, 1,6 % anual, loteo de 24 viviendas), curva
+  horaria normalizada, criterios de diseño típicos (presión mínima 15 m, dotación 140 L/hab/día, pérdidas 25 %) y
+  metas, todos **«no verificado»**; derecho de agua 4 L/s y 70 000 m³/año (caudal autorizado del pozo 4 L/s).
+- **24 meses de registros** hasta el mes de corte: lecturas mensuales de clientes (más consumo de diciembre a marzo),
+  lecturas diarias del medidor del pozo y de los 3 macromedidores (agua no contabilizada de ~18 % a 30 %, mayor en los
+  meses con fugas), energía diaria coherente con las horas de bomba y la altura de impulsión, cloro residual semanal
+  (algunos fuera del rango 0,2–1,5 mg/L), fugas, roturas y reparaciones concentradas en La Vega, cortes programados y
+  de emergencia (clientes afectados según los cuarteles), reclamos con tiempos de respuesta variables, mantenciones con
+  registro de cumplimiento, presiones horarias y nivel del estanque, y 4 factibilidades evaluadas con el modelo.
+- **Casos para mirar**: presión mínima baja en El Arrayán en verano (Operación, filtro de sector), un mes con varias
+  roturas en La Vega y muchos reclamos, mantenciones atrasadas (Activos y Equipo), un cliente con consumo anómalo,
+  la demanda a 20 años sobre el derecho del pozo y una factibilidad «NO FACTIBLE» en la loma (Planificación).
+- **Regenerar**: `make ejemplo` (o `EJEMPLO_HASTA=AAAA-MM-DD make ejemplo` para fijar el último día con datos; el
+  archivo del repositorio usa 2026-11-12). Ejecuta `scripts/generar_apr_ejemplo.py` dentro de la imagen de la API:
+  crea el proyecto en una organización temporal, simula 24 h, lo exporta como `.trazo` (sin ortofoto) y lo borra.
+  Con la misma fecha de corte, los datos son los mismos (semilla fija).
+- **Prueba**: `backend/tests/test_ejemplo.py` (organización limpia, pestañas, Resumen, informe y simulación) y
+  `e2e/ejemplo.py` (en `make test-e2e`, con capturas en `docs/capturas/ejemplo/`).
+
+El `.trazo` incluye ahora las **mediciones** (lecturas de medidor, presiones y niveles) además de los registros de
+Gestión; un `.trazo` anterior sin esa clave se importa igual.

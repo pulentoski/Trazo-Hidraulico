@@ -249,6 +249,34 @@ function SkeletonCards() {
   );
 }
 
+/** Proyecto de ejemplo completo (red y 24 meses de gestión), servido junto a la aplicación. */
+export const EXAMPLE_TRAZO = "ejemplos/apr-ejemplo-valle-elqui.trazo";
+
+function LoadExample() {
+  const navigate = useNavigate();
+  const toast = useEditor((s) => s.toast);
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}${EXAMPLE_TRAZO}`);
+      if (!res.ok) throw new Error(`No se encontró el proyecto de ejemplo (${res.status}).`);
+      const file = new File([await res.blob()], "apr-ejemplo-valle-elqui.trazo", { type: "application/zip" });
+      const t = await api.importTrazo(file);
+      toast(`Proyecto de ejemplo cargado: «${t.project.name}».`);
+      navigate(PATHS.project(t.project.id));
+    } catch (err) {
+      toast(errorText(err), "error");
+      setBusy(false);
+    }
+  };
+  return (
+    <button onClick={load} disabled={busy} title="APR rural ficticio con red completa y 24 meses de registros de gestión">
+      <Icon.download /><span>{busy ? "Cargando ejemplo…" : "Cargar proyecto de ejemplo"}</span>
+    </button>
+  );
+}
+
 function EmptyState({ onCreate }: { onCreate: (c: Create) => void }) {
   return (
     <div className="empty-state">
@@ -269,9 +297,11 @@ function EmptyState({ onCreate }: { onCreate: (c: Create) => void }) {
       <div className="inline">
         <button onClick={() => onCreate("excel")}><Icon.csv /><span>Desde Excel</span></button>
         <button onClick={() => onCreate("import")}><Icon.upload /><span>Importar</span></button>
+        <LoadExample />
         <button className="cta" onClick={() => onCreate("new")}><Icon.plus /><span>Nuevo proyecto</span></button>
       </div>
-      <p className="muted small">La demostración «APR Demo» está en <code>examples/apr-demo.xlsx</code>.</p>
+      <p className="muted small">«Cargar proyecto de ejemplo» importa el APR Ejemplo Valle de Elqui (datos ficticios) con todos
+        los datos de gestión; el archivo está en <code>examples/apr-ejemplo-valle-elqui.trazo</code>.</p>
     </div>
   );
 }

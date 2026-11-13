@@ -160,6 +160,14 @@ mantenciones/tareas y lecturas de clientes (formulario, plantilla, importación 
 en el `.trazo`). En el mapa: búsqueda y creación por coordenadas (lat/lon, grados-minutos-segundos o UTM, huso 19S por
 defecto), edición de las coordenadas de un elemento y barra con la coordenada del cursor.
 
+### Proyecto de ejemplo
+
+`examples/apr-ejemplo-valle-elqui.trazo`: «APR Ejemplo Valle de Elqui», APR rural ficticio en EPSG:32719 con ~180
+clientes, 3 sectores y 3 rutas, ~6,8 km de red, pozo con bomba, estanque elevado de 150 m³, 8 llaves y 3 grifos, y 24
+meses de registros de gestión (detalle en [docs/gestion.md](docs/gestion.md#proyecto-de-ejemplo)). Se importa desde
+**Inicio → Importar** o, con la organización sin proyectos, con **Cargar proyecto de ejemplo**. Se regenera con
+`make ejemplo` (`scripts/generar_apr_ejemplo.py`, semilla fija).
+
 ## Publicar en un dominio con HTTPS
 
 Lo más simple es el instalador para Ubuntu 22.04/24.04/26.04 (`deploy/instalar.sh`); la guía completa (instancia
@@ -201,6 +209,9 @@ Ejecuta todo dentro de contenedores y sin depender de Google:
 - Etapa 5: contraseñas (Argon2id y política), sesión y cookie, bloqueo y límite de ingresos, TOTP, recuperación,
   invitaciones, roles, aislamiento entre organizaciones (lectura, edición, exportación, ortofotos y adivinanza de
   IDs), auditoría, uso, límites y suspensión.
+- Proyecto de ejemplo: se importa en una organización limpia y todas las pestañas de Gestión, el Resumen, el informe
+  mensual y la simulación de 24 h muestran datos (`backend/tests/test_ejemplo.py` y `e2e/ejemplo.py`, con capturas en
+  `docs/capturas/ejemplo/`).
 - Frontend: `tsc --noEmit`, pruebas unitarias (vitest) y verificación de que `schema.d.ts` está al día con OpenAPI.
 
 Los resultados y las tolerancias quedan en [`docs/validation/`](docs/validation/tolerancias.md).
@@ -236,5 +247,6 @@ backend/   API FastAPI (app/{routers,services,repositories,schemas,models,hydrau
 frontend/  React + TypeScript + Vite (servido por nginx-unprivileged)
 infra/     compose.yml, compose.public.yml (dominio + HTTPS) y Caddy (Caddyfile, entrypoint.sh)
 docs/      arquitectura, modelo de datos, API, validación del motor y plan de autenticación
-examples/  Net1.inp, Net2.inp y Net3.inp del repositorio oficial (tag v2.3.5)
+examples/  Net1.inp, Net2.inp y Net3.inp del repositorio oficial (tag v2.3.5), apr-demo.xlsx y el proyecto de ejemplo .trazo
+scripts/   generar_apr_ejemplo.py (proyecto de ejemplo; se ejecuta dentro de la imagen de la API con make ejemplo)
 ```
