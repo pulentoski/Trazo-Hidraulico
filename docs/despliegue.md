@@ -95,6 +95,23 @@ certificado interno para la IP nueva). Manual: `make actualizar-ip`. Registro: `
 Tras un cambio de IP el navegador vuelve a pedir que acepte el certificado. Para una dirección estable, asocie una
 IP elástica o use un dominio.
 
+### Pasar de IP a dominio (un paso)
+
+Con el registro DNS `A` del dominio ya apuntando a la IP pública y los puertos 80 y 443 abiertos (Let's Encrypt
+valida por el 80), en el servidor:
+
+```bash
+cd /opt/trazo-hidraulico && D=trazo.miapr.cl && sed -i -E \
+  -e "s|^SITE_ADDRESS=.*|SITE_ADDRESS=$D|" -e "s|^PUBLIC_URL=.*|PUBLIC_URL=https://$D|" \
+  -e "s|^TLS_MODE=.*|TLS_MODE=auto|" -e "s|^HSTS_ENABLED=.*|HSTS_ENABLED=true|" .env && make up-public
+```
+
+Caddy obtiene el certificado de Let's Encrypt al recrearse el proxy (unos segundos; `make logs` muestra
+`certificate obtained successfully`). `trazo-ip.timer` puede quedar activo: con un dominio en `SITE_ADDRESS` no
+hace nada (o se desactiva con `systemctl disable --now trazo-ip.timer`). Restrinja la key de Google Maps a
+`https://dominio/*`. Para volver a IP, deje `SITE_ADDRESS=https://IP`, `TLS_MODE=internal` y `HSTS_ENABLED=false`
+(los navegadores que ya vieron HSTS del dominio siguen exigiendo HTTPS válido en ese dominio un año).
+
 Al primer ingreso, el superadministrador debe configurar el segundo factor (TOTP) en **Ajustes → Seguridad** si
 `MFA_REQUIRED_FOR_ADMINS=true` (por defecto). Después crea las organizaciones en **Panel admin → Organizaciones** e invita a
 sus administradores.
@@ -233,6 +250,32 @@ Lo que hubo que ajustar o tener en cuenta:
 - **Medidas**: ortofoto GeoTIFF de 204 MB (8200×8200 RGB) subida en partes de 16 MB en ~1 s desde la misma
   instancia, procesada en 33 s; pico de memoria del worker ~570 MiB (límite 2 GiB) y de la API ~165 MiB.
   Respaldo manual (`make backup-now`) y `make restore-test` correctos.
+
+### Reinstalación desde cero (17 de noviembre de 2026, commit c77f24e)
+
+Misma instancia (2 vCPU, 7,6 GiB, 48 GiB, Ubuntu 26.04.1), reinstalada desde cero con el instalador sin cambios
+de código. Lo que hubo que ajustar o tener en cuenta:
+
+- **La instancia no estaba vacía**: tenía la instalación anterior (commit 88affe0) con usuarios y proyectos. Se
+  sacó un `pg_dump` fuera de la instancia y se eliminó todo: `trazo-ip.timer`, `docker compose … down -v
+  --rmi all`, caché de construcción, `/opt/trazo-hidraulico` y `/var/backups/trazo-hidraulico`. Revise con
+  `docker ps -a` y `docker volume ls` antes de dar una instancia por nueva.
+- **`SITE_ADDRESS` no puede quedar vacío** en `make up-public` (`compose.public.yml` lo exige): «sin dominio»
+  significa `TRAZO_MODE=2`, que escribe `SITE_ADDRESS=https://IP` y `TLS_MODE=internal`, y deja `trazo-ip.timer`.
+- **Instalador por ssh**: lanzado con `nohup … --no-interactivo > /root/instalar.log` para que una desconexión no
+  lo corte. La contraseña generada queda en ese log: se borró la línea al terminar
+  (`sed -i '/Contraseña:/d' /root/instalar.log`).
+- **`.env` después del instalador** (editado en el servidor, aplicado con `make up-public`): `ORTHO_MAX_MB=2048`,
+  `ORTHO_CHUNK_MB=32`, `WORKER_MEMORY=2G`, `RATE_LIMIT_USER_PER_MINUTE=1200`, `MFA_REQUIRED_FOR_ADMINS=false`
+  (temporal), sin SMTP ni key de Google (mapa en proveedor automático → OpenStreetMap). Secretos generados por
+  `make env`.
+- **Comandos `make` dentro de un heredoc por ssh** (`ssh … 'bash -s' <<EOF`): `make backup-now`, `restore-test` y
+  `docker compose exec/run` leen la entrada estándar y se comen el resto del script. Úselos con `</dev/null`.
+- **Verificación sin usuarios de prueba**: no se usó `make test-ortho-grande` ni `make test-e2e` (crean cuentas
+  `@trazo.local`). Con el superadministrador y la API: `/healthz`, ingreso (200 y cookie `Secure`), proyecto
+  importado de un `.inp` mínimo y simulado con OWA-EPANET 2.3.5, ortofoto sintética de 204 MB (subida en ~1 s,
+  procesada en 30 s, tesela 200), todo borrado después; `make backup-now` y `make restore-test` correctos, y
+  ningún usuario `@trazo.local` ni `@demo-apr.cl`.
 
 ### Repositorio privado: deploy key de solo lectura
 
