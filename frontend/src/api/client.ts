@@ -9,6 +9,7 @@ import type {
   NetworkDocument, NetworkSave, NetworkSaveResult, OrthophotoOut, ProjectOut, QueryDef, QueryElement, QueryResult,
   SavedQueryOut, ScenarioResult, SearchHit, SectorsResult, SimulationBlocked, SimulationResult, ValidationReport, VersionOut,
   LeakEventIn, LeakEventOut, LeakImportResult, MapsStatus, SummaryResult, SummarySettings,
+  AdminOverview, InvitationOut, OrgDataUpdate, OrgDetail, OrgOut, PlanName,
   GFilters, GTab, GestionSettings, OrgSettings, SystemInfo, RecordKind, RecordSpec, RecordImportPreview, TabResult, MaintenanceLogOut,
 } from "./types";
 
@@ -203,11 +204,25 @@ export const api = {
   adminOrgs: () => unwrap<OrgAdminOut[]>(client.GET("/api/admin/orgs")),
   adminCreateOrg: (body: { name: string; kind?: "apr" | "consultora" | "sanitaria" | "otra"; plan?: "basico" | "profesional" | "ilimitado"; admin_email?: string | null }) =>
     unwrap<{ admin_invitation?: string | null }>(client.POST("/api/admin/orgs", { body: { kind: "apr", plan: "basico", ...body } })),
-  adminUpdateOrg: (org: string, body: { plan?: "basico" | "profesional" | "ilimitado"; limits?: Record<string, number | null>; suspended?: boolean }) =>
-    unwrap<unknown>(client.PATCH("/api/admin/orgs/{org_id}", { params: { path: { org_id: org } }, body })),
+  adminUpdateOrg: (org: string, body: { name?: string; plan?: PlanName; limits?: Record<string, number | null>; suspended?: boolean; confirm?: string }) =>
+    unwrap<OrgOut>(client.PATCH("/api/admin/orgs/{org_id}", { params: { path: { org_id: org } }, body })),
+  adminOrg: (org: string) => unwrap<OrgDetail>(client.GET("/api/admin/orgs/{org_id}", { params: { path: { org_id: org } } })),
+  adminDeleteOrg: (org: string, confirm: string) =>
+    unwrap<unknown>(client.DELETE("/api/admin/orgs/{org_id}", { params: { path: { org_id: org } }, body: { confirm } })),
+  adminSupport: (org: string) => unwrap<unknown>(client.POST("/api/admin/orgs/{org_id}/support", { params: { path: { org_id: org } } })),
+  supportExit: () => unwrap<unknown>(client.POST("/api/auth/support/exit")),
+  adminOverview: () => unwrap<AdminOverview>(client.GET("/api/admin/overview")),
+  adminPlans: (plans: Partial<Record<PlanName, Record<string, number | null>>>) =>
+    unwrap<Record<string, Record<string, number | null>>>(client.PUT("/api/admin/plans", { body: { plans } })),
   adminUsers: () => unwrap<UserAdminOut[]>(client.GET("/api/admin/users")),
-  adminUpdateUser: (user: string, active: boolean) =>
-    unwrap<UserAdminOut>(client.PATCH("/api/admin/users/{user_id}", { params: { path: { user_id: user } }, body: { active } })),
+  adminUpdateUser: (user: string, body: { active?: boolean; is_superadmin?: boolean }) =>
+    unwrap<UserAdminOut>(client.PATCH("/api/admin/users/{user_id}", { params: { path: { user_id: user } }, body })),
+  orgData: (org: string) => unwrap<OrgOut>(client.GET("/api/orgs/{org_id}", { params: { path: { org_id: org } } })),
+  updateOrgData: (org: string, body: OrgDataUpdate) =>
+    unwrap<OrgOut>(client.PATCH("/api/orgs/{org_id}", { params: { path: { org_id: org } }, body })),
+  invitations: (org: string) => unwrap<InvitationOut[]>(client.GET("/api/orgs/{org_id}/invitations", { params: { path: { org_id: org } } })),
+  revokeInvitation: (org: string, id: string) =>
+    unwrap<unknown>(client.DELETE("/api/orgs/{org_id}/invitations/{inv_id}", { params: { path: { org_id: org, inv_id: id } } })),
   adminResetLink: (user: string) =>
     unwrap<{ link: string }>(client.POST("/api/admin/users/{user_id}/reset-link", { params: { path: { user_id: user } } })),
   reviews: (id: string, n: number) =>

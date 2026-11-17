@@ -5,7 +5,12 @@
   `check_project` (llamado por get_project_or_404) filtra por organización: un proyecto de otra organización
   responde 404 (no se distingue de uno inexistente) y un rol sin el permiso necesario responde 403.
 - Permisos por rol: lector = ver y exportar; revisor = ver y revisar versiones; proyectista = ver y editar;
-  administrador = todo + miembros, auditoría y uso de su organización.
+  administrador = todo + miembros, auditoría, uso y datos de su organización.
+- Jerarquía (ROLE_RANK): nadie invita ni asigna un rol superior al propio; la organización siempre conserva al
+  menos un administrador activo. El superadministrador (Super Admin) administra la plataforma: organizaciones,
+  planes y límites, mapa base y el modo soporte (entra a una organización como administrador, con auditoría).
+- Límites por plan (PLANS, configurables por el superadministrador en la base): proyectos, simulaciones, cargas
+  de mapa, ortofotos, usuarios e invitaciones por día.
 """
 from __future__ import annotations
 
@@ -34,6 +39,7 @@ from app.models import (AuditLog, Membership, OneTimeToken, Organization, Orthop
 log = logging.getLogger(__name__)
 ROLES = ("admin", "proyectista", "revisor", "lector")
 ROLE_LABEL = {"admin": "administrador", "proyectista": "proyectista", "revisor": "revisor", "lector": "lector"}
+ROLE_RANK = {"lector": 1, "revisor": 2, "proyectista": 3, "admin": 4}
 ROLE_PERMS = {"lector": {"view"}, "revisor": {"view", "review"}, "proyectista": {"view", "edit"},
               "admin": {"view", "edit", "review", "manage"}}
 PUBLIC = re.compile(r"^/api/(health|auth/(login|recover|reset|invitation/[^/]+|status))$")
@@ -43,12 +49,15 @@ READONLY_POST = re.compile(r"/(simulate|validate|scenarios/simulate|scenarios/co
                            r"query|query/export|hydrants/fire)$")
 REVIEW_POST = re.compile(r"/versions/\d+/reviews$")
 PLANS = {
-    "basico": {"max_projects": 10, "max_simulations_month": 5000, "max_map_loads_month": 2000, "max_ortho_mb": 2048},
+    "basico": {"max_projects": 10, "max_simulations_month": 5000, "max_map_loads_month": 2000, "max_ortho_mb": 2048,
+               "max_users": 5, "max_invites_day": 10},
     "profesional": {"max_projects": 50, "max_simulations_month": 50000, "max_map_loads_month": 20000,
-                    "max_ortho_mb": 20480},
+                    "max_ortho_mb": 20480, "max_users": 25, "max_invites_day": 10},
     "ilimitado": {"max_projects": None, "max_simulations_month": None, "max_map_loads_month": None,
-                  "max_ortho_mb": None},
+                  "max_ortho_mb": None, "max_users": None, "max_invites_day": 10},
 }
+LIMIT_KEYS = tuple(PLANS["basico"])
+PLANS_SETTING = "planes"  # PlatformSetting con los límites de cada plan editados por el superadministrador
 
 
 class AuthError(Exception):
@@ -68,6 +77,7 @@ class Principal:
     ip: str | None = None
     need: str = "view"
     system: bool = False
+    support_org_id: uuid.UUID | None = None
 
     def role_in(self, org_id) -> str | None:
         return self.roles.get(org_id)
@@ -102,6 +112,17 @@ def memberships(session: Session, user_id) -> dict[uuid.UUID, str]:
     return {o: r for o, r in rows}
 
 
+def effective_roles(session: Session, user: User, s: UserSession | None) -> tuple[dict[uuid.UUID, str], uuid.UUID | None]:
+    """Roles del usuario; en modo soporte, el superadministrador actúa como administrador de esa organización."""
+    roles = memberships(session, user.id)
+    sup = s.support_org_id if s is not None and user.is_superadmin else None
+    if sup is not None and session.get(Organization, sup) is not None:
+        roles = {**roles, sup: "admin"}
+    else:
+        sup = None
+    return roles, sup
+
+
 def mfa_setup_required(user: User, roles: dict) -> bool:
     if not get_settings().mfa_required_for_admins or user.mfa_enabled:
         return False
@@ -128,15 +149,16 @@ async def authenticate(request: Request) -> None:
             raise AuthError(401, "La cuenta está desactivada.", "login_required")
         if s.mfa_pending and not PENDING_OK.match(path):
             raise AuthError(401, "Falta el código del segundo factor.", "mfa_pending")
-        roles = memberships(session, user.id)
+        roles, support = effective_roles(session, user, s)
         if mfa_setup_required(user, roles) and not AUTH_ONLY.match(path):
             raise AuthError(403, "Su rol exige el segundo factor (TOTP): configúrelo en su perfil.", "mfa_setup_required")
         if (now() - s.last_seen_at).total_seconds() > 60:
             s.last_seen_at = now()
             session.commit()
-        org = s.org_id if s.org_id in roles else next(iter(roles), None)
+        org = support or (s.org_id if s.org_id in roles else next(iter(roles), None))
         p = Principal(user_id=user.id, email=user.email, is_superadmin=user.is_superadmin, session_hash=s.token_hash,
-                      org_id=org, roles=roles, ip=client_ip(request), need=need_for(request.method, path))
+                      org_id=org, roles=roles, ip=client_ip(request), need=need_for(request.method, path),
+                      support_org_id=support)
     current.set(p)
     request.state.principal = p
 
@@ -172,6 +194,57 @@ def require_org_perm(org_id: uuid.UUID, perm: str) -> Principal:
     if org_id not in p.roles and not p.is_superadmin:
         raise AuthError(404, "Organización no encontrada.")
     raise AuthError(403, "Su rol no permite esta acción en la organización.", "forbidden")
+
+
+def rank(role: str | None) -> int:
+    return ROLE_RANK.get(role or "", 0)
+
+
+def check_assignable(p: Principal, org_id: uuid.UUID, role: str) -> None:
+    """Nadie asigna (ni invita con) un rol superior al propio; el superadministrador puede asignar cualquiera."""
+    if p.system or p.is_superadmin:
+        return
+    if rank(role) > rank(p.roles.get(org_id)):
+        raise AuthError(403, "No puede asignar un rol superior al suyo.", "forbidden")
+
+
+def active_admins(session: Session, org_id: uuid.UUID) -> int:
+    return session.scalar(select(func.count()).select_from(Membership).join(User, User.id == Membership.user_id).where(
+        Membership.org_id == org_id, Membership.role == "admin", Membership.active.is_(True), User.active.is_(True))) or 0
+
+
+def active_users(session: Session, org_id: uuid.UUID) -> int:
+    return session.scalar(select(func.count()).select_from(Membership).join(User, User.id == Membership.user_id).where(
+        Membership.org_id == org_id, Membership.active.is_(True), User.active.is_(True))) or 0
+
+
+def pending_invitations(session: Session, org_id: uuid.UUID) -> int:
+    return session.scalar(select(func.count()).select_from(OneTimeToken).where(
+        OneTimeToken.org_id == org_id, OneTimeToken.purpose == "invite", OneTimeToken.used_at.is_(None),
+        OneTimeToken.expires_at > now())) or 0
+
+
+def invitations_today(session: Session, org_id: uuid.UUID) -> int:
+    start = now().replace(hour=0, minute=0, second=0, microsecond=0)
+    return session.scalar(select(func.count()).select_from(OneTimeToken).where(
+        OneTimeToken.org_id == org_id, OneTimeToken.purpose == "invite", OneTimeToken.created_at >= start)) or 0
+
+
+def check_user_limit(session: Session, org: Organization, *, adding: int = 1, include_pending: bool = False) -> None:
+    cap = limits_for(org).get("max_users")
+    if cap is None:
+        return
+    n = active_users(session, org.id) + (pending_invitations(session, org.id) if include_pending else 0)
+    if n + adding > cap:
+        raise AuthError(403, f"Su plan permite {cap} usuarios.", "limit")
+
+
+def check_invite_limits(session: Session, org: Organization) -> None:
+    check_user_limit(session, org, include_pending=True)
+    cap = limits_for(org).get("max_invites_day")
+    if cap is not None and invitations_today(session, org.id) >= cap:
+        raise AuthError(429, f"Se alcanzó el máximo de {cap} invitaciones por día de la organización: reintente mañana.",
+                        "limit")
 
 
 def require_superadmin() -> Principal:
@@ -419,6 +492,8 @@ def accept_invitation(session: Session, token: str, name: str, password: str, ip
         raise AuthError(401, "Ya existe una cuenta con ese correo: ingrese su contraseña actual para aceptar.",
                         "bad_credentials")
     m = session.get(Membership, (user.id, org.id))
+    if m is None or not m.active:
+        check_user_limit(session, org)
     if m is None:
         session.add(Membership(user_id=user.id, org_id=org.id, role=t.role, active=True))
     else:
@@ -437,6 +512,8 @@ def accept_invitation(session: Session, token: str, name: str, password: str, ip
 def audit(session: Session, action: str, *, user: User | None = None, org_id=None, project_id=None, version=None,
           detail: dict | None = None, ip: str | None = None) -> None:
     p = current.get()
+    if p is not None and p.support_org_id is not None and org_id == p.support_org_id:
+        detail = {**(detail or {}), "soporte": True}  # acción hecha por el superadministrador en modo soporte
     uid = user.id if user else (p.user_id if p else None)
     email = user.email if user else (p.email if p and not p.system else None)
     session.add(AuditLog(org_id=org_id, user_id=uid, user_email=email, action=action, project_id=project_id,
@@ -447,9 +524,31 @@ def month() -> str:
     return now().strftime("%Y-%m")
 
 
+def plans(session: Session | None) -> dict[str, dict]:
+    """Límites de cada plan: los valores por defecto (PLANS) con los cambios guardados por el superadministrador."""
+    import json
+
+    from app.models import PlatformSetting
+
+    out = {k: dict(v) for k, v in PLANS.items()}
+    row = session.get(PlatformSetting, PLANS_SETTING) if session is not None else None
+    if row is not None:
+        try:
+            saved = json.loads(row.value)
+        except ValueError:
+            saved = {}
+        for plan, lim in (saved or {}).items():
+            if plan in out and isinstance(lim, dict):
+                out[plan].update({k: v for k, v in lim.items() if k in LIMIT_KEYS})
+    return out
+
+
 def limits_for(org: Organization) -> dict:
-    base = dict(PLANS.get(org.plan, PLANS["basico"]))
-    base.update(org.limits or {})
+    from sqlalchemy.orm import object_session
+
+    all_plans = plans(object_session(org))
+    base = dict(all_plans.get(org.plan, all_plans["basico"]))
+    base.update({k: v for k, v in (org.limits or {}).items() if k in LIMIT_KEYS})
     return base
 
 

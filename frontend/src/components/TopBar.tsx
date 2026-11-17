@@ -6,6 +6,7 @@ import { PATHS } from "../paths";
 import { flushPending, saveNow, simulateNow } from "../state/live";
 import { useEditor, writePref } from "../state/store";
 import { Modal } from "./Dialogs";
+import { MenuButton } from "./MenuButton";
 import { Icon } from "./Icons";
 import { Logo } from "./PageHeader";
 import { UserMenu } from "./UserMenu";
@@ -70,33 +71,23 @@ function StatusDetail({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Menú «Datos»: importar y exportar (.inp, .trazo, planilla y SIG), agrupado por formato. */
+/** Menú «Datos»: importar y exportar (.inp, .trazo, planilla y SIG), agrupado por formato. Se dibuja en una capa
+ * propia sobre el mapa y los paneles, sin cortarse en los bordes de la ventana. */
 function DataMenu({ dirty }: { dirty: boolean }) {
   const s = useEditor();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const down = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    const key = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("mousedown", down);
-    window.addEventListener("keydown", key);
-    return () => { window.removeEventListener("mousedown", down); window.removeEventListener("keydown", key); };
-  }, [open]);
   const pid = s.project?.id;
   if (!pid) return null;
-  const item = (href: string, text: string, title: string) => (
-    <a role="menuitem" className={`menu-item ${dirty ? "disabled" : ""}`} href={href} title={dirty ? "Esperando el guardado de los cambios" : title}
-      aria-disabled={dirty} onClick={() => setOpen(false)}><Icon.download /><span>{text}</span></a>
-  );
   return (
-    <div className="menu-wrap" ref={ref}>
-      <button onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" aria-label="Importar / Exportar"
-        title="Importar y exportar: .inp, .trazo, planilla Excel y SIG/CAD"><Icon.fileUp /><span>Datos</span><Icon.chevronDown /></button>
-      {open && (
-        <div className="menu-pop data-menu" role="menu" aria-label="Importar y exportar">
+    <MenuButton menuLabel="Importar y exportar" ariaLabel="Importar / Exportar" align="right" menuClass="data-menu" title="Importar y exportar: .inp, .trazo, planilla Excel y SIG/CAD"
+      label={<><Icon.fileUp /><span>Datos</span><Icon.chevronDown /></>}>
+      {(close) => {
+        const item = (href: string, text: string, title: string) => (
+          <a role="menuitem" className={`menu-item ${dirty ? "disabled" : ""}`} href={href} title={dirty ? "Esperando el guardado de los cambios" : title}
+            aria-disabled={dirty} onClick={close}><Icon.download /><span>{text}</span></a>
+        );
+        return (<>
           <p className="menu-title">Importar</p>
-          <button role="menuitem" className="menu-item" onClick={() => { setOpen(false); s.set({ importOpen: true }); }}
+          <button role="menuitem" className="menu-item" onClick={() => { close(); s.set({ importOpen: true }); }}
             title="Actualiza el proyecto desde una planilla (con vista previa de los cambios)"><Icon.upload /><span>Importar Excel o CSV…</span></button>
           <p className="menu-title">Modelo</p>
           {item(api.exportUrl(pid, s.serverVersion ?? undefined), "Exportar .inp (EPANET)", "La versión actual como archivo de EPANET")}
@@ -110,9 +101,9 @@ function DataMenu({ dirty }: { dirty: boolean }) {
           {item(api.gpkgUrl(pid), "Exportar GeoPackage (QGIS)", "Una capa por tipo de elemento, más los cuarteles de corta")}
           {item(api.reportUrl(pid), "Informe técnico (HTML imprimible)", "Proyecto, criterios, resultados, gráficos y diagnóstico")}
           {dirty && <p className="muted small pad">Esperando el guardado de los cambios…</p>}
-        </div>
-      )}
-    </div>
+        </>);
+      }}
+    </MenuButton>
   );
 }
 

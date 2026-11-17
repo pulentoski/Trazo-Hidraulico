@@ -260,7 +260,7 @@ def tour(page: Page, pid: str, theme: str, width: int, full: bool) -> None:
         # Agregar un nudo con la herramienta y deshacer
         box = page.locator(".net-layer").bounding_box()
         page.keyboard.press("N")
-        page.mouse.click(box["x"] + box["width"] * 0.12, box["y"] + box["height"] * 0.3)
+        page.mouse.click(box["x"] + box["width"] * 0.85, box["y"] + box["height"] * 0.6)  # zona libre (fuera de la leyenda)
         expect(page.locator(".props h3")).to_contain_text("Nudo")
         page.keyboard.press("Control+z")
         page.keyboard.press("V")
@@ -451,7 +451,7 @@ def totp(secret: str) -> str:
 
 
 def config_tour(browser, state: dict, theme: str, width: int) -> None:
-    """Ajustes → Plataforma → Mapa base con el superadministrador: guardar una key de prueba (cifrada), ver su estado y borrarla."""
+    """Panel admin → Mapa base con el superadministrador: guardar una key de prueba (cifrada), ver su estado y borrarla."""
     ctx = browser.new_context(viewport={"width": width, "height": 900}, locale="es-CL", storage_state=state,
                               ignore_https_errors=INSECURE, reduced_motion="reduce")
     page = ctx.new_page()
@@ -459,7 +459,7 @@ def config_tour(browser, state: dict, theme: str, width: int) -> None:
     set_theme(page, theme)
     page.goto(f"{BASE}/configuracion")
     expect(page).to_have_url(re.compile(r"/ajustes/preferencias"))
-    page.goto(f"{BASE}/ajustes/mapa-base")
+    page.goto(f"{BASE}/panel-admin/mapa-base")
     sec = page.get_by_label("Proveedor y key del mapa base")
     expect(sec.get_by_text("Administración de la plataforma")).to_be_visible()
     in_use = sec.get_by_label("En uso ahora")
@@ -490,7 +490,7 @@ def login(browser, email: str = EMAIL) -> dict:
     expect(page).to_have_url(re.compile(r"/login\?volver="))
     shot(page, "login", "light", 1440)
     page.get_by_label("Correo").fill(email)
-    page.get_by_label("Contraseña").fill(PASSWORD)
+    page.get_by_label("Contraseña", exact=True).fill(PASSWORD)
     page.get_by_role("button", name="Ingresar").click()
     page.wait_for_url(re.compile(r"/ajustes/(perfil|seguridad)"), timeout=15000)
     if "/ajustes/seguridad" in page.url:  # el rol exige segundo factor: configurarlo

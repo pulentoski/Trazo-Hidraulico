@@ -7,6 +7,7 @@ import { uidOf } from "../lib/sig";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
 import { Icon } from "./Icons";
+import { DataTable } from "./DataTable";
 
 const OPS: { id: Condition["op"]; label: string; noValue?: boolean }[] = [
   { id: "eq", label: "=" }, { id: "ne", label: "≠" }, { id: "lt", label: "<" }, { id: "le", label: "≤" }, { id: "gt", label: ">" },
@@ -136,16 +137,14 @@ export function QueryTab() {
             <button className="small" onClick={() => void exportAs("xlsx")}>Excel</button>
             <button className="small" onClick={() => void exportAs("csv")}>CSV</button>
           </div>
-          <table className="tbl compact">
-            <thead><tr>{res.columns.map((c) => <th key={c.key}>{c.label}</th>)}</tr></thead>
-            <tbody>
-              {res.rows.slice(0, 1000).map((r) => (
-                <tr key={String(r.id)} className="clickable" onClick={() => { const u = uidOf(net, res.element, String(r.id)); if (u) focus([u]); }}>
-                  {res.columns.map((c) => <td key={c.key} className={typeof r[c.key] === "number" ? "num" : ""}>{r[c.key] === null || r[c.key] === undefined ? "" : typeof r[c.key] === "number" ? fmt(r[c.key] as number, 3) : String(r[c.key])}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable compact label="Resultado de la consulta" rows={res.rows as Record<string, unknown>[]} rowKey={(r, i) => `${String(r.id)}-${i}`}
+            onRowClick={(r) => { const u = uidOf(net, res.element, String(r.id)); if (u) focus([u]); }}
+            columns={res.columns.map((c) => {
+              const isNum = res.rows.some((r) => typeof (r as Record<string, unknown>)[c.key] === "number");
+              return { key: c.key, label: c.label, type: isNum ? "num" as const : "text" as const,
+                value: (r: Record<string, unknown>) => r[c.key] as string | number | null | undefined,
+                render: (r: Record<string, unknown>) => (r[c.key] === null || r[c.key] === undefined ? "" : typeof r[c.key] === "number" ? fmt(r[c.key] as number, 3) : String(r[c.key])) };
+            })} />
         </div>
       )}
     </div>

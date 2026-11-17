@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ingresar · Trazo Hidráulico</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;box-sizing:border-box;--bg1:#0d1d38;--bg2:#050d1a;--card:rgba(9,21,41,.88);--line:#1e293b;--field:#050d1a;--fline:#334155;--text:#f1f5f9;--muted:#94a3b8;--accent:#22d3ee;--btn1:#0077e6;--btn2:#0099ff;--onaccent:#fff;--logo:#00d2ff;--river:#0ea5e9;--ink:#fff;--shadow:0 20px 60px rgba(0,0,0,.55);
+padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html.light{color-scheme:light;--bg1:#ffffff;--bg2:#eef3f9;--card:rgba(255,255,255,.92);--line:#d3deed;--field:#eaf1f9;--fline:#d3deed;--text:#0f172a;--muted:#64748b;--accent:#0284c7;--logo:#0284c7;--river:#0ea5e9;--ink:#000;--shadow:0 6px 18px rgba(15,23,42,.08)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;font-family:'Inter',system-ui,sans-serif;color:var(--text);background:radial-gradient(ellipse at 50% -10%,var(--bg1),var(--bg2) 70%) fixed;overflow-x:hidden;display:flex;align-items:center;justify-content:flex-start;padding:56px 16px 56px var(--gx)}
+:root{--gx:max(16px,calc((100vw - 1120px) / 2))}
+@keyframes cA{50%{transform:translateX(14px)}}@keyframes cB{50%{transform:translateX(-12px)}}
+@keyframes rain{0%{transform:translateY(-10px);opacity:0}20%,85%{opacity:.95}100%{transform:translateY(58px);opacity:0}}
+@keyframes snow{0%{transform:translate(0,-8px);opacity:0}25%{opacity:1}50%{transform:translate(4px,22px)}100%{transform:translate(-3px,54px);opacity:0}}
+@keyframes dash{to{stroke-dashoffset:-48}}@keyframes pdash{to{stroke-dashoffset:-32}}
+@keyframes evap{0%{transform:translateY(0);opacity:0}30%{opacity:.8}100%{transform:translateY(-62px);opacity:0}}
+@keyframes pul{0%,100%{opacity:.5}50%{opacity:1}}@keyframes sun{50%{transform:scale(1.12);opacity:.6}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.c1{animation:cA 11s ease-in-out infinite}.c2{animation:cB 14s ease-in-out infinite}.c3{animation:cA 16s ease-in-out infinite}
+.r1{animation:rain 1.8s linear infinite}.r2{animation:rain 1.8s linear .6s infinite}.r3{animation:rain 1.8s linear 1.2s infinite}
+.s1{animation:snow 3.2s ease-in-out infinite}.s2{animation:snow 3.2s ease-in-out 1.1s infinite}.s3{animation:snow 3.2s ease-in-out 2.2s infinite}
+.river{stroke-dasharray:12 12;animation:dash 1.8s linear infinite}.pipe{stroke-dasharray:8 8;animation:pdash 1.2s linear infinite}
+.e1{animation:evap 4.5s ease-out infinite}.e2{animation:evap 4.5s ease-out 1.5s infinite}.e3{animation:evap 4.5s ease-out 3s infinite}
+.sunr{transform-origin:760px 58px;animation:sun 6s ease-in-out infinite}.tank{animation:pul 3s ease-in-out infinite}
+@keyframes wv{to{transform:translateX(-40px)}}@keyframes wv2{to{transform:translateX(-60px)}}
+@keyframes boat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-2px) rotate(3deg)}}
+@keyframes condor{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(60px,-8px) rotate(-4deg)}50%{transform:translate(120px,2px) rotate(0)}75%{transform:translate(60px,10px) rotate(4deg)}}
+@keyframes bob{50%{transform:translateY(-1.6px)}}@keyframes sip{0%,22%{transform:rotate(0)}42%,62%{transform:rotate(-78deg)}82%,100%{transform:rotate(0)}}
+@keyframes drip{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(13px);opacity:0}}
+.w1{animation:wv 2.6s linear infinite}.w2{animation:wv2 3.8s linear infinite}.w3{animation:wv 2.2s linear infinite reverse}
+.boat{transform-box:fill-box;transform-origin:center bottom;animation:boat 3.5s ease-in-out infinite}
+.condor{animation:condor 22s ease-in-out infinite}
+.bob{animation:bob 1.6s ease-in-out infinite}.sip{transform-box:fill-box;transform-origin:0 0;animation:sip 4s ease-in-out infinite}
+.drip{animation:drip 1.2s linear infinite}.drip.b{animation-delay:.6s}
+@keyframes flag{0%,100%{transform:skewY(0) scaleX(1)}50%{transform:skewY(-5deg) scaleX(.93)}}
+.flag{transform-box:fill-box;transform-origin:0 50%;animation:flag 2.2s ease-in-out infinite}
+.paused *{animation-play-state:paused!important}
+[data-tip]{pointer-events:visiblePainted;cursor:help}.hit{fill:none;stroke:transparent;pointer-events:stroke!important}
+#tip{position:fixed;z-index:6;max-width:250px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid color-mix(in srgb,#06b6d4 45%,transparent);box-shadow:var(--shadow);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:12.5px;line-height:1.45;color:var(--muted);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s}
+#tip.on{opacity:1;transform:none}#tip b{display:block;color:var(--accent);font-size:13px;font-weight:600;margin-bottom:2px}
+.sky-ink{stroke:var(--ink)}.dot{fill:var(--ink)}
+#scene{position:fixed;left:calc(var(--gx) + 360px);right:auto;width:min(calc(100vw - var(--gx) - 376px),760px);top:50%;transform:translateY(-50%);aspect-ratio:1200/340;pointer-events:none;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 14%,#000 92%,transparent 100%),linear-gradient(to bottom,#000 80%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent 0,#000 14%,#000 92%,transparent 100%),linear-gradient(to bottom,#000 80%,transparent 100%);mask-composite:intersect}
+
+@media(max-width:860px){body{justify-content:center;padding:24px 16px 120px}#scene{left:0;right:auto;top:auto;bottom:0;transform:none;width:100%;height:44vh;aspect-ratio:auto;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 35%);-webkit-mask-composite:source-over;mask-image:linear-gradient(to bottom,transparent 0,#000 35%);mask-composite:add}}
+#scene svg{width:100%;height:100%;display:block}
+.card{position:relative;z-index:2;width:100%;max-width:420px;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--accent) 18%,transparent);display:flex;align-items:center;justify-content:center}
+.brand b{font-size:24px;font-weight:600;letter-spacing:-.01em}.brand b span{color:var(--accent)}
+.sub{color:var(--muted);font-size:14px;line-height:1.5;margin:12px 0 22px}
+h2{font-size:21px;margin:0 0 20px;font-weight:600}
+label{display:block;font-size:13px;color:var(--muted);margin:0 0 7px}
+.field{position:relative;margin-bottom:18px}
+input{width:100%;background:var(--field);border:1px solid var(--fline);border-radius:8px;padding:11px 12px;font:inherit;font-size:14px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+input::placeholder{color:var(--muted);opacity:.7}
+input:focus{border-color:#06b6d4;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+input.bad{border-color:#e5484d}
+.eye{position:absolute;right:6px;bottom:5px;background:none;border:0;color:var(--muted);padding:6px;border-radius:6px;cursor:pointer}.eye:hover{color:var(--text)}
+.err{color:#f08a8d;font-size:12px;margin:-10px 0 14px;min-height:0}
+html.light .err{color:#c2272d}
+.btn{width:100%;height:42px;border:0;border-radius:8px;background:linear-gradient(90deg,var(--btn1),var(--btn2));color:var(--onaccent);box-shadow:0 8px 20px rgba(0,119,230,.25);font:inherit;font-weight:600;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:filter .2s,transform .1s}
+.btn:hover{filter:brightness(1.1)}.btn:active{transform:scale(.99)}.btn[disabled]{opacity:.75;cursor:progress}
+.spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.loading .spin{display:block}
+.forgot{display:inline-block;margin-top:14px;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;font-family:inherit}.forgot:hover{color:var(--accent)}
+.tools{position:fixed;z-index:3;top:calc(14px + env(safe-area-inset-top,0px));right:14px;display:flex;gap:8px}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}.ib:hover{border-color:var(--accent)}
+.foot{position:fixed;z-index:3;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font-size:12px;color:var(--muted)}
+.toast{position:fixed;z-index:5;bottom:56px;left:50%;transform:translate(-50%,30px);opacity:0;transition:all .3s;pointer-events:none;background:var(--card);border:1px solid color-mix(in srgb,#06b6d4 40%,transparent);color:var(--text);padding:11px 16px;border-radius:12px;font-size:13px;max-width:90vw;box-shadow:var(--shadow)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="tools">
+  <button class="ib" id="pp" onclick="togglePlay()" title="Pausar o reanudar animación" aria-label="Pausar o reanudar animación"></button>
+  <button class="ib" id="th" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema claro u oscuro"></button>
+</div>
+
+<div id="scene" aria-hidden="true">
+<svg id="cycle" viewBox="0 0 1200 340" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle class="dot" cx="2" cy="2" r="1.3"/><circle class="dot" cx="6" cy="6" r="1.3"/></pattern>
+<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#000" stroke-width="1.7"/></pattern>
+<pattern id="sand" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r=".9" fill="#000"/><circle cx="5" cy="4.5" r=".7" fill="#000"/></pattern>
+<linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient>
+<mask id="mk"><rect width="1200" height="270" fill="url(#mg)"/></mask>
+</defs>
+<rect width="1200" height="270" fill="url(#dots)" mask="url(#mk)" opacity=".55"/>
+<g class="sunr sky-ink" stroke="#000" stroke-width="3" stroke-linecap="round"><line x1="760" y1="10" x2="760" y2="22"/><line x1="760" y1="94" x2="760" y2="106"/><line x1="712" y1="58" x2="724" y2="58"/><line x1="796" y1="58" x2="808" y2="58"/><line x1="726" y1="24" x2="734" y2="32"/><line x1="794" y1="24" x2="786" y2="32"/><line x1="726" y1="92" x2="734" y2="84"/><line x1="794" y1="92" x2="786" y2="84"/></g>
+<circle cx="760" cy="58" r="24" fill="#fff" stroke="#000" stroke-width="4" data-tip="Sol|La radiación solar evapora el agua del mar y de los cuerpos de agua, iniciando el ciclo."/>
+<path d="M748 52Q760 44 772 52" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+<g class="sky-ink" stroke="#000" stroke-width="2.5" stroke-linecap="round"><path d="M140 40v14M133 47h14"/><path d="M290 30v12M284 36h12"/><path d="M1120 44v14M1113 51h14"/><path d="M960 28v10M955 33h10"/></g>
+<g stroke-linejoin="round" stroke="#000">
+<path d="M0 240L120 155L230 205L360 120L480 185L610 95L740 175L880 110L1030 180L1140 125L1200 165V340H0Z" fill="#d8d8d8" stroke-width="3"/>
+<path d="M360 120L400 160L370 168L395 200L360 205M880 110L915 150L893 158L920 185" fill="none" stroke-width="1.8"/>
+<path d="M260 265L445 78L630 265Z" fill="#b9b9b9" stroke-width="4"/>
+<path d="M445 78L515 175L475 210L545 265H630Z" fill="url(#hatch)" stroke-width="2.5"/>
+<path d="M445 78L392 132L416 142L432 128L448 148L468 130L495 130Z" fill="#fff" stroke-width="3.5" data-tip="Glaciar y nieve|Reserva de agua de la cordillera. En primavera y verano el deshielo alimenta los ríos."/>
+<path d="M330 215L360 190M350 235L390 205M560 235L585 215" fill="none" stroke-width="2"/>
+<path d="M760 265L955 88L1160 265Z" fill="#b9b9b9" stroke-width="4"/>
+<path d="M955 88L1025 180L995 205L1065 265H1160Z" fill="url(#hatch)" stroke-width="2.5"/>
+<path d="M955 88L905 134L928 144L948 128L968 146L986 132L1004 134Z" fill="#fff" stroke-width="3.5" data-tip="Nieve cordillerana|Acumulación nival que se derrite gradualmente y recarga cuencas y napas."/>
+<path d="M550 265L710 128L865 265Z" fill="#8f8f8f" stroke-width="4"/>
+<path d="M710 128L672 162L695 168L712 155L732 168L748 160Z" fill="#fff" stroke-width="3"/>
+<path d="M770 215L798 190M780 238L826 205" fill="none" stroke-width="2"/>
+</g>
+<g class="cw" data-x="430" data-y="60" data-tip="Nube de nieve|Precipitación sólida en alta cordillera: forma el manto nival."><g class="c1"><path d="M385 68C385 56 398 48 412 51C418 39 436 37 446 47C458 43 472 51 472 63C481 65 485 75 478 82L382 82C374 79 376 69 385 68Z" fill="#fff" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+<g fill="#fff" stroke="#000" stroke-width="1.8"><circle class="s1" cx="405" cy="88" r="3"/><circle class="s2" cx="430" cy="92" r="3.3"/><circle class="s3" cx="455" cy="86" r="2.8"/><circle class="s2" cx="418" cy="100" r="2.6"/><circle class="s1" cx="445" cy="98" r="3"/></g></g></g>
+<g class="cw" data-x="616" data-y="68" data-tip="Lluvia orográfica|Las nubes suben por la cordillera, se enfrían y precipitan sobre la cuenca."><g class="c2"><path d="M570 76C570 64 584 56 598 59C605 47 624 46 634 56C647 52 660 60 660 72C669 74 672 84 665 90L568 90C560 87 562 77 570 76Z" fill="#c4c4c4" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+<path d="M580 82Q600 76 620 82M600 70Q615 66 628 72" fill="none" stroke="#000" stroke-width="1.6"/>
+<g class="sky-ink" stroke="#000" stroke-width="2.8" stroke-linecap="round"><line class="r1" x1="590" y1="96" x2="586" y2="108"/><line class="r2" x1="610" y1="98" x2="606" y2="110"/><line class="r3" x1="630" y1="95" x2="626" y2="107"/><line class="r1" x1="648" y1="98" x2="644" y2="110"/><line class="r3" x1="600" y1="112" x2="596" y2="124"/><line class="r2" x1="622" y1="114" x2="618" y2="126"/></g></g></g>
+<g class="cw" data-x="856" data-y="56" data-tip="Nube|Vapor de agua condensado que viaja con el viento hacia la cordillera."><g class="c3"><path d="M815 62C815 51 827 44 840 47C846 36 863 35 872 44C883 40 895 48 895 59C903 61 906 70 899 76L813 76C806 73 808 63 815 62Z" fill="#fff" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/></g></g>
+<path d="M0 245Q240 215 480 242T920 232Q1080 225 1200 240L1200 340L0 340Z" fill="#0b0b0b" stroke="#000" stroke-width="3"/>
+<path d="M0 245Q240 215 480 242T920 232Q1080 225 1200 240" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M740 245Q840 210 950 242L950 300L740 300Z" fill="#262626" stroke="#fff" stroke-width="1.5"/>
+<path d="M150 252Q215 244 262 250Q300 254 330 262Q312 300 306 340H230Z" fill="#e2e2e2" stroke="#000" stroke-width="3" stroke-linejoin="round" data-tip="Playa|Orilla del mar donde desemboca el río y termina el recorrido del agua."/>
+<path d="M150 252Q215 244 262 250Q300 254 330 262Q312 300 306 340H230Z" fill="url(#sand)" opacity=".35" style="pointer-events:none"/>
+<clipPath id="seaClip"><path d="M0 254Q70 246 140 254T238 254Q262 262 270 274Q262 305 258 340H0Z"/></clipPath>
+<path d="M0 254Q70 246 140 254T238 254Q262 262 270 274Q262 305 258 340H0Z" fill="#fff" stroke="#000" stroke-width="3.5" stroke-linejoin="round" data-tip="Océano Pacífico|Principal fuente de evaporación; el agua de los ríos vuelve finalmente al mar."/>
+<path d="M238 254Q262 262 270 274Q262 305 258 340" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="5 4" style="pointer-events:none"/>
+<g clip-path="url(#seaClip)"><rect y="296" width="262" height="22" fill="url(#hatch)" opacity=".22"/><rect y="318" width="262" height="22" fill="url(#hatch)" opacity=".5"/>
+<g fill="none" stroke="#000" stroke-linecap="round"><g class="w1" stroke-width="2"><path d="M-40 268q20-6 40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0"/></g><g class="w2" stroke-width="2.4"><path d="M-60 289q30-9 60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0"/></g><g class="w3" stroke-width="2.6"><path d="M-40 311q20-8 40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0t40 0"/></g></g></g>
+<g transform="translate(150,282)" data-tip="Océano Pacífico|Principal fuente de evaporación; el agua de los ríos vuelve finalmente al mar."><g class="boat" stroke="#000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M0 -30V-2" fill="none"/><path d="M1.8 -28L18 -5H1.8Z" fill="#fff"/><path d="M-1.8 -22L-13 -5H-1.8Z" fill="#fff"/><path d="M-18 -3H18L12 7H-12Z" fill="#000"/></g></g>
+<path d="M600 262C520 274 420 258 330 268S250 270 226 270" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round"/>
+<path d="M600 262C520 274 420 258 330 268S250 270 226 270" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" class="river"/>
+<g class="cw" data-x="148" data-y="148" data-tip="Nube costera|El vapor del mar se condensa y el viento la empuja hacia los Andes."><g class="c3"><path d="M108 150C108 139 120 132 133 135C139 124 156 123 165 132C176 128 188 136 188 147C196 149 199 158 192 164H106C99 161 101 151 108 150Z" fill="#fff" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/></g></g>
+<g transform="translate(215,92) scale(1.45)" data-tip="Cóndor andino|Ave emblemática de la cordillera de los Andes."><g class="condor"><path d="M-38 3L-33 -1L-35 4L-29 0L-30 5L-24 2Q-14 -5 -5 -1Q0 -4 5 -1Q14 -5 24 2L30 5L29 0L35 4L33 -1L38 3Q22 8 5 4L2 9H-2L-5 4Q-22 8 -38 3Z" fill="#000" stroke="var(--ink)" stroke-width="1.3" stroke-linejoin="round"/><path d="M-4 -1Q0 2 4 -1" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="0" cy="-3.4" r="2.2" fill="#000" stroke="var(--ink)" stroke-width="1"/></g></g>
+<g stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity=".7"><path d="M60 290l8-8M120 305l8-8M220 295l8-8M340 310l8-8M470 290l8-8M980 310l8-8M1100 300l8-8M1170 318l8-8"/></g>
+<g fill="#000" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"><polygon points="510,238 518,214 526,238"/><polygon points="524,240 534,210 544,240"/><polygon points="735,244 743,220 751,244"/><polygon points="945,238 954,212 963,238"/><polygon points="962,240 970,218 978,240"/><polygon points="1135,242 1144,215 1153,242"/></g>
+<path d="M448 148Q465 185 515 212T605 246" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round"/>
+<path d="M448 148Q465 185 515 212T605 246" fill="none" stroke="#fff" stroke-width="3.8" stroke-linecap="round"/>
+<path d="M448 148Q465 185 515 212T605 246" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" class="river"/>
+<path data-tip="Río / embalse|Cauce que recibe el deshielo y la lluvia; fuente superficial para la captación." d="M585 248C630 242 680 244 735 256C780 266 820 278 860 295L770 295C735 276 685 262 600 256Z" fill="#fff" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+<path d="M600 250C655 247 710 255 785 280" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" class="river"/>
+<g class="sky-ink" stroke="#000" stroke-width="2.4" fill="none" stroke-linecap="round"><path class="e2" d="M135 248Q128 233 135 218T135 192"/><path class="e3" d="M175 246Q182 231 175 216T175 190"/><path class="e1" d="M222 249Q215 234 222 219T222 193"/></g>
+<g transform="translate(692,240)" data-tip="Bocatoma|Obra de captación que toma agua del río para el sistema APR."><rect y="4" width="22" height="14" rx="2" fill="#fff" stroke="#000" stroke-width="3"/><rect x="4" y="8" width="6" height="6" fill="#000"/><line x1="14" y1="7" x2="14" y2="15" stroke="#000" stroke-width="1.6"/><line x1="17" y1="7" x2="17" y2="15" stroke="#000" stroke-width="1.6"/></g>
+<path d="M714 252L775 252L822 222" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M714 252L775 252L822 222" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M714 252L775 252L822 222" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="pipe"/>
+<g transform="translate(812,174)" data-tip="Estanque elevado|Regula caudales y entrega presión a la red de distribución del APR."><g stroke="#000" stroke-width="3" stroke-linecap="round"><line x1="6" y1="24" x2="2" y2="48"/><line x1="26" y1="24" x2="30" y2="48"/><line x1="16" y1="24" x2="16" y2="48"/><line x1="4" y1="36" x2="28" y2="36" stroke-width="2"/></g><rect x="2" y="4" width="28" height="20" rx="3" fill="#fff" stroke="#000" stroke-width="3.5"/><rect class="tank" x="5" y="11" width="22" height="10" rx="1.5" fill="url(#hatch)" stroke="#000" stroke-width="1.5"/><path d="M0 4L16 -2L32 4Z" fill="#000" stroke="#000" stroke-width="2" stroke-linejoin="round"/></g>
+<g transform="translate(828,172)" data-tip="Bandera de Chile|Sistema de Agua Potable Rural (APR), servicio sanitario rural en Chile."><line x1="0" y1="0" x2="0" y2="-30" stroke="#000" stroke-width="4" stroke-linecap="round"/><line x1="0" y1="0" x2="0" y2="-30" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="0" cy="-31" r="1.8" fill="#fff" stroke="#000" stroke-width="1"/><g class="flag"><rect x="1" y="-29" width="22" height="14" fill="#fff" stroke="#000" stroke-width="1.4"/><rect x="1" y="-22" width="22" height="7" fill="#d52b1e"/><rect x="1" y="-29" width="8" height="7" fill="#0039a6"/><path d="M5 -27.3l.5 1.4h1.5l-1.2.9.5 1.4-1.3-.9-1.3.9.5-1.4-1.2-.9h1.5z" fill="#fff"/><rect x="1" y="-29" width="22" height="14" fill="none" stroke="#000" stroke-width="1.4"/></g></g>
+<path d="M834 222L855 262L1120 262" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M834 222L855 262L1120 262" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M834 222L855 262L1120 262" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pipe"/>
+<g stroke="#fff" stroke-width="2" class="pipe"><line x1="920" y1="262" x2="920" y2="244"/><line x1="995" y1="262" x2="995" y2="242"/><line x1="1075" y1="262" x2="1075" y2="245"/></g>
+<g transform="translate(904,224)" stroke-linejoin="round" data-tip="Vivienda rural|Cliente del APR conectado mediante arranque domiciliario con medidor."><rect x="3" y="9" width="26" height="14" fill="#fff" stroke="#000" stroke-width="2.5"/><polygon points="0,10 16,0 32,10" fill="#000" stroke="#fff" stroke-width="2"/><rect x="8" y="13" width="5" height="5"/><rect x="19" y="14" width="5" height="9"/></g>
+<g transform="translate(976,220)" stroke-linejoin="round" data-tip="Vivienda rural|Cliente del APR conectado mediante arranque domiciliario con medidor."><rect x="3" y="10" width="32" height="15" fill="#fff" stroke="#000" stroke-width="2.5"/><polygon points="0,11 19,0 38,11" fill="#000" stroke="#fff" stroke-width="2"/><rect x="9" y="14" width="6" height="5"/><rect x="24" y="14" width="6" height="5"/><rect x="16" y="16" width="5" height="9"/></g>
+<g transform="translate(1060,225)" stroke-linejoin="round" data-tip="Vivienda rural|Cliente del APR conectado mediante arranque domiciliario con medidor."><rect x="3" y="9" width="26" height="14" fill="#fff" stroke="#000" stroke-width="2.5"/><polygon points="0,10 16,0 32,10" fill="#000" stroke="#fff" stroke-width="2"/><rect x="18" y="13" width="5" height="5"/><rect x="8" y="14" width="5" height="9"/></g>
+<g transform="translate(884,233)" data-tip="Consumo|Persona usando agua potable entregada por el APR."><g class="bob" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="-1.8" y1="-6" x2="-1.8" y2="0" stroke-width="3"/><line x1="1.8" y1="-6" x2="1.8" y2="0" stroke-width="3"/><rect x="-3.8" y="-15" width="7.6" height="10" rx="3" fill="#fff"/><circle cx="0" cy="-19.5" r="4.4" fill="#fff"/><path d="M-4.4 -20Q0 -27 4.4 -20Z" fill="#000" stroke="none"/><line x1="-2" y1="-12" x2="-6" y2="-7"/><g class="sip"><line x1="2" y1="-13" x2="8" y2="-10"/><path d="M7 -14h5l-1 7H8z" fill="#fff" stroke-width="1.6"/><path d="M8.1 -11h2.8v2.6H8.4z" fill="#000" stroke="none"/></g></g></g>
+<g transform="translate(1036,234)" data-tip="Llave / arranque|Punto de consumo domiciliario: el agua llega con presión desde el estanque."><g class="bob" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="-1.8" y1="-6" x2="-1.8" y2="0" stroke-width="3"/><line x1="1.8" y1="-6" x2="1.8" y2="0" stroke-width="3"/><rect x="-3.8" y="-15" width="7.6" height="10" rx="3" fill="#fff"/><circle cx="0" cy="-19.5" r="4.4" fill="#fff"/><path d="M-4.4 -20Q0 -27 4.4 -20Z" fill="#000" stroke="none"/><line x1="2" y1="-12" x2="14" y2="-7"/></g><path d="M11 0V-24H19V-20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 0V-24H19V-20" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><line class="drip" x1="19" y1="-17" x2="19" y2="-13" stroke="#000" stroke-width="2" stroke-linecap="round"/><line class="drip b" x1="19" y1="-17" x2="19" y2="-13" stroke="#000" stroke-width="2" stroke-linecap="round"/><path d="M15 -9h8l-1.5 8h-5z" fill="#fff" stroke="#000" stroke-width="1.8" stroke-linejoin="round"/><rect x="16.4" y="-6" width="5.2" height="3.4" fill="url(#hatch)"/></g>
+<g>
+<path class="hit" stroke-width="16" d="M448 148Q465 185 515 212T605 246" data-tip="Deshielo|El agua de glaciares y nieve escurre por la ladera hacia el río."/>
+<path class="hit" stroke-width="16" d="M600 262C520 274 420 258 330 268S250 270 226 270" data-tip="Retorno al mar|El río desemboca en el Pacífico y el ciclo vuelve a comenzar."/>
+<path class="hit" stroke-width="14" d="M714 252L775 252L822 222" data-tip="Impulsión|Tubería que eleva el agua desde la bocatoma hasta el estanque."/>
+<path class="hit" stroke-width="14" d="M834 222L855 262L1120 262" data-tip="Red de distribución|Matriz de cañerías que lleva el agua a cada arranque domiciliario."/>
+<rect x="120" y="186" width="115" height="58" fill="transparent" data-tip="Evaporación|El sol calienta el mar y el agua sube como vapor a la atmósfera."/>
+</g>
+</svg>
+</div>
+
+<main class="card">
+  <div class="brand">
+    <div class="mark"><svg width="26" height="26" viewBox="0 0 120 70" fill="none"><path d="M12 56L46 16L66 40L82 24L108 56" stroke="var(--logo)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M35 29L46 16L56 28L49 32L43 26Z" fill="var(--text)"/><path d="M24 52C42 42 58 58 76 46C88 38 98 46 106 52" stroke="var(--river)" stroke-width="5" stroke-linecap="round"/></svg></div>
+    <b><span>Trazo</span> Hidráulico</b>
+  </div>
+  <p class="sub">Diseño, simulación y gestión de redes de agua potable</p>
+  <h2>Ingresar</h2>
+  <form id="f" novalidate onsubmit="return login(event)">
+    <div class="field"><label for="em">Correo</label><input id="em" type="email" autocomplete="username" placeholder="correo@ejemplo.cl" inputmode="email"></div>
+    <div class="field"><label for="pw">Contraseña</label><input id="pw" type="password" autocomplete="current-password" placeholder="••••••••" style="padding-right:42px"><button type="button" class="eye" id="eye" onclick="showPw()" title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña"></button></div>
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn" id="go" type="submit"><span class="spin"></span><span id="gt">Ingresar</span></button>
+  </form>
+  <button class="forgot" onclick="toast('Te enviaremos un enlace para restablecer tu contraseña.')">¿Olvidó su contraseña?</button>
+</main>
+<div class="foot">Trazo Hidráulico • versión 1.0.0</div>
+<div class="toast" id="toast"></div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const ic=(d,s=1.8)=>`<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="${s}" d="${d}"/></svg>`;
+const D={sun:"M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",moon:"M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z",pause:"M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z",play:"M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z",eye:"M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z",eyeoff:"M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"};
+function applyTheme(t){document.documentElement.classList.toggle('light',t==='light');$('th').innerHTML=ic(t==='light'?D.moon:D.sun);try{localStorage.setItem('trazo-theme',t)}catch(e){}}
+function toggleTheme(){const l=document.documentElement.classList.contains('light');applyTheme(l?'dark':'light')}
+let saved='dark';try{saved=localStorage.getItem('trazo-theme')||'dark'}catch(e){}
+applyTheme(saved);
+let paused=false;$('pp').innerHTML=ic(D.pause);
+function togglePlay(){paused=!paused;$('cycle').classList.toggle('paused',paused);$('pp').innerHTML=ic(paused?D.play:D.pause)}
+let shown=false;$('eye').innerHTML=ic(D.eye);
+function showPw(){shown=!shown;$('pw').type=shown?'text':'password';$('eye').innerHTML=ic(shown?D.eyeoff:D.eye)}
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3400)}
+function login(e){e.preventDefault();const em=$('em'),pw=$('pw'),err=$('err');
+em.classList.remove('bad');pw.classList.remove('bad');err.textContent='';
+if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value.trim())){em.classList.add('bad');err.textContent='Ingresa un correo válido.';em.focus();return false}
+if(pw.value.length<1){pw.classList.add('bad');err.textContent='Ingresa tu contraseña.';pw.focus();return false}
+const b=$('go');b.disabled=true;b.classList.add('loading');$('gt').textContent='Ingresando…';
+setTimeout(()=>{b.disabled=false;b.classList.remove('loading');$('gt').textContent='Ingresar';toast('Acceso simulado: aquí conectas tu autenticación real.')},1300);return false}
+// Tooltip de elementos de la escena
+(function(){
+const tip=$('tip'),svg=$('cycle');let cur=null;
+function place(e){const w=tip.offsetWidth,h=tip.offsetHeight;let x=e.clientX+14,y=e.clientY-h-12;if(x+w>innerWidth-8)x=e.clientX-w-14;if(y<8)y=e.clientY+18;tip.style.left=x+'px';tip.style.top=y+'px'}
+svg.addEventListener('pointerover',e=>{const el=e.target.closest('[data-tip]');if(!el||el===cur)return;cur=el;const[t,d]=el.dataset.tip.split('|');tip.innerHTML='<b></b><span></span>';tip.firstChild.textContent=t;tip.lastChild.textContent=d;tip.classList.add('on');place(e)});
+svg.addEventListener('pointermove',e=>{if(cur)place(e)});
+svg.addEventListener('pointerout',e=>{const to=e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest('[data-tip]');if(to===cur)return;cur=null;tip.classList.remove('on')});
+})();
+// Nubes interactivas: se apartan y flotan al pasar el mouse (o el dedo) cerca
+(function(){
+const svg=$('cycle');
+const cl=[...svg.querySelectorAll('.cw')].map(g=>({g,x:+g.dataset.x,y:+g.dataset.y,px:0,py:0,vx:0,vy:0}));
+let m=null;
+function toSvg(e){const ctm=svg.getScreenCTM();if(!ctm)return null;const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(ctm.inverse())}
+const mv=e=>{m=toSvg(e)};
+document.addEventListener('pointermove',mv,{passive:true});
+document.addEventListener('mousemove',mv,{passive:true});
+document.addEventListener('touchmove',e=>{if(e.touches[0])mv(e.touches[0])},{passive:true});
+document.addEventListener('mouseleave',()=>{m=null});
+addEventListener('blur',()=>{m=null});
+const R=170,PUSH=130;
+(function tick(){
+cl.forEach(c=>{
+let tx=0,ty=0;
+if(m){const dx=c.x-m.x,dy=c.y-m.y,d=Math.hypot(dx,dy);
+if(d<R){const f=Math.pow(1-d/R,.7),ux=d>1?dx/d:1,uy=d>1?dy/d:-.3;tx=ux*f*PUSH;ty=uy*f*PUSH*.25}}
+c.vx+=(tx-c.px)*.08;c.vy+=(ty-c.py)*.08;c.vx*=.85;c.vy*=.85;c.px+=c.vx;c.py+=c.vy;
+c.g.setAttribute('transform','translate('+c.px.toFixed(2)+' '+c.py.toFixed(2)+')');
+});
+requestAnimationFrame(tick)
+})();
+})();
+</script>
+</body>
+</html>

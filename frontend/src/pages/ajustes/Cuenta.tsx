@@ -10,6 +10,7 @@ import { errorText } from "../../state/projects";
 import type { MapType, ThemePref } from "../../state/store";
 import { useEditor, writePref } from "../../state/store";
 import { Panel, SaveButton } from "./common";
+import { DataTable } from "../../components/DataTable";
 
 const UNITS: [string, string, string][] = [
   ["Caudal y demanda", "L/s", "litros por segundo (EPANET UNITS LPS)"],
@@ -34,7 +35,7 @@ export function Perfil() {
       </div>
       <dl className="kv">
         <dt>Organizaciones</dt><dd>{me.orgs.map((o) => `${o.name} (${ROLE_LABEL[o.role]})`).join(" · ") || "—"}</dd>
-        {me.is_superadmin && <><dt>Plataforma</dt><dd>Superadministrador</dd></>}
+        {me.is_superadmin && <><dt>Panel admin</dt><dd>Super Admin</dd></>}
         <dt>Segundo factor</dt><dd>{me.mfa_enabled ? "Activo" : "No configurado"}</dd>
       </dl>
       <SaveButton dirty={name.trim() !== me.name && name.trim().length > 0} onSave={async () => { await api.updateMe(name.trim()); await refresh(); }} />
@@ -88,14 +89,14 @@ export function Seguridad() {
       ) : <button className="primary" onClick={async () => { try { setSetup(await api.mfaSetup()); } catch (e) { toast(errorText(e), "error"); } }}>Configurar</button>}
       <h3>Sesiones activas</h3>
       <div className="table-scroll">
-        <table className="tbl compact">
-          <thead><tr><th>Dispositivo</th><th>IP</th><th>Última actividad</th><th /></tr></thead>
-          <tbody>{sessions.map((s) => (
-            <tr key={s.id}><td className="small">{s.current ? "Esta sesión · " : ""}{(s.user_agent ?? "").slice(0, 60)}</td><td>{s.ip ?? "—"}</td>
-              <td>{new Date(s.last_seen_at).toLocaleString("es-CL")}</td>
-              <td>{!s.current && <button className="small ghost" onClick={async () => { await api.closeSession(s.id); void load(); }}>Cerrar</button>}</td></tr>
-          ))}</tbody>
-        </table>
+        <DataTable compact label="Sesiones activas" rows={sessions} rowKey={(s) => s.id} initialSort={{ key: "seen", dir: -1 }} search={sessions.length > 5}
+          columns={[
+            { key: "dev", label: "Dispositivo", value: (s) => `${s.current ? "Esta sesión · " : ""}${(s.user_agent ?? "").slice(0, 60)}`, className: "small" },
+            { key: "ip", label: "IP", value: (s) => s.ip ?? "" },
+            { key: "seen", label: "Última actividad", type: "date", value: (s) => s.last_seen_at, render: (s) => new Date(s.last_seen_at).toLocaleString("es-CL") },
+            { key: "x", label: "", sortable: false, noExport: true, value: () => "", render: (s) => (!s.current
+              ? <button className="small ghost" onClick={async () => { await api.closeSession(s.id); void load(); }}>Cerrar</button> : null) },
+          ]} />
       </div>
       <button className="danger-outline" onClick={async () => { if (!window.confirm("¿Cerrar todas las sesiones, incluida esta?")) return; await api.logoutAll(); window.location.assign(PATHS.login); }}><Icon.logout /><span>Cerrar todas las sesiones</span></button>
     </Panel>

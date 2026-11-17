@@ -11,6 +11,7 @@ import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
 import { SummarySettingsDialog } from "./SummarySettings";
 import { Icon } from "./Icons";
+import { DataTable } from "./DataTable";
 
 interface Listing { title: string; type: ElType; ids: string[]; values?: Record<string, string> }
 
@@ -213,13 +214,14 @@ export function SummaryTab() {
                 <p className="small">Cota de terreno + presión mínima sobre la cota piezométrica disponible:
                   {" "}<N value={data.over_elevation.length} title="Clientes sobre cota" list={{ type: "client", ids: data.over_elevation.map((o) => o.client) }}
                     values={Object.fromEntries(data.over_elevation.map((o) => [o.client, `déficit ${fmt(o.deficit, 1)} m`]))} /> clientes.</p>
-                <table className="tbl compact mini">
-                  <thead><tr><th>Cliente</th><th className="num">Terreno</th><th className="num">Piezom.</th><th className="num">Déficit</th></tr></thead>
-                  <tbody>{data.over_elevation.map((o) => (
-                    <tr key={o.client} className="clickable" onClick={() => goto("client", o.client)}>
-                      <td>{o.client} <span className="muted">{o.name}</span></td><td className="num">{fmt(o.ground, 1)}</td><td className="num">{fmt(o.head, 1)}</td><td className="num bad">{fmt(o.deficit, 1)} m</td>
-                    </tr>))}</tbody>
-                </table>
+                <DataTable compact label="Clientes sobre cota" rows={data.over_elevation} rowKey={(o) => o.client} pageSize={25}
+                  onRowClick={(o) => goto("client", o.client)} initialSort={{ key: "deficit", dir: -1 }} exportName={`clientes-sobre-cota-${project?.name ?? ""}`}
+                  columns={[
+                    { key: "client", label: "Cliente", value: (o) => o.client, render: (o) => <>{o.client} <span className="muted">{o.name}</span></> },
+                    { key: "ground", label: "Terreno", type: "num", value: (o) => o.ground, render: (o) => fmt(o.ground, 1) },
+                    { key: "head", label: "Piezom.", type: "num", value: (o) => o.head, render: (o) => fmt(o.head, 1) },
+                    { key: "deficit", label: "Déficit (m)", type: "num", value: (o) => o.deficit, render: (o) => `${fmt(o.deficit, 1)} m`, className: "bad" },
+                  ]} />
               </>) : <p className="muted">{data.simulated ? "Todos los clientes quedan bajo la cota piezométrica disponible menos la presión mínima." : "Sin simulación."}</p>}
             </Card>
             <Card title="Clientes por tubería" sub="tramos con más clientes abastecidos">
@@ -235,12 +237,14 @@ export function SummaryTab() {
                 <button className="small" onClick={() => show("Mayores consumidores", "client", data.top_consumers.map((x) => x.client),
                   Object.fromEntries(data.top_consumers.map((x) => [x.client, `${fmt(x.m3_month, 1)} m³/mes · ${fmt(x.pct, 1)} %`])))}>Resaltar en el mapa</button>
               </div>
-              <table className="tbl compact mini">
-                <thead><tr><th>Cliente</th><th className="num">m³/mes</th><th className="num">%</th></tr></thead>
-                <tbody>{data.top_consumers.map((x) => (
-                  <tr key={x.client} className="clickable" onClick={() => goto("client", x.client)}>
-                    <td>{x.client} <span className="muted">{x.name}</span></td><td className="num">{fmt(x.m3_month, 1)}</td><td className="num">{fmt(x.pct, 1)}</td></tr>))}</tbody>
-              </table>
+              <DataTable compact label="Mayores consumidores" rows={data.top_consumers} rowKey={(x) => x.client} pageSize={25}
+                onRowClick={(x) => goto("client", x.client)} exportName={`mayores-consumidores-${project?.name ?? ""}`}
+                columns={[
+                  { key: "client", label: "Cliente", value: (x) => x.client, render: (x) => <>{x.client} <span className="muted">{x.name}</span></> },
+                  { key: "name", label: "Nombre", value: (x) => x.name ?? "" },
+                  { key: "m3", label: "m³/mes", type: "num", value: (x) => x.m3_month, render: (x) => fmt(x.m3_month, 1) },
+                  { key: "pct", label: "%", type: "num", value: (x) => x.pct, render: (x) => fmt(x.pct, 1) },
+                ]} />
             </Card>
             <Card title="Consumo" sub="clientes activos">
               <div className="kpis">
@@ -295,9 +299,17 @@ export function SummaryTab() {
             <aside className="summary-list" aria-label={listing.title}>
               <header><b>{listing.title}</b> <span className="muted">({listing.ids.length} {TYPE_NAME[listing.type]})</span>
                 <button className="ghost small" onClick={() => { setListing(null); set({ highlight: [] }); }} aria-label="Cerrar lista"><Icon.close /></button></header>
-              <ul>{listing.ids.map((id) => (
-                <li key={id}><button type="button" className="link" onClick={() => goto(listing.type, id)}>{id}</button>
-                  {listing.values?.[id] && <span className="muted small"> {listing.values[id]}</span>}</li>))}</ul>
+              <DataTable compact label={listing.title} rows={listing.ids} rowKey={(id) => id} pageSize={25}
+                onRowClick={(id) => goto(listing.type, id)} initialSort={{ key: "id" }}
+                exportName={`${listing.title}-${project?.name ?? "proyecto"}`}
+                columns={[
+                  { key: "id", label: "ID", value: (id) => id, className: "mono" },
+                  ...(listing.type === "client" ? [{ key: "name", label: "Nombre", value: (id: string) => {
+                    const uid = maps.client.get(id);
+                    return uid ? net.clients[uid]?.props.name ?? "" : "";
+                  } }] : []),
+                  ...(listing.values ? [{ key: "v", label: "Detalle", value: (id: string) => listing.values?.[id] ?? "" }] : []),
+                ]} />
               {TYPE_TAB[listing.type] && <button className="small" onClick={() => set({ bottomTab: TYPE_TAB[listing.type]! })}>Abrir la pestaña {TYPE_NAME[listing.type]}</button>}
             </aside>
           )}
@@ -389,17 +401,18 @@ function LossesCard({ data, show, goto, reload, readOnly, pid, net, toast }: {
           )}
           {errors.length > 0 && <ul className="issues">{errors.slice(0, 6).map((x, i) => <li key={i} className="error">{x}</li>)}</ul>}
           {lo.events.length ? (
-            <div className="scroll-box">
-              <table className="tbl compact mini">
-                <thead><tr><th>Fecha</th><th>Tramo</th><th>Tipo</th><th className="num">L/s</th><th>Observación</th>{!readOnly && <th />}</tr></thead>
-                <tbody>{lo.events.map((ev) => (
-                  <tr key={ev.id}>
-                    <td>{ev.event_date}</td><td><button type="button" className="link" onClick={() => goto("link", ev.link_id)}>{ev.link_id}</button></td>
-                    <td>{KIND_TXT[ev.kind]}</td><td className="num">{fmt(ev.flow_lps, 2)}</td><td>{ev.note ?? ""}</td>
-                    {!readOnly && <td className="right"><button className="ghost small" title="Eliminar evento (pide confirmación)" aria-label={`Eliminar evento ${ev.id}`} onClick={() => void remove(ev.id)}><Icon.trash /></button></td>}
-                  </tr>))}</tbody>
-              </table>
-            </div>
+            <DataTable compact label="Eventos de pérdidas" rows={lo.events} rowKey={(ev) => String(ev.id)} pageSize={25}
+              initialSort={{ key: "date", dir: -1 }} exportName="eventos-perdidas"
+              columns={[
+                { key: "date", label: "Fecha", type: "date", value: (ev) => ev.event_date },
+                { key: "link", label: "Tramo", value: (ev) => ev.link_id,
+                  render: (ev) => <button type="button" className="link" onClick={() => goto("link", ev.link_id)}>{ev.link_id}</button> },
+                { key: "kind", label: "Tipo", value: (ev) => KIND_TXT[ev.kind] },
+                { key: "lps", label: "L/s", type: "num", value: (ev) => ev.flow_lps, render: (ev) => fmt(ev.flow_lps, 2) },
+                { key: "note", label: "Observación", value: (ev) => ev.note ?? "" },
+                ...(!readOnly ? [{ key: "x", label: "", sortable: false, noExport: true, value: () => "", className: "right",
+                  render: (ev: (typeof lo.events)[number]) => <button className="ghost small" title="Eliminar evento (pide confirmación)" aria-label={`Eliminar evento ${ev.id}`} onClick={() => void remove(ev.id)}><Icon.trash /></button> }] : []),
+              ]} />
           ) : <p className="muted small">Sin datos: ingrese eventos con el formulario o importe una planilla (hoja «Pérdidas»: Tramo, Fecha, Tipo, Caudal estimado, Observación).</p>}
         </div>
       </div>

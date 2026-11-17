@@ -1,4 +1,4 @@
-// Ajustes → Plataforma → Mapa base: proveedor (automático, Google Maps u OpenStreetMap) y estado de la key de Google Maps
+// Panel admin → Mapa base: proveedor (automático, Google Maps u OpenStreetMap) y estado de la key de Google Maps
 // para todos; el superadministrador elige el proveedor y gestiona la key (cifrada en la base). El editor lo aplica
 // sin reconstruir contenedores. Sin key de Google, el mapa base es OpenStreetMap.
 import { useEffect, useState } from "react";

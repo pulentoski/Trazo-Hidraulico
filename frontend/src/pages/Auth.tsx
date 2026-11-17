@@ -1,25 +1,55 @@
-// Pantallas públicas: ingreso (con segundo factor), recuperación de contraseña e invitación.
+// Pantallas públicas (estilo v2, docs/referencias/estilo/login.html): ingreso con segundo factor, recuperación de
+// contraseña e invitación. Tarjeta a la izquierda, escena del ciclo del agua a la derecha, tema y pausa arriba a la
+// derecha y la versión al pie. Conectadas a la API real (401, 423, 429, TOTP, enlaces de un solo uso).
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { api, ApiError } from "../api/client";
 import type { InvitationInfo } from "../api/types";
-import { NetPattern } from "../components/NetPattern";
-import { Brand } from "../components/PageHeader";
+import { Icon } from "../components/Icons";
+import { Logo } from "../components/PageHeader";
+import { Scene } from "../components/Scene";
+import { LOGIN_SCENE, LOGIN_SCENE_VIEWBOX } from "../components/scenes/loginScene";
+import { useEditor, writePref } from "../state/store";
 import { PATHS } from "../paths";
 import { ROLE_LABEL, useAuth } from "../state/auth";
 import { errorText } from "../state/projects";
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  const theme = useEditor((s) => s.theme);
+  const set = useEditor((s) => s.set);
+  const [paused, setPaused] = useState(false);
+  const next = theme === "dark" ? "light" : "dark";
   return (
     <div className="auth-page">
-      <NetPattern />
-      <div className="auth-card">
-        <Brand big />
+      <div className="auth-tools">
+        <button className="ib" onClick={() => setPaused(!paused)} aria-pressed={paused} title={paused ? "Reanudar la animación" : "Pausar la animación"}
+          aria-label={paused ? "Reanudar la animación" : "Pausar la animación"}>{paused ? <Icon.resume /> : <Icon.pause />}</button>
+        <button className="ib" onClick={() => { set({ themePref: next, theme: next }); writePref("theme", next); }}
+          title="Cambiar tema claro / oscuro" aria-label="Cambiar tema claro u oscuro">{theme === "dark" ? <Icon.sun /> : <Icon.moon />}</button>
+      </div>
+      <div className="auth-scene" aria-hidden="true">
+        <Scene svg={LOGIN_SCENE} viewBox={LOGIN_SCENE_VIEWBOX} paused={paused} />
+      </div>
+      <main className="auth-card">
+        <div className="auth-brand"><Logo size={44} /><b><span>Trazo</span> Hidráulico</b></div>
         <p className="auth-tagline">Diseño, simulación y gestión de redes de agua potable</p>
         <h1>{title}</h1>
         {children}
-      </div>
+      </main>
+      <footer className="auth-foot">Trazo Hidráulico • versión {__APP_VERSION__}</footer>
     </div>
+  );
+}
+
+/** Campo de contraseña con botón para mostrarla u ocultarla (maqueta de ingreso). */
+function PasswordInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [shown, setShown] = useState(false);
+  return (
+    <span className="pw-field">
+      <input {...props} type={shown ? "text" : "password"} />
+      <button type="button" className="eye" onClick={() => setShown(!shown)} aria-pressed={shown}
+        title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña">{shown ? <Icon.eyeOff /> : <Icon.eye />}</button>
+    </span>
   );
 }
 
@@ -92,16 +122,20 @@ export function Login() {
       <form onSubmit={submit} className="auth-form">
         {step === "password" ? (<>
           <label className="field stacked"><span>Correo</span>
-            <input type="email" autoComplete="username" autoFocus required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+            <input type="email" autoComplete="username" inputMode="email" autoFocus required placeholder="correo@ejemplo.cl" value={email}
+              aria-invalid={!!error} className={error ? "bad" : ""} onChange={(e) => setEmail(e.target.value)} /></label>
           <label className="field stacked"><span>Contraseña</span>
-            <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+            <PasswordInput autoComplete="current-password" required placeholder="••••••••" value={password} aria-invalid={!!error}
+              className={error ? "bad" : ""} onChange={(e) => setPassword(e.target.value)} /></label>
         </>) : (
           <label className="field stacked"><span>Código de 6 dígitos de su aplicación de autenticación</span>
             <input inputMode="numeric" autoComplete="one-time-code" autoFocus required pattern="[0-9 ]{6,8}" value={code} onChange={(e) => setCode(e.target.value)} /></label>
         )}
         {error && <p className="field-error" role="alert">{error}</p>}
-        <button className="primary" disabled={busy}>{busy ? "Verificando…" : step === "password" ? "Ingresar" : "Verificar"}</button>
-        {step === "password" && <Link className="muted small" to={PATHS.recover}>¿Olvidó su contraseña?</Link>}
+        <button className={`primary auth-submit ${busy ? "loading" : ""}`} disabled={busy}>
+          {busy && <span className="spin" aria-hidden="true" />}{busy ? (step === "password" ? "Ingresando…" : "Verificando…") : step === "password" ? "Ingresar" : "Verificar"}</button>
+        {step === "password" ? <Link className="forgot" to={PATHS.recover}>¿Olvidó su contraseña?</Link>
+          : <button type="button" className="forgot link" onClick={() => { setStep("password"); setCode(""); setError(null); void api.logout().catch(() => undefined); }}>Volver a ingresar con otra cuenta</button>}
       </form>
     </Card>
   );
@@ -139,18 +173,19 @@ export function Recover() {
       <form onSubmit={submit} className="auth-form">
         {token ? (<>
           <label className="field stacked"><span>Contraseña nueva</span>
-            <input type="password" autoComplete="new-password" required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
+            <PasswordInput autoComplete="new-password" required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
           <label className="field stacked"><span>Repítala</span>
-            <input type="password" autoComplete="new-password" required value={pw2} onChange={(e) => setPw2(e.target.value)} /></label>
+            <PasswordInput autoComplete="new-password" required value={pw2} onChange={(e) => setPw2(e.target.value)} /></label>
           <p className="muted small">Al menos 10 caracteres, con letras y números.</p>
         </>) : (
           <label className="field stacked"><span>Correo</span>
-            <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+            <input type="email" autoComplete="username" required placeholder="correo@ejemplo.cl" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
         )}
         {msg && <p className="ok-text" role="status">{msg}</p>}
         {error && <p className="field-error" role="alert">{error}</p>}
-        <button className="primary" disabled={busy || !!(msg && token)}>{token ? "Guardar contraseña" : "Enviar enlace"}</button>
-        <Link className="muted small" to={PATHS.login}>Volver al ingreso</Link>
+        <button className={`primary auth-submit ${busy ? "loading" : ""}`} disabled={busy || !!(msg && token)}>
+          {busy && <span className="spin" aria-hidden="true" />}{token ? "Guardar contraseña" : "Enviar enlace"}</button>
+        <Link className="forgot" to={PATHS.login}>Volver al ingreso</Link>
       </form>
     </Card>
   );
@@ -182,12 +217,16 @@ export function Invitation() {
           <p>Lo invitaron a <b>{info.org_name}</b> como <b>{ROLE_LABEL[info.role]}</b> ({info.email}).</p>
           {!info.existing_user && <label className="field stacked"><span>Su nombre</span><input required value={name} onChange={(e) => setName(e.target.value)} /></label>}
           <label className="field stacked"><span>{info.existing_user ? "Su contraseña actual" : "Contraseña"}</span>
-            <input type="password" autoComplete={info.existing_user ? "current-password" : "new-password"} required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
+            <PasswordInput autoComplete={info.existing_user ? "current-password" : "new-password"} required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
           {!info.existing_user && <p className="muted small">Al menos 10 caracteres, con letras y números.</p>}
           {error && <p className="field-error" role="alert">{error}</p>}
-          <button className="primary">Aceptar invitación</button>
+          <button className="primary auth-submit">Aceptar invitación</button>
+          <Link className="forgot" to={PATHS.login}>Ir al ingreso</Link>
         </form>
-      ) : <p className={error ? "field-error" : "muted"}>{error ?? "Cargando…"}</p>}
+      ) : (<>
+        <p className={error ? "field-error" : "muted"} role={error ? "alert" : undefined}>{error ?? "Cargando…"}</p>
+        {error && <Link className="forgot" to={PATHS.login}>Ir al ingreso</Link>}
+      </>)}
     </Card>
   );
 }

@@ -7,6 +7,8 @@ import {
   FolderOpen, History, House, HousePlug, Info, Layers, LayoutDashboard, LogOut, MapPin, Maximize2, Menu, Minus, Moon,
   MousePointer2, Move, Play, Plus, Redo2, Ruler, Save, Search, Settings, Spline, Square, SquareDashedMousePointer, Sun,
   Table2, Tag, Trash2, TriangleAlert, Undo2, Upload, User, Users, Waves, Wrench, X,
+  ArrowDown, ArrowRight, ArrowUp, Ban, Bell, ChevronsLeft, ChevronsRight, CirclePause, CirclePlay, Eye, EyeOff, Gauge,
+  HardDrive, Image, LayoutGrid, LifeBuoy, List, PanelLeftClose, PanelLeftOpen, PencilLine, ShieldCheck, Zap,
 } from "lucide-react";
 
 export const ICON_STROKE = 1.75;
@@ -79,4 +81,27 @@ export const Icon = {
   minus: make(Minus),
   square: make(Square),
   maximize: make(Maximize2),
+  // Estilo v2: marco, tablas y Panel admin
+  bell: make(Bell),
+  arrowRight: make(ArrowRight),
+  arrowUp: make(ArrowUp),
+  arrowDown: make(ArrowDown),
+  grid: make(LayoutGrid),
+  list: make(List),
+  pause: make(CirclePause),
+  resume: make(CirclePlay),
+  eye: make(Eye),
+  eyeOff: make(EyeOff),
+  support: make(LifeBuoy),
+  disk: make(HardDrive),
+  image: make(Image),
+  gauge: make(Gauge),
+  shield: make(ShieldCheck),
+  first: make(ChevronsLeft),
+  last: make(ChevronsRight),
+  sidebarClose: make(PanelLeftClose),
+  sidebarOpen: make(PanelLeftOpen),
+  edit: make(PencilLine),
+  ban: make(Ban),
+  zap: make(Zap),
 };

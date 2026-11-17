@@ -62,6 +62,7 @@ class Me(BaseModel):
     mfa_setup_required: bool
     current_org: uuid.UUID | None
     orgs: list[OrgRef]
+    support_org: OrgRef | None = Field(None, description="Organización en la que el superadministrador está como soporte")
 
 
 class AuthStatus(BaseModel):
@@ -154,7 +155,27 @@ class Usage(BaseModel):
     map_loads: int
     ortho_mb: float
     projects: int
+    users: int = Field(0, description="Usuarios activos de la organización")
+    pending_invitations: int = Field(0, description="Invitaciones vigentes sin aceptar")
+    invitations_today: int = Field(0, description="Invitaciones creadas hoy")
+    invite_days: int = Field(7, description="Días de vigencia de una invitación")
     limits: dict
+
+
+OrgKind = Literal["apr", "consultora", "sanitaria", "otra"]
+PlanName = Literal["basico", "profesional", "ilimitado"]
+
+
+class OrgInfo(BaseModel):
+    """Datos de contacto de la organización (todos opcionales)."""
+    model_config = ConfigDict(extra="forbid")
+    rut: str | None = Field(None, max_length=20)
+    region: str | None = Field(None, max_length=80)
+    comuna: str | None = Field(None, max_length=80)
+    address: str | None = Field(None, max_length=200, description="Dirección")
+    contact: str | None = Field(None, max_length=120, description="Persona de contacto")
+    phone: str | None = Field(None, max_length=40)
+    email: str | None = Field(None, max_length=254, pattern=r"^$|^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class OrgOut(BaseModel):
@@ -166,6 +187,15 @@ class OrgOut(BaseModel):
     limits: dict | None
     suspended: bool
     created_at: datetime
+    info: dict | None = None
+
+
+class OrgDataUpdate(BaseModel):
+    """Lo que el administrador de la organización puede cambiar (no plan, límites ni suspensión)."""
+    model_config = ConfigDict(extra="forbid")
+    name: str | None = Field(None, min_length=2, max_length=200)
+    kind: OrgKind | None = None
+    info: OrgInfo | None = None
 
 
 class OrgAdminOut(OrgOut):
@@ -176,8 +206,8 @@ class OrgAdminOut(OrgOut):
 class OrgCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=2, max_length=200)
-    kind: Literal["apr", "consultora", "sanitaria", "otra"] = "apr"
-    plan: Literal["basico", "profesional", "ilimitado"] = "basico"
+    kind: OrgKind = "apr"
+    plan: PlanName = "basico"
     admin_email: str | None = Field(None, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -189,9 +219,55 @@ class OrgCreated(BaseModel):
 class OrgUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str | None = Field(None, min_length=2, max_length=200)
-    plan: Literal["basico", "profesional", "ilimitado"] | None = None
+    plan: PlanName | None = None
     limits: dict[str, int | None] | None = None
     suspended: bool | None = None
+    confirm: str | None = Field(None, max_length=200, description="Nombre de la organización (exigido para suspender)")
+
+
+class OrgDelete(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    confirm: str = Field(max_length=200, description="Nombre exacto de la organización")
+
+
+class LimitUse(BaseModel):
+    key: str
+    label: str
+    used: float
+    limit: float | None
+    ratio: float | None = Field(None, description="Uso / límite (0–1+); sin límite = None")
+
+
+class OrgDetail(BaseModel):
+    org: OrgOut
+    usage: Usage
+    limits_use: list[LimitUse]
+    members: list[MemberOut]
+
+
+class NearLimit(BaseModel):
+    org: OrgOut
+    worst: LimitUse
+
+
+class AdminOverview(BaseModel):
+    orgs_active: int
+    orgs_suspended: int
+    users_total: int
+    users_active: int
+    projects_total: int
+    ortho_count: int
+    ortho_mb: float
+    disk_total_gb: float | None
+    disk_used_gb: float | None
+    disk_free_gb: float | None
+    near_limit: list[NearLimit]
+    recent_audit: list["AuditOut"]
+
+
+class PlansUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    plans: dict[PlanName, dict[str, int | None]]
 
 
 class UserAdminOut(BaseModel):
@@ -209,6 +285,15 @@ class UserAdminOut(BaseModel):
 class UserAdminUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     active: bool | None = None
+    is_superadmin: bool | None = None
+
+
+class InvitationOut(BaseModel):
+    id: str = Field(description="Identificador corto de la invitación")
+    email: str
+    role: Role
+    created_at: datetime
+    expires_at: datetime
 
 
 class MapLoadOut(BaseModel):
@@ -260,3 +345,6 @@ class SystemInfo(BaseModel):
     services: list[ServiceStatus]
     last_backup: dict | None = Field(None, description="Último respaldo automático (fecha, carpeta, tamaño)")
     plans: dict[str, dict]
+
+
+AdminOverview.model_rebuild()

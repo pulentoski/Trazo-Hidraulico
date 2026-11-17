@@ -294,6 +294,7 @@ def test_superadministrador_uso_limites_y_suspension(two_orgs):
     assert c.get("/api/projects").status_code == 401
     assert new_client().post("/api/auth/login", json={"email": email, "password": TEST_PASSWORD}).status_code == 401
     # Suspender la organización deja sin acceso a sus proyectos
-    s.patch(f"/api/admin/orgs/{org_b}", json={"suspended": True})
+    assert s.patch(f"/api/admin/orgs/{org_b}", json={"suspended": True}).status_code == 400  # falta confirmar
+    assert s.patch(f"/api/admin/orgs/{org_b}", json={"suspended": True, "confirm": "Organización B"}).status_code == 200
     assert two_orgs["b"].get("/api/projects").json() == []
     s.patch(f"/api/admin/orgs/{org_b}", json={"suspended": False, "limits": {}})

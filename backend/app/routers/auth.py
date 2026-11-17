@@ -81,12 +81,13 @@ def _me_user(session: Session) -> User:
 def me(request: Request, session: SessionDep) -> Me:
     s = session.get(UserSession, security.token_hash(_token(request) or ""))
     user = session.get(User, s.user_id)
-    roles = auth.memberships(session, user.id)
+    roles, support = auth.effective_roles(session, user, s)
     names = dict(session.execute(select(Organization.id, Organization.name).where(Organization.id.in_(list(roles)))).all())
-    current = s.org_id if s.org_id in roles else next(iter(roles), None)
+    current = support or (s.org_id if s.org_id in roles else next(iter(roles), None))
     return Me(id=user.id, email=user.email, name=user.name, is_superadmin=user.is_superadmin, mfa_enabled=user.mfa_enabled,
               mfa_pending=s.mfa_pending, mfa_setup_required=auth.mfa_setup_required(user, roles), current_org=current,
-              orgs=sorted([OrgRef(id=o, name=names.get(o, "?"), role=r) for o, r in roles.items()], key=lambda x: x.name))
+              orgs=sorted([OrgRef(id=o, name=names.get(o, "?"), role=r) for o, r in roles.items()], key=lambda x: x.name),
+              support_org=OrgRef(id=support, name=names.get(support, "?"), role="admin") if support else None)
 
 
 @router.patch("/me", response_model=Me, summary="Editar el perfil (nombre visible)")
@@ -106,8 +107,25 @@ def switch_org(body: OrgSwitch, session: SessionDep) -> Response:
     p = auth.principal()
     if body.org_id not in p.roles:
         raise auth.AuthError(404, "Organización no encontrada.")
-    session.get(UserSession, p.session_hash).org_id = body.org_id
+    s = session.get(UserSession, p.session_hash)
+    s.org_id = body.org_id
+    if s.support_org_id is not None and s.support_org_id != body.org_id:
+        auth.audit(session, "soporte.salida", org_id=s.support_org_id)
+        s.support_org_id = None
     session.commit()
+    return Response(status_code=204)
+
+
+@router.post("/support/exit", status_code=204, summary="Salir del modo soporte (superadministrador)")
+def support_exit(session: SessionDep) -> Response:
+    p = auth.principal()
+    s = session.get(UserSession, p.session_hash)
+    if s is not None and s.support_org_id is not None:
+        auth.audit(session, "soporte.salida", org_id=s.support_org_id)
+        s.support_org_id = None
+        own = auth.memberships(session, p.user_id)
+        s.org_id = s.org_id if s.org_id in own else next(iter(own), None)
+        session.commit()
     return Response(status_code=204)
 
 

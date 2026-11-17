@@ -7,8 +7,9 @@ import { api } from "../api/client";
 import type { GFilters, GIndicator, GMapRef, GTab, GTable, GestionSettings, ProjectOut, RecordKind, RecordSpec, TabResult } from "../api/types";
 import { Modal } from "../components/Dialogs";
 import { GChart } from "../components/GChart";
-import { PageHeader } from "../components/PageHeader";
-import { RecordsPanel } from "../components/RecordsPanel";
+import { AppFrame } from "../components/AppFrame";
+import { RecordEntryDialog, RecordsPanel } from "../components/RecordsPanel";
+import { MenuButton } from "../components/MenuButton";
 import { fmt } from "../lib/format";
 import { PATHS } from "../paths";
 import { canEdit, useAuth } from "../state/auth";
@@ -16,6 +17,8 @@ import { errorText } from "../state/projects";
 import { animationsOn, useEditor } from "../state/store";
 import { Icon } from "../components/Icons";
 import { Skeleton } from "../components/Skeleton";
+import { DataTable } from "../components/DataTable";
+import type { CellType } from "../lib/table";
 
 export const GESTION_TABS: { id: GTab; label: string; records: RecordKind[] }[] = [
   { id: "operacion", label: "Operación", records: ["energia"] },
@@ -53,30 +56,29 @@ export function openInMap(navigate: (to: string) => void, pid: string, ref: GMap
   navigate(`${PATHS.project(pid)}?ver=gestion`);
 }
 
+/** Tipo de columna de una tabla de detalle: números, fechas (por nombre o contenido) o texto. */
+function colType(c: GTable["columns"][number], rows: GTable["rows"]): CellType {
+  if (c.num) return "num";
+  const v = rows.find((r) => (r as Record<string, unknown>)[c.key] != null)?.[c.key as never];
+  return typeof v === "string" && /^\d{4}-\d{2}(-\d{2})?/.test(v) ? "date" : "text";
+}
+
 function TableView({ t, pid, tab, q }: { t: GTable; pid: string; tab: GTab; q: GQuery }) {
-  const [all, setAll] = useState(false);
-  const rows = all ? t.rows : t.rows.slice(0, 20);
   return (
     <div className="gtable" data-table={t.key}>
       <div className="gtable-head">
-        <b>{t.title}</b> <span className="muted small">{t.rows.length} filas</span>
+        <b>{t.title}</b>
         <span className="spacer" />
-        <a className="btn small ghost" href={api.gestionTableUrl(pid, tab, t.key, "xlsx", q)}>Excel</a>
-        <a className="btn small ghost" href={api.gestionTableUrl(pid, tab, t.key, "csv", q)}>CSV</a>
+        <a className="btn small ghost" href={api.gestionTableUrl(pid, tab, t.key, "xlsx", q)}><Icon.download /><span>Excel</span></a>
+        <a className="btn small ghost" href={api.gestionTableUrl(pid, tab, t.key, "csv", q)}><Icon.download /><span>CSV</span></a>
       </div>
-      {t.rows.length ? (
-        <div className="table-scroll">
-          <table className="tbl compact">
-            <thead><tr>{t.columns.map((c) => <th key={c.key} className={c.num ? "num" : ""}>{c.label}{c.unit ? ` (${c.unit})` : ""}</th>)}</tr></thead>
-            <tbody>{rows.map((r, i) => (
-              <tr key={i}>{t.columns.map((c) => {
-                const v = (r as Record<string, unknown>)[c.key];
-                return <td key={c.key} className={c.num ? "num" : ""}>{typeof v === "number" ? num(v) : v === null || v === undefined ? "—" : String(v)}</td>;
-              })}</tr>))}</tbody>
-          </table>
-          {!all && t.rows.length > 20 && <button className="ghost small" onClick={() => setAll(true)}>Ver las {t.rows.length} filas</button>}
-        </div>
-      ) : <p className="muted small">Sin datos en el período.</p>}
+      <DataTable compact label={t.title} rows={t.rows as Record<string, unknown>[]} rowKey={(_, i) => String(i)} pageSize={25}
+        empty={<p className="muted small">Sin datos en el período.</p>}
+        columns={t.columns.map((c) => ({
+          key: c.key, label: `${c.label}${c.unit ? ` (${c.unit})` : ""}`, type: colType(c, t.rows),
+          value: (r: Record<string, unknown>) => r[c.key] as string | number | null | undefined,
+          render: (r: Record<string, unknown>) => { const v = r[c.key]; return typeof v === "number" ? num(v) : v === null || v === undefined ? "—" : String(v); },
+        }))} />
     </div>
   );
 }
@@ -178,8 +180,9 @@ function IndicatorCard({ i, res, pid, q, onLoad }: { i: GIndicator; res: TabResu
             <p className="small"><b>Cómo cargarlo:</b> {i.empty.how}.</p>
             {i.empty.record && (
               <div className="inline">
-                <button className="small" onClick={() => onLoad(i.empty!.record!, "add")}><Icon.plus /><span>Agregar registro</span></button>
-                <button className="small primary" onClick={() => onLoad(i.empty!.record!, "import")}><Icon.upload /><span>Cargar planilla</span></button>
+                <button className="small primary" onClick={() => onLoad(i.empty!.record!, "add")} title="Abre el formulario de este registro; al guardar vuelve aquí">
+                  <Icon.plus /><span>Ingresar datos</span></button>
+                <button className="small ghost" onClick={() => onLoad(i.empty!.record!, "import")} title="Cargar la planilla de este registro"><Icon.upload /><span>Planilla</span></button>
               </div>)}
           </div>
         </div>
@@ -301,7 +304,7 @@ export function GestionPage() {
   const [res, setRes] = useState<TabResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [targets, setTargets] = useState(false);
-  const [openRecord, setOpenRecord] = useState<{ kind: RecordKind; n: number; action: "import" | "add" } | null>(null);
+  const [entry, setEntry] = useState<{ kind: RecordKind; action: "import" | "add" } | null>(null);
   const tab = (GESTION_TABS.find((t) => t.id === params.get("pestana"))?.id ?? "operacion") as GTab;
   const preset = (params.get("periodo") as Preset) || "anio";
   const sector = params.get("sector") ?? "";
@@ -336,18 +339,19 @@ export function GestionPage() {
   const readOnly = project ? !canEdit(roleIn(project.org_id)) : true;
   const tabDef = GESTION_TABS.find((t) => t.id === tab)!;
   const recordSpecs = tabDef.records.map((k) => specs.find((s) => s.kind === k)).filter((s): s is RecordSpec => !!s);
+  // «Ingresar datos»: abre el formulario o la planilla en un diálogo; al guardar se cierra y Gestión recarga, sin
+  // cambiar de pestaña ni perder la posición.
   const loadRecord = (k: RecordKind, action: "import" | "add" = "add") => {
-    const owner = GESTION_TABS.find((t) => t.records.includes(k));
-    if (owner && owner.id !== tab) update({ pestana: owner.id });
-    setOpenRecord({ kind: k, n: Date.now(), action });
+    if (readOnly) { toast("Su rol permite ver, no ingresar datos.", "error"); return; }
+    setEntry({ kind: k, action });
   };
+  const entrySpec = entry ? specs.find((x) => x.kind === entry.kind) : undefined;
   const usedTables = new Set(res?.indicators.map((i) => i.table).filter(Boolean));
   const calendar = (res?.extra as { calendar?: { date: string; kind: string; element?: string | null; status: string; assignee?: string | null }[] } | undefined)?.calendar;
 
   return (
-    <div className="page gestion-page">
-      <PageHeader />
-      <main className="page-body gestion">
+    <AppFrame className="gestion-page" crumbs={[{ label: "Proyectos", to: `${PATHS.home}#proyectos` }, { label: project?.name ?? "…", to: PATHS.project(id) }, { label: "Gestión" }]}>
+      <div className="page-body gestion">
         {filters?.model_version != null && <p className="muted small gestion-meta">Versión del modelo {filters.model_version}
           {filters.data_start ? ` · datos desde ${filters.data_start} hasta ${filters.data_end}` : " · sin registros de operación todavía"}</p>}
         <div className="gestion-sticky">
@@ -357,30 +361,53 @@ export function GestionPage() {
             <h1 className="page-title">Gestión <span className="muted">· {project?.name ?? "…"}</span></h1>
             <p className="gestion-period"><b>{desde}</b> a <b>{hasta}</b>{sector ? ` · sector ${sector}` : ""}{ruta ? ` · ruta ${ruta}` : ""}</p>
           </div>
-          <div className="inline">
+        </div>
+        {/* Botonera en orden de uso: período y filtros | metas | registros de datos | exportar e informe mensual. */}
+        <section className="gestion-filters gestion-actions" aria-label="Filtros y acciones">
+          <div className="ga-group" role="group" aria-label="Período y filtros">
+            <div className="seg" role="group" aria-label="Período">
+              {PRESETS.map((p) => <button key={p.id} className={preset === p.id ? "on" : ""} onClick={() => update({ periodo: p.id === "anio" ? null : p.id,
+                ...(p.id === "personalizado" ? { desde, hasta } : { desde: null, hasta: null }) })}>{p.label}</button>)}
+            </div>
+            <label className="field inline-field"><span>Desde</span>
+              <input type="date" value={desde} aria-label="Desde" disabled={preset !== "personalizado"} onChange={(e) => update({ desde: e.target.value })} /></label>
+            <label className="field inline-field"><span>Hasta</span>
+              <input type="date" value={hasta} aria-label="Hasta" disabled={preset !== "personalizado"} onChange={(e) => update({ hasta: e.target.value })} /></label>
+            <label className="field inline-field"><span>Sector</span>
+              <select value={sector} aria-label="Sector" onChange={(e) => update({ sector: e.target.value })}>
+                <option value="">Todos</option>{filters?.sectors.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select></label>
+            <label className="field inline-field"><span>Ruta</span>
+              <select value={ruta} aria-label="Ruta" onChange={(e) => update({ ruta: e.target.value })}>
+                <option value="">Todas</option>{filters?.routes.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select></label>
+          </div>
+          <div className="ga-group" role="group" aria-label="Metas">
             <button onClick={() => setTargets(true)} title="Metas e indicadores del APR"><Icon.activity /><span>Metas</span></button>
-            <a className="btn" href={api.gestionReportUrl(id, "xlsx", q)} title="Informe del período en Excel"><Icon.download /><span>Informe Excel</span></a>
+          </div>
+          <div className="ga-group" role="group" aria-label="Registros de datos">
+            <MenuButton menuLabel="Registros de datos" title="Ingresar o importar registros de operación (energía, cloro, cortes, reclamos, mantenciones, lecturas)"
+              label={<><Icon.table /><span>Datos</span><Icon.chevronDown /></>} menuClass="data-menu">
+              {(close) => (<>
+                <p className="menu-title">Registros de operación</p>
+                {specs.map((sp) => (
+                  <div key={sp.kind} className="menu-row">
+                    <span className="menu-row-label">{sp.title}</span>
+                    <button role="menuitem" className="menu-item small" disabled={readOnly} onClick={() => { close(); loadRecord(sp.kind, "add"); }}
+                      title={`Agregar una fila de ${sp.title}`}><Icon.plus /><span>Agregar</span></button>
+                    <button role="menuitem" className="menu-item small" disabled={readOnly} onClick={() => { close(); loadRecord(sp.kind, "import"); }}
+                      title={`Importar la planilla de ${sp.title}`}><Icon.upload /><span>Planilla</span></button>
+                  </div>
+                ))}
+                {readOnly && <p className="muted small pad">Su rol permite ver, no ingresar datos.</p>}
+              </>)}
+            </MenuButton>
+          </div>
+          <div className="ga-group end" role="group" aria-label="Exportar e informe">
+            <a className="btn" href={api.gestionReportUrl(id, "xlsx", q)} title="Informe del período en Excel"><Icon.download /><span>Exportar Excel</span></a>
             <a className="btn primary" href={api.gestionReportUrl(id, "html", q)} target="_blank" rel="noopener" title="Informe mensual imprimible (se abre en otra pestaña)"><Icon.csv /><span>Informe mensual</span></a>
           </div>
-        </div>
-        <section className="gestion-filters" aria-label="Filtros">
-          <div className="seg" role="group" aria-label="Período">
-            {PRESETS.map((p) => <button key={p.id} className={preset === p.id ? "on" : ""} onClick={() => update({ periodo: p.id === "anio" ? null : p.id,
-              ...(p.id === "personalizado" ? { desde, hasta } : { desde: null, hasta: null }) })}>{p.label}</button>)}
-          </div>
-          <label className="field inline-field"><span>Desde</span>
-            <input type="date" value={desde} aria-label="Desde" disabled={preset !== "personalizado"} onChange={(e) => update({ desde: e.target.value })} /></label>
-          <label className="field inline-field"><span>Hasta</span>
-            <input type="date" value={hasta} aria-label="Hasta" disabled={preset !== "personalizado"} onChange={(e) => update({ hasta: e.target.value })} /></label>
-          <label className="field inline-field"><span>Sector</span>
-            <select value={sector} aria-label="Sector" onChange={(e) => update({ sector: e.target.value })}>
-              <option value="">Todos</option>{filters?.sectors.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select></label>
-          <label className="field inline-field"><span>Ruta</span>
-            <select value={ruta} aria-label="Ruta" onChange={(e) => update({ ruta: e.target.value })}>
-              <option value="">Todas</option>{filters?.routes.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select></label>
-          {res && <span className="muted small">Comparado con {res.period.prev_start} a {res.period.prev_end}</span>}
+          {res && <span className="muted small ga-compare">Comparado con {res.period.prev_start} a {res.period.prev_end}</span>}
         </section>
         <nav className="gestion-tabs" role="tablist" aria-label="Pestañas de gestión">
           {GESTION_TABS.map((t) => (
@@ -417,15 +444,14 @@ export function GestionPage() {
             {recordSpecs.length > 0 && (
               <section className="records" aria-label="Registros">
                 <h2>Registros</h2>
-                {recordSpecs.map((s) => <RecordsPanel key={s.kind} pid={id} spec={s} readOnly={readOnly} onChanged={load}
-                  openNonce={openRecord?.kind === s.kind ? openRecord.n : undefined}
-                  openAction={openRecord?.kind === s.kind ? openRecord.action : undefined} />)}
+                {recordSpecs.map((s) => <RecordsPanel key={s.kind} pid={id} spec={s} readOnly={readOnly} onChanged={load} />)}
               </section>
             )}
           </>)}
         </div>
-      </main>
+      </div>
       {targets && <TargetsDialog pid={id} onClose={() => setTargets(false)} onSaved={load} />}
-    </div>
+      {entry && entrySpec && <RecordEntryDialog pid={id} spec={entrySpec} mode={entry.action} onClose={() => setEntry(null)} onSaved={load} />}
+    </AppFrame>
   );
 }

@@ -48,14 +48,67 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Ficha de una organización */
+        get: operations["admin_org_detail_api_admin_orgs__org_id__get"];
+        put?: never;
+        post?: never;
+        /** Eliminar una organización con sus proyectos */
+        delete: operations["admin_delete_org_api_admin_orgs__org_id__delete"];
+        options?: never;
+        head?: never;
+        /** Plan, límites, nombre o suspensión */
+        patch: operations["admin_update_org_api_admin_orgs__org_id__patch"];
+        trace?: never;
+    };
+    "/api/admin/orgs/{org_id}/support": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get?: never;
+        put?: never;
+        /** Entrar a la organización como soporte */
+        post: operations["admin_support_api_admin_orgs__org_id__support_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resumen del Panel admin */
+        get: operations["admin_overview_api_admin_overview_get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Plan, límites, nombre o suspensión */
-        patch: operations["admin_update_org_api_admin_orgs__org_id__patch"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Editar los límites de cada plan */
+        put: operations["admin_plans_api_admin_plans_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/admin/system": {
@@ -400,6 +453,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/support/exit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Salir del modo soporte (superadministrador) */
+        post: operations["support_exit_api_auth_support_exit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/catalog/pipes": {
         parameters: {
             query?: never;
@@ -485,6 +555,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orgs/{org_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Datos de la organización (miembros) */
+        get: operations["org_data_api_orgs__org_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Nombre, tipo y datos de la organización (administrador) */
+        patch: operations["update_org_data_api_orgs__org_id__patch"];
+        trace?: never;
+    };
     "/api/orgs/{org_id}/audit": {
         parameters: {
             query?: never;
@@ -509,11 +597,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Invitaciones vigentes */
+        get: operations["invitations_api_orgs__org_id__invitations_get"];
         put?: never;
         /** Invitar por correo o con un enlace de un solo uso */
         post: operations["invite_api_orgs__org_id__invitations_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{org_id}/invitations/{inv_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Anular una invitación */
+        delete: operations["revoke_invitation_api_orgs__org_id__invitations__inv_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2066,6 +2172,33 @@ export interface components {
             dwellings: number;
             /** Year */
             year: number;
+        };
+        /** AdminOverview */
+        AdminOverview: {
+            /** Disk Free Gb */
+            disk_free_gb: number | null;
+            /** Disk Total Gb */
+            disk_total_gb: number | null;
+            /** Disk Used Gb */
+            disk_used_gb: number | null;
+            /** Near Limit */
+            near_limit: components["schemas"]["NearLimit"][];
+            /** Orgs Active */
+            orgs_active: number;
+            /** Orgs Suspended */
+            orgs_suspended: number;
+            /** Ortho Count */
+            ortho_count: number;
+            /** Ortho Mb */
+            ortho_mb: number;
+            /** Projects Total */
+            projects_total: number;
+            /** Recent Audit */
+            recent_audit: components["schemas"]["AuditOut"][];
+            /** Users Active */
+            users_active: number;
+            /** Users Total */
+            users_total: number;
         };
         /** AffectedClient */
         AffectedClient: {
@@ -3865,6 +3998,31 @@ export interface components {
              */
             role: "admin" | "proyectista" | "revisor" | "lector";
         };
+        /** InvitationOut */
+        InvitationOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Email */
+            email: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * @description Identificador corto de la invitación
+             */
+            id: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "admin" | "proyectista" | "revisor" | "lector";
+        };
         /** InviteIn */
         InviteIn: {
             /** Email */
@@ -3973,6 +4131,22 @@ export interface components {
             suggested: number | null;
             /** Years */
             years: number;
+        };
+        /** LimitUse */
+        LimitUse: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Limit */
+            limit: number | null;
+            /**
+             * Ratio
+             * @description Uso / límite (0–1+); sin límite = None
+             */
+            ratio?: number | null;
+            /** Used */
+            used: number;
         };
         /** LineStringGeometry */
         LineStringGeometry: {
@@ -4428,6 +4602,8 @@ export interface components {
             name: string;
             /** Orgs */
             orgs: components["schemas"]["OrgRef"][];
+            /** @description Organización en la que el superadministrador está como soporte */
+            support_org?: components["schemas"]["OrgRef"] | null;
         };
         /** MeasureCompareResult */
         MeasureCompareResult: {
@@ -4562,6 +4738,11 @@ export interface components {
              * @default 2
              */
             pressure_m: number;
+        };
+        /** NearLimit */
+        NearLimit: {
+            org: components["schemas"]["OrgOut"];
+            worst: components["schemas"]["LimitUse"];
         };
         /** NetworkBlock */
         NetworkBlock: {
@@ -4828,6 +5009,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Info */
+            info?: {
+                [key: string]: unknown;
+            } | null;
             /** Kind */
             kind: string;
             /** Limits */
@@ -4869,6 +5054,60 @@ export interface components {
             admin_invitation: string | null;
             org: components["schemas"]["OrgOut"];
         };
+        /**
+         * OrgDataUpdate
+         * @description Lo que el administrador de la organización puede cambiar (no plan, límites ni suspensión).
+         */
+        OrgDataUpdate: {
+            info?: components["schemas"]["OrgInfo"] | null;
+            /** Kind */
+            kind?: ("apr" | "consultora" | "sanitaria" | "otra") | null;
+            /** Name */
+            name?: string | null;
+        };
+        /** OrgDelete */
+        OrgDelete: {
+            /**
+             * Confirm
+             * @description Nombre exacto de la organización
+             */
+            confirm: string;
+        };
+        /** OrgDetail */
+        OrgDetail: {
+            /** Limits Use */
+            limits_use: components["schemas"]["LimitUse"][];
+            /** Members */
+            members: components["schemas"]["MemberOut"][];
+            org: components["schemas"]["OrgOut"];
+            usage: components["schemas"]["Usage"];
+        };
+        /**
+         * OrgInfo
+         * @description Datos de contacto de la organización (todos opcionales).
+         */
+        OrgInfo: {
+            /**
+             * Address
+             * @description Dirección
+             */
+            address?: string | null;
+            /** Comuna */
+            comuna?: string | null;
+            /**
+             * Contact
+             * @description Persona de contacto
+             */
+            contact?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Region */
+            region?: string | null;
+            /** Rut */
+            rut?: string | null;
+        };
         /** OrgOut */
         OrgOut: {
             /**
@@ -4881,6 +5120,10 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Info */
+            info?: {
+                [key: string]: unknown;
+            } | null;
             /** Kind */
             kind: string;
             /** Limits */
@@ -4954,6 +5197,11 @@ export interface components {
         };
         /** OrgUpdate */
         OrgUpdate: {
+            /**
+             * Confirm
+             * @description Nombre de la organización (exigido para suspender)
+             */
+            confirm?: string | null;
             /** Limits */
             limits?: {
                 [key: string]: number | null;
@@ -5134,6 +5382,15 @@ export interface components {
             km: number;
             /** Year */
             year: number;
+        };
+        /** PlansUpdate */
+        PlansUpdate: {
+            /** Plans */
+            plans: {
+                [key: string]: {
+                    [key: string]: number | null;
+                };
+            };
         };
         /** PointGeometry */
         PointGeometry: {
@@ -6427,6 +6684,18 @@ export interface components {
         };
         /** Usage */
         Usage: {
+            /**
+             * Invitations Today
+             * @description Invitaciones creadas hoy
+             * @default 0
+             */
+            invitations_today: number;
+            /**
+             * Invite Days
+             * @description Días de vigencia de una invitación
+             * @default 7
+             */
+            invite_days: number;
             /** Limits */
             limits: {
                 [key: string]: unknown;
@@ -6437,10 +6706,22 @@ export interface components {
             month: string;
             /** Ortho Mb */
             ortho_mb: number;
+            /**
+             * Pending Invitations
+             * @description Invitaciones vigentes sin aceptar
+             * @default 0
+             */
+            pending_invitations: number;
             /** Projects */
             projects: number;
             /** Simulations */
             simulations: number;
+            /**
+             * Users
+             * @description Usuarios activos de la organización
+             * @default 0
+             */
+            users: number;
         };
         /** UserAdminOut */
         UserAdminOut: {
@@ -6470,6 +6751,8 @@ export interface components {
         UserAdminUpdate: {
             /** Active */
             active?: boolean | null;
+            /** Is Superadmin */
+            is_superadmin?: boolean | null;
         };
         /**
          * ValidateRequest
@@ -6927,6 +7210,70 @@ export interface operations {
             };
         };
     };
+    admin_org_detail_api_admin_orgs__org_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_org_api_admin_orgs__org_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgDelete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_update_org_api_admin_orgs__org_id__patch: {
         parameters: {
             query?: never;
@@ -6949,6 +7296,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrgOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_support_api_admin_orgs__org_id__support_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_overview_api_admin_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOverview"];
+                };
+            };
+        };
+    };
+    admin_plans_api_admin_plans_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlansUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: {
+                            [key: string]: unknown;
+                        };
+                    };
                 };
             };
             /** @description Validation Error */
@@ -7562,6 +7995,24 @@ export interface operations {
             };
         };
     };
+    support_exit_api_auth_support_exit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_pipes_api_catalog_pipes_get: {
         parameters: {
             query?: never;
@@ -7664,6 +8115,72 @@ export interface operations {
             };
         };
     };
+    org_data_api_orgs__org_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_org_data_api_orgs__org_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgDataUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     audit_log_api_orgs__org_id__audit_get: {
         parameters: {
             query?: {
@@ -7685,6 +8202,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    invitations_api_orgs__org_id__invitations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationOut"][];
                 };
             };
             /** @description Validation Error */
@@ -7721,6 +8269,36 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["LinkOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_invitation_api_orgs__org_id__invitations__inv_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_id: string;
+                inv_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

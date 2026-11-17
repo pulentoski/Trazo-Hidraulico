@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { fmt } from "../lib/format";
 import { useAuth } from "../state/auth";
+import type { DataColumn } from "./DataTable";
+import { DataTable } from "./DataTable";
 import { useEditor } from "../state/store";
 import { DEFAULT_H, MIN_H, clampH, maxH, usePanelSize } from "./panelSize";
 import type { TabDef } from "./TabBar";
@@ -21,8 +23,6 @@ import { SectorsTab } from "./SectorsTab";
 
 type Tab = "summary" | "alerts" | "nodes" | "links" | "clients" | "scenarios" | "sectors" | "query" | "hydrants" | "layers" | "engine"
   | "simulation" | "demand" | "charts" | "diagnosis" | "measurements";
-type SortKey = { col: string; dir: 1 | -1 };
-
 interface AlertRow { sev: "error" | "warning"; origin: string; text: string; type?: string | null; id?: string | null }
 
 export function BottomPanel() {
@@ -36,7 +36,6 @@ export function BottomPanel() {
     if (bottomTab && bottomTab !== tab) { setTabState(bottomTab as Tab); setCollapsed(false); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottomTab]);
-  const [sort, setSort] = useState<SortKey>({ col: "id", dir: 1 });
 
   const byLabel = useMemo(() => {
     const m = { node: new Map<string, string>(), link: new Map<string, string>() };
@@ -67,17 +66,6 @@ export function BottomPanel() {
     if (uid) focus([uid]);
   };
 
-  const sorted = <T extends Record<string, unknown>>(rows: T[]): T[] => [...rows].sort((a, b) => {
-    const x = a[sort.col];
-    const y = b[sort.col];
-    if (typeof x === "number" && typeof y === "number") return (x - y) * sort.dir;
-    return String(x).localeCompare(String(y), "es", { numeric: true }) * sort.dir;
-  });
-  const th = (col: string, label: string, num = false) => (
-    <th className={num ? "num" : ""} onClick={() => setSort({ col, dir: sort.col === col ? (-sort.dir as 1 | -1) : 1 })}>
-      {label}{sort.col === col ? <span className="sort-ind" aria-label={sort.dir === 1 ? "ascendente" : "descendente"}>{sort.dir === 1 ? "▴" : "▾"}</span> : ""}
-    </th>
-  );
 
   const nodeRows = useMemo(() => Object.values(net.nodes).map((n) => {
     const r = result?.nodes[n.id];
@@ -112,6 +100,34 @@ export function BottomPanel() {
     { id: "engine", label: "Corrida" },
   ];
   const kindTxt: Record<string, string> = { junction: "nudo", reservoir: "reservorio", tank: "estanque", pipe: "tubería", pump: "bomba", valve: "válvula" };
+  const pname = useEditor((st) => st.project?.name ?? "proyecto");
+  type NodeRow = (typeof nodeRows)[number];
+  type LinkRow = (typeof linkRows)[number];
+  const alertCols: DataColumn<AlertRow>[] = [
+    { key: "sev", label: "Severidad", width: 110, value: (a) => (a.sev === "error" ? "Error" : "Advertencia"),
+      render: (a) => <span className={`sev ${a.sev}`}>{a.sev === "error" ? "Error" : "Advertencia"}</span> },
+    { key: "origin", label: "Origen", width: 150, value: (a) => a.origin },
+    { key: "text", label: "Mensaje", value: (a) => a.text },
+    { key: "id", label: "Elemento", width: 110, value: (a) => a.id ?? "", className: "mono" },
+  ];
+  const nodeCols: DataColumn<NodeRow>[] = [
+    { key: "id", label: "ID", value: (r) => r.id, className: "mono" },
+    { key: "kind", label: "Tipo", value: (r) => kindTxt[r.kind] },
+    { key: "elevation", label: "Cota (m)", type: "num", value: (r) => r.elevation, render: (r) => fmt(r.elevation, 2) },
+    { key: "demand", label: "Demanda (L/s)", type: "num", value: (r) => r.demand, render: (r) => fmt(r.demand, 3) },
+    { key: "head", label: "Cota piez. (m)", type: "num", value: (r) => r.head, render: (r) => fmt(r.head, 2) },
+    { key: "pressure", label: "Presión (m)", type: "num", value: (r) => r.pressure, render: (r) => fmt(r.pressure, 2), className: (r) => (r.pressure < 0 ? "bad" : "") },
+  ];
+  const linkCols: DataColumn<LinkRow>[] = [
+    { key: "id", label: "ID", value: (r) => r.id, className: "mono" },
+    { key: "kind", label: "Tipo", value: (r) => kindTxt[r.kind] },
+    { key: "dn", label: "DN", type: "num", value: (r) => r.dn, render: (r) => (Number.isNaN(r.dn) ? "—" : r.dn) },
+    { key: "d", label: "D int. (mm)", type: "num", value: (r) => r.d, render: (r) => fmt(r.d, 1) },
+    { key: "length", label: "Largo (m)", type: "num", value: (r) => r.length, render: (r) => fmt(r.length, 2) },
+    { key: "flow", label: "Caudal (L/s)", type: "num", value: (r) => r.flow, render: (r) => fmt(r.flow, 3) },
+    { key: "velocity", label: "Velocidad (m/s)", type: "num", value: (r) => r.velocity, render: (r) => fmt(r.velocity, 3) },
+    { key: "headloss", label: "Pérdida (m/km)", type: "num", value: (r) => (r.kind === "pipe" ? r.headloss : NaN), render: (r) => (r.kind === "pipe" ? fmt(r.headloss, 3) : "—") },
+  ];
 
   return (
     <section ref={sectionRef} className={`bottom ${collapsed ? "collapsed" : ""} ${maximized && !collapsed ? "maxed" : ""} ${dragging ? "dragging" : ""}`}
@@ -145,46 +161,17 @@ export function BottomPanel() {
           {tab === "summary" && <SummaryTab />}
           {tab === "alerts" && (
             alerts.length === 0 ? <p className="muted pad">{simError ?? (result ? "Sin alertas: la red cumple los criterios configurados." : "Sin resultados todavía.")}</p> : (
-              <table className="tbl">
-                <thead><tr><th style={{ width: 90 }}>Severidad</th><th style={{ width: 140 }}>Origen</th><th>Mensaje</th><th style={{ width: 90 }}>Elemento</th></tr></thead>
-                <tbody>
-                  {alerts.map((a, i) => (
-                    <tr key={i} className={`clickable ${a.sev}`} onClick={() => goto(a.type, a.id)}>
-                      <td><span className={`sev ${a.sev}`}>{a.sev === "error" ? "Error" : "Advertencia"}</span></td>
-                      <td>{a.origin}</td><td>{a.text}</td><td className="mono">{a.id ?? ""}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <DataTable label="Alertas" rows={alerts} columns={alertCols} rowKey={(_, i) => String(i)} rowClassName={(a) => a.sev}
+                onRowClick={(a) => goto(a.type, a.id)} exportName={`alertas-${pname}`} />
             )
           )}
           {tab === "nodes" && (
-            <table className="tbl">
-              <thead><tr>{th("id", "ID")}{th("kind", "Tipo")}{th("elevation", "Cota (m)", true)}{th("demand", "Demanda (L/s)", true)}{th("head", "Cota piez. (m)", true)}{th("pressure", "Presión (m)", true)}</tr></thead>
-              <tbody>
-                {sorted(nodeRows).map((r) => (
-                  <tr key={r.uid} className="clickable" onClick={() => focus([r.uid])}>
-                    <td className="mono">{r.id}</td><td>{kindTxt[r.kind]}</td><td className="num">{fmt(r.elevation, 2)}</td>
-                    <td className="num">{fmt(r.demand, 3)}</td><td className="num">{fmt(r.head, 2)}</td>
-                    <td className={`num ${r.pressure < 0 ? "bad" : ""}`}>{fmt(r.pressure, 2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable label="Nudos" rows={nodeRows} columns={nodeCols} rowKey={(r) => r.uid} initialSort={{ key: "id" }}
+              onRowClick={(r) => focus([r.uid])} exportName={`nudos-${pname}`} empty={<p className="muted pad">Sin nudos.</p>} />
           )}
           {tab === "links" && (
-            <table className="tbl">
-              <thead><tr>{th("id", "ID")}{th("kind", "Tipo")}{th("dn", "DN", true)}{th("d", "D int. (mm)", true)}{th("length", "Largo (m)", true)}{th("flow", "Caudal (L/s)", true)}{th("velocity", "Velocidad (m/s)", true)}{th("headloss", "Pérdida (m/km)", true)}</tr></thead>
-              <tbody>
-                {sorted(linkRows).map((r) => (
-                  <tr key={r.uid} className="clickable" onClick={() => focus([r.uid])}>
-                    <td className="mono">{r.id}</td><td>{kindTxt[r.kind]}</td><td className="num">{Number.isNaN(r.dn) ? "—" : r.dn}</td>
-                    <td className="num">{fmt(r.d, 1)}</td><td className="num">{fmt(r.length, 2)}</td><td className="num">{fmt(r.flow, 3)}</td>
-                    <td className="num">{fmt(r.velocity, 3)}</td><td className="num">{r.kind === "pipe" ? fmt(r.headloss, 3) : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable label="Tramos" rows={linkRows} columns={linkCols} rowKey={(r) => r.uid} initialSort={{ key: "id" }}
+              onRowClick={(r) => focus([r.uid])} exportName={`tramos-${pname}`} empty={<p className="muted pad">Sin tramos.</p>} />
           )}
           {tab === "clients" && <ClientsTab />}
           {tab === "scenarios" && <ScenariosTab />}

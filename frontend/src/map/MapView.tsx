@@ -280,7 +280,7 @@ function MapLayers({ wanted, googleFailed, size, host }: { wanted: BaseKind; goo
           </> : <>
             <strong>Se usa OpenStreetMap.</strong>{" "}
             {quotaDenied ? "Se alcanzó el límite mensual de cargas de Google Maps del plan de su organización."
-              : "No se pudo cargar Google Maps (revise la key y sus restricciones en Ajustes → Plataforma → Mapa base)."}
+              : "No se pudo cargar Google Maps (revise la key y sus restricciones en Panel admin → Mapa base)."}
           </>}
         </div>
       )}

@@ -96,7 +96,7 @@ Tras un cambio de IP el navegador vuelve a pedir que acepte el certificado. Para
 IP elástica o use un dominio.
 
 Al primer ingreso, el superadministrador debe configurar el segundo factor (TOTP) en **Ajustes → Seguridad** si
-`MFA_REQUIRED_FOR_ADMINS=true` (por defecto). Después crea las organizaciones en **Ajustes → Plataforma → Organizaciones** e invita a
+`MFA_REQUIRED_FOR_ADMINS=true` (por defecto). Después crea las organizaciones en **Panel admin → Organizaciones** e invita a
 sus administradores.
 
 ## Producción (`infra/compose.prod.yml`)
@@ -113,9 +113,9 @@ Sin key, el mapa base es OpenStreetMap con MapLibre: teselas de `tile.openstreet
 `server.arcgisonline.com` (Esri World Imagery) y búsqueda de direcciones con `nominatim.openstreetmap.org`, cada uno
 con su atribución en el mapa. Son servicios públicos con políticas de uso justo (sin uso masivo; Nominatim, una
 consulta por búsqueda): para mucho tráfico conviene un servidor de teselas propio o contratado. El proveedor se
-elige en **Ajustes → Plataforma → Mapa base** (automático, Google Maps u OpenStreetMap) y se aplica sin reconstruir.
+elige en **Panel admin → Mapa base** (automático, Google Maps u OpenStreetMap) y se aplica sin reconstruir.
 
-La key de Google se ingresa en **Ajustes → Plataforma → Mapa base** con el superadministrador y queda cifrada en la base
+La key de Google se ingresa en **Panel admin → Mapa base** con el superadministrador y queda cifrada en la base
 (Fernet) con `SETTINGS_SECRET_KEY` del `.env` (`make env` la agrega si falta). Respalde el `.env`: sin esa clave
 la key guardada no se puede leer y hay que volver a ingresarla. El frontend la pide en tiempo de ejecución
 (`/api/maps/config`), así que guardarla no requiere reconstruir contenedores.
@@ -146,7 +146,7 @@ la key guardada no se puede leer y hay que volver a ingresarla. El frontend la p
   `make restore-test` (mensual como mínimo).
 - **Seguridad**: el registro de auditoría de cada organización (Organización → Auditoría) muestra ingresos,
   ingresos fallidos y bloqueos, cambios de red, importaciones, exportaciones y cambios de permisos.
-- **Uso**: el superadministrador ve en **Ajustes → Plataforma → Planes y límites** simulaciones, cargas de mapa y ortofotos por
+- **Uso**: el superadministrador ve en **Panel admin → Planes y límites** simulaciones, cargas de mapa y ortofotos por
   organización, con los límites del plan.
 
 ## Cuentas desde la consola del servidor
@@ -221,7 +221,7 @@ Lo que hubo que ajustar o tener en cuenta:
   `ORTHO_MAX_MB=2048`, `ORTHO_CHUNK_MB=32`, `WORKER_MEMORY=2G` (8 GiB de RAM; ver «Ortofotos grandes»),
   `RATE_LIMIT_USER_PER_MINUTE=1200`, `MFA_REQUIRED_FOR_ADMINS=false` (temporal). `make env` genera
   `SETTINGS_SECRET_KEY`, `POSTGRES_PASSWORD` y `REDIS_PASSWORD` aleatorias. El mapa queda en proveedor
-  automático (OpenStreetMap mientras no se guarde una key de Google en Ajustes → Plataforma → Mapa base).
+  automático (OpenStreetMap mientras no se guarde una key de Google en Panel admin → Mapa base).
 - **Organizaciones creadas por la API**: `POST /api/admin/orgs` no hace miembro al superadministrador que la
   crea; para trabajar dentro de ella hay que invitarse como administrador o agregar la membresía por consola.
   `make create-admin` solo lo vincula a la primera organización («Organización inicial», creada por las migraciones).

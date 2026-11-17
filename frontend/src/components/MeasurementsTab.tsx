@@ -9,6 +9,7 @@ import { useEditor } from "../state/store";
 import { Chart } from "./Chart";
 import { Help, NumField } from "./Fields";
 import { Icon } from "./Icons";
+import { DataTable } from "./DataTable";
 
 const KIND = { meter: "Medidor (m³)", pressure: "Presión (m)", level: "Nivel (m)" } as const;
 const TYPE = { node: "Nudo / estanque", link: "Tramo / bomba", client: "Cliente", well: "Pozo" } as const;
@@ -94,32 +95,33 @@ export function MeasurementsTab() {
         )}
         <p className="muted small">{list.length} mediciones registradas.</p>
         {list.length > 0 && (
-          <table className="tbl compact">
-            <thead><tr><th>Elemento</th><th>Medición</th><th>Fecha y hora</th><th className="num">Valor</th><th></th></tr></thead>
-            <tbody>{list.slice(-200).map((m) => (
-              <tr key={m.id}><td className="mono">{m.element_id}</td><td>{KIND[m.kind]}</td><td>{new Date(m.measured_at).toLocaleString("es-CL")}</td>
-                <td className="num">{fmt(m.value, 3)}</td>
-                <td><button className="small ghost danger-text" aria-label="Eliminar" title="Eliminar la medición (pide confirmación)" onClick={async () => { if (!window.confirm("¿Eliminar esta medición?")) return; await api.deleteMeasurements(project.id, [m.id]); await refresh(); }}><Icon.trash /></button></td></tr>
-            ))}</tbody>
-          </table>
+          <DataTable compact label="Mediciones" rows={list} rowKey={(m) => String(m.id)} pageSize={25} initialSort={{ key: "at", dir: -1 }}
+            exportName={`mediciones-${project.name}`}
+            columns={[
+              { key: "el", label: "Elemento", value: (m) => m.element_id, className: "mono" },
+              { key: "kind", label: "Medición", value: (m) => KIND[m.kind] },
+              { key: "at", label: "Fecha y hora", type: "date", value: (m) => m.measured_at, render: (m) => new Date(m.measured_at).toLocaleString("es-CL") },
+              { key: "v", label: "Valor", type: "num", value: (m) => m.value, render: (m) => fmt(m.value, 3) },
+              { key: "x", label: "", sortable: false, noExport: true, value: () => "", render: (m) => (
+                <button className="small ghost danger-text" aria-label="Eliminar" title="Eliminar la medición (pide confirmación)" onClick={async (e) => { e.stopPropagation(); if (!window.confirm("¿Eliminar esta medición?")) return; await api.deleteMeasurements(project.id, [m.id]); await refresh(); }}><Icon.trash /></button>) },
+            ]} />
         )}
       </div>
       <div className="meas-cmp">
         {!series.length ? <p className="muted pad">Agregue mediciones para compararlas con el modelo (versión guardada).</p> : (<>
-          <table className="tbl compact">
-            <thead><tr><th>Elemento</th><th>Magnitud</th><th className="num">Mediciones</th><th className="num">Dif. máx.</th><th>Resultado</th></tr></thead>
-            <tbody>{series.map((s, i) => (
-              <tr key={`${s.element_id}-${s.kind}`} className={`clickable ${i === sel ? "current" : ""}`} onClick={() => {
-                setSel(i);
-                const u = uidOf(net, SHEET[s.element_type], s.element_id);
-                if (u) focus([u]);
-              }}>
-                <td className="mono">{s.element_id}</td><td>{s.quantity} ({s.unit})</td><td className="num">{s.points.length}</td>
-                <td className="num">{s.max_abs_diff == null ? "—" : fmt(s.max_abs_diff, 2)}</td>
-                <td className={s.alert ? "bad" : ""}>{s.alert ? "▲ " : "✔ "}{s.message}</td>
-              </tr>
-            ))}</tbody>
-          </table>
+          <DataTable compact label="Comparación con el modelo" rows={series} rowKey={(s) => `${s.element_id}-${s.kind}`}
+            rowClassName={(s) => (series[sel] === s ? "current" : "")} onRowClick={(s) => {
+              setSel(series.indexOf(s));
+              const u = uidOf(net, SHEET[s.element_type], s.element_id);
+              if (u) focus([u]);
+            }}
+            columns={[
+              { key: "el", label: "Elemento", value: (s) => s.element_id, className: "mono" },
+              { key: "q", label: "Magnitud", value: (s) => `${s.quantity} (${s.unit})` },
+              { key: "n", label: "Mediciones", type: "num", value: (s) => s.points.length },
+              { key: "d", label: "Dif. máx.", type: "num", value: (s) => s.max_abs_diff, render: (s) => (s.max_abs_diff == null ? "—" : fmt(s.max_abs_diff, 2)) },
+              { key: "r", label: "Resultado", value: (s) => s.message, render: (s) => <>{s.alert ? "▲ " : "✔ "}{s.message}</>, className: (s) => (s.alert ? "bad" : "") },
+            ]} />
           {cur && cur.points.length > 0 && (() => {
             const t0 = new Date(cur.points[0].time).getTime();
             const x = cur.points.map((p) => (new Date(p.time).getTime() - t0) / 60000);

@@ -1,5 +1,10 @@
-"""Organizaciones: miembros, invitaciones, roles, auditoría y uso (administrador de la organización);
-gestión de la plataforma (superadministrador); conteo de cargas de mapa; revisiones de versiones."""
+"""Organizaciones: datos, miembros, invitaciones, roles, auditoría y uso (administrador de la organización);
+Panel admin (superadministrador): resumen, organizaciones, planes y límites, usuarios y modo soporte; conteo de
+cargas de mapa; revisiones de versiones.
+
+Reglas de roles (validadas aquí, no solo en la interfaz): nadie asigna un rol superior al propio, la organización
+conserva siempre un administrador activo, el administrador no toca plan, límites, suspensión ni superadministradores,
+y todo cambio queda en la auditoría."""
 import uuid
 from typing import Annotated
 
@@ -8,10 +13,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_session
-from app.models import AuditLog, Membership, Organization, Project, ProjectVersion, User, VersionReview
-from app.schemas.auth import (AuditOut, InviteIn, LinkOut, MapLoadOut, MemberOut, MemberUpdate, OrgAdminOut, OrgCreate,
-                              OrgCreated, OrgOut, OrgRef, OrgSettings, OrgUpdate, ReviewIn, ReviewOut, ServiceStatus,
-                              SystemInfo, Usage, UserAdminOut, UserAdminUpdate)
+from app.models import (AuditLog, Membership, OneTimeToken, Organization, Orthophoto, Project, ProjectVersion, User,
+                        UserSession, VersionReview)
+from app.schemas.auth import (AdminOverview, AuditOut, InvitationOut, InviteIn, LimitUse, LinkOut, MapLoadOut, MemberOut,
+                              MemberUpdate, NearLimit, OrgAdminOut, OrgCreate, OrgCreated, OrgDataUpdate, OrgDelete,
+                              OrgDetail, OrgOut, OrgRef, OrgSettings, OrgUpdate, PlansUpdate, ReviewIn, ReviewOut,
+                              ServiceStatus, SystemInfo, Usage, UserAdminOut, UserAdminUpdate)
 from app.services import auth
 from app.services.network import get_project_or_404, get_version_or_404
 
@@ -31,18 +38,90 @@ def usage_of(session: Session, org: Organization) -> Usage:
                  map_loads=auth.usage_count(session, org.id, "map_load"),
                  ortho_mb=round(auth.ortho_bytes(session, org.id) / 1024 / 1024, 2),
                  projects=session.scalar(select(func.count()).select_from(Project).where(Project.org_id == org.id)) or 0,
-                 limits=auth.limits_for(org))
+                 users=auth.active_users(session, org.id), pending_invitations=auth.pending_invitations(session, org.id),
+                 invitations_today=auth.invitations_today(session, org.id),
+                 invite_days=auth.get_settings().invite_token_days, limits=auth.limits_for(org))
 
 
-# ── Administrador de la organización ──
+LIMIT_LABELS = {"max_users": ("users", "Usuarios"), "max_projects": ("projects", "Proyectos"),
+                "max_simulations_month": ("simulations", "Simulaciones del mes"),
+                "max_map_loads_month": ("map_loads", "Cargas de mapa del mes"), "max_ortho_mb": ("ortho_mb", "Ortofotos (MB)"),
+                "max_invites_day": ("invitations_today", "Invitaciones de hoy")}
 
-@router.get("/orgs/{org_id}/members", response_model=list[MemberOut], summary="Miembros de la organización")
-def members(org_id: uuid.UUID, session: SessionDep) -> list[MemberOut]:
-    auth.require_org_perm(org_id, "manage")
+
+def limits_use(u: Usage) -> list[LimitUse]:
+    out = []
+    for key, (field, label) in LIMIT_LABELS.items():
+        used, cap = float(getattr(u, field)), u.limits.get(key)
+        out.append(LimitUse(key=key, label=label, used=used, limit=cap,
+                            ratio=None if cap is None else (used / cap if cap else 1.0)))
+    return out
+
+
+def _member_rows(session: Session, org_id: uuid.UUID) -> list[MemberOut]:
     rows = session.execute(select(Membership, User).join(User, User.id == Membership.user_id)
                            .where(Membership.org_id == org_id).order_by(User.email)).all()
     return [MemberOut(user_id=u.id, email=u.email, name=u.name, role=m.role, active=m.active and u.active,
                       mfa_enabled=u.mfa_enabled, last_login_at=u.last_login_at) for m, u in rows]
+
+
+# ── Administrador de la organización ──
+
+@router.get("/orgs/{org_id}", response_model=OrgOut, summary="Datos de la organización (miembros)")
+def org_data(org_id: uuid.UUID, session: SessionDep) -> OrgOut:
+    auth.require_org_perm(org_id, "view")
+    return OrgOut.model_validate(_org(session, org_id))
+
+
+@router.patch("/orgs/{org_id}", response_model=OrgOut, summary="Nombre, tipo y datos de la organización (administrador)")
+def update_org_data(org_id: uuid.UUID, body: OrgDataUpdate, session: SessionDep) -> OrgOut:
+    auth.require_org_perm(org_id, "manage")
+    org = _org(session, org_id)
+    data = body.model_dump(exclude_unset=True)
+    if data.get("name"):
+        name = data["name"].strip()
+        dup = session.scalar(select(Organization).where(func.lower(Organization.name) == name.lower(), Organization.id != org.id))
+        if dup is not None:
+            raise auth.AuthError(409, "Ya existe una organización con ese nombre.")
+        org.name = name
+    if data.get("kind"):
+        org.kind = data["kind"]
+    if "info" in data:
+        org.info = {k: v for k, v in (data["info"] or {}).items() if v not in (None, "")} or None
+    auth.audit(session, "organizacion.datos", org_id=org.id, detail={k: v for k, v in data.items() if k != "info"} |
+               ({"datos": sorted((data.get("info") or {}).keys())} if "info" in data else {}))
+    session.commit()
+    return OrgOut.model_validate(org)
+
+
+@router.get("/orgs/{org_id}/members", response_model=list[MemberOut], summary="Miembros de la organización")
+def members(org_id: uuid.UUID, session: SessionDep) -> list[MemberOut]:
+    auth.require_org_perm(org_id, "manage")
+    return _member_rows(session, org_id)
+
+
+@router.get("/orgs/{org_id}/invitations", response_model=list[InvitationOut], summary="Invitaciones vigentes")
+def invitations(org_id: uuid.UUID, session: SessionDep) -> list[InvitationOut]:
+    auth.require_org_perm(org_id, "manage")
+    rows = session.scalars(select(OneTimeToken).where(
+        OneTimeToken.org_id == org_id, OneTimeToken.purpose == "invite", OneTimeToken.used_at.is_(None),
+        OneTimeToken.expires_at > auth.now()).order_by(OneTimeToken.created_at.desc()))
+    return [InvitationOut(id=t.token_hash[:16], email=t.email or "", role=t.role, created_at=t.created_at,
+                          expires_at=t.expires_at) for t in rows]
+
+
+@router.delete("/orgs/{org_id}/invitations/{inv_id}", status_code=204, summary="Anular una invitación")
+def revoke_invitation(org_id: uuid.UUID, inv_id: str, session: SessionDep) -> Response:
+    auth.require_org_perm(org_id, "manage")
+    t = session.scalars(select(OneTimeToken).where(
+        OneTimeToken.org_id == org_id, OneTimeToken.purpose == "invite", OneTimeToken.used_at.is_(None),
+        OneTimeToken.token_hash.startswith(inv_id[:16]))).first() if len(inv_id) >= 16 else None
+    if t is None:
+        raise auth.AuthError(404, "Invitación no encontrada.")
+    t.used_at = auth.now()
+    auth.audit(session, "permiso.invitacion_anulada", org_id=org_id, detail={"email": t.email, "rol": t.role})
+    session.commit()
+    return Response(status_code=204)
 
 
 @router.post("/orgs/{org_id}/invitations", response_model=LinkOut, status_code=201,
@@ -50,6 +129,13 @@ def members(org_id: uuid.UUID, session: SessionDep) -> list[MemberOut]:
 def invite(org_id: uuid.UUID, body: InviteIn, session: SessionDep) -> LinkOut:
     p = auth.require_org_perm(org_id, "manage")
     org = _org(session, org_id)
+    auth.check_assignable(p, org_id, body.role)
+    existing = auth.user_by_email(session, body.email)
+    if existing is not None:
+        m = session.get(Membership, (existing.id, org_id))
+        if m is not None and m.active:
+            raise auth.AuthError(409, "Esa persona ya es miembro activo de la organización.")
+    auth.check_invite_limits(session, org)
     url = auth.invitation_link(session, org_id, body.email, body.role, p.user_id)
     auth.audit(session, "permiso.invitacion", org_id=org_id, detail={"email": body.email, "rol": body.role})
     session.commit()
@@ -66,16 +152,23 @@ def update_member(org_id: uuid.UUID, user_id: uuid.UUID, body: MemberUpdate, ses
     m = session.get(Membership, (user_id, org_id))
     if m is None:
         raise auth.AuthError(404, "Miembro no encontrado.")
+    target = session.get(User, user_id)
+    if target.is_superadmin and not p.is_superadmin:
+        raise auth.AuthError(403, "No puede cambiar el rol de un superadministrador.", "forbidden")
     if user_id == p.user_id and (body.active is False or (body.role and body.role != "admin")):
         raise auth.AuthError(400, "No puede quitarse a sí mismo el rol de administrador.")
+    if body.role is not None:
+        auth.check_assignable(p, org_id, body.role)
     before = {"rol": m.role, "activo": m.active}
+    if body.active and not m.active:
+        auth.check_user_limit(session, _org(session, org_id))
     if body.role is not None:
         m.role = body.role
     if body.active is not None:
         m.active = body.active
-    admins = session.scalar(select(func.count()).select_from(Membership).where(
-        Membership.org_id == org_id, Membership.role == "admin", Membership.active.is_(True)))
-    if not admins:
+    session.flush()
+    if not auth.active_admins(session, org_id):
+        session.rollback()
         raise auth.AuthError(400, "La organización debe conservar al menos un administrador activo.")
     auth.audit(session, "permiso.cambio", org_id=org_id, detail={"usuario": str(user_id), "antes": before,
                                                                  "despues": {"rol": m.role, "activo": m.active}})
@@ -234,7 +327,69 @@ def admin_system(session: SessionDep) -> SystemInfo:
     from app.main import app as fastapi_app
 
     return SystemInfo(api_version=fastapi_app.version, engine=engine_info(), services=services, last_backup=backup,
-                      plans={k: dict(v) for k, v in auth.PLANS.items()})
+                      plans=auth.plans(session))
+
+
+@router.put("/admin/plans", response_model=dict[str, dict], summary="Editar los límites de cada plan")
+def admin_plans(body: PlansUpdate, session: SessionDep) -> dict[str, dict]:
+    import json
+
+    from app.models import PlatformSetting
+
+    p = auth.require_superadmin()
+    for plan, lim in body.plans.items():
+        bad = set(lim) - set(auth.LIMIT_KEYS)
+        if bad:
+            raise auth.AuthError(422, f"Límite desconocido en {plan}: {', '.join(sorted(bad))}.")
+        if any(v is not None and v < 0 for v in lim.values()):
+            raise auth.AuthError(422, "Los límites no pueden ser negativos (vacío = sin límite).")
+    current = auth.plans(session)
+    for plan, lim in body.plans.items():
+        current[plan].update(lim)
+    row = session.get(PlatformSetting, auth.PLANS_SETTING)
+    if row is None:
+        row = PlatformSetting(key=auth.PLANS_SETTING, value="{}", encrypted=False)
+        session.add(row)
+    row.value, row.updated_by = json.dumps(current), p.email
+    auth.audit(session, "plataforma.planes", detail={k: dict(v) for k, v in body.plans.items()})
+    session.commit()
+    return auth.plans(session)
+
+
+@router.get("/admin/overview", response_model=AdminOverview, summary="Resumen del Panel admin")
+def admin_overview(session: SessionDep) -> AdminOverview:
+    import shutil
+
+    auth.require_superadmin()
+    orgs = list(session.scalars(select(Organization)))
+    near = []
+    for org in orgs:
+        if org.suspended:
+            continue
+        lu = [x for x in limits_use(usage_of(session, org)) if x.ratio is not None]
+        worst = max(lu, key=lambda x: x.ratio, default=None)
+        if worst is not None and worst.ratio >= 0.8:
+            near.append(NearLimit(org=OrgOut.model_validate(org), worst=worst))
+    near.sort(key=lambda x: -(x.worst.ratio or 0))
+    disk = None
+    try:
+        disk = shutil.disk_usage(auth.get_settings().ortho_dir)
+    except OSError:
+        pass
+    gb = 1024 ** 3
+    ortho_n, ortho_b = session.execute(select(func.count(), func.coalesce(func.sum(Orthophoto.size_bytes), 0))
+                                       .select_from(Orthophoto)).one()
+    recent = session.scalars(select(AuditLog).order_by(AuditLog.id.desc()).limit(12))
+    return AdminOverview(
+        orgs_active=sum(1 for o in orgs if not o.suspended), orgs_suspended=sum(1 for o in orgs if o.suspended),
+        users_total=session.scalar(select(func.count()).select_from(User)) or 0,
+        users_active=session.scalar(select(func.count()).select_from(User).where(User.active.is_(True))) or 0,
+        projects_total=session.scalar(select(func.count()).select_from(Project)) or 0,
+        ortho_count=int(ortho_n), ortho_mb=round(int(ortho_b) / 1024 / 1024, 2),
+        disk_total_gb=round(disk.total / gb, 1) if disk else None, disk_used_gb=round(disk.used / gb, 1) if disk else None,
+        disk_free_gb=round(disk.free / gb, 1) if disk else None, near_limit=near[:10],
+        recent_audit=[AuditOut(id=a.id, created_at=a.created_at, user_email=a.user_email, action=a.action,
+                               project_id=a.project_id, version=a.version, detail=a.detail, ip=a.ip) for a in recent])
 
 
 
@@ -262,11 +417,63 @@ def admin_create_org(body: OrgCreate, session: SessionDep) -> OrgCreated:
     return OrgCreated(org=OrgOut.model_validate(org), admin_invitation=url)
 
 
+@router.get("/admin/orgs/{org_id}", response_model=OrgDetail, summary="Ficha de una organización")
+def admin_org_detail(org_id: uuid.UUID, session: SessionDep) -> OrgDetail:
+    auth.require_superadmin()
+    org = _org(session, org_id)
+    u = usage_of(session, org)
+    return OrgDetail(org=OrgOut.model_validate(org), usage=u, limits_use=limits_use(u), members=_member_rows(session, org_id))
+
+
+@router.post("/admin/orgs/{org_id}/support", status_code=204, summary="Entrar a la organización como soporte")
+def admin_support(org_id: uuid.UUID, session: SessionDep) -> Response:
+    p = auth.require_superadmin()
+    org = _org(session, org_id)
+    s = session.get(UserSession, p.session_hash)
+    s.support_org_id = org.id
+    s.org_id = org.id
+    auth.audit(session, "soporte.entrada", org_id=org.id, detail={"organizacion": org.name, "soporte": True})
+    session.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/admin/orgs/{org_id}", status_code=204, summary="Eliminar una organización con sus proyectos")
+def admin_delete_org(org_id: uuid.UUID, body: OrgDelete, session: SessionDep) -> Response:
+    import shutil
+
+    from app.services.orthophotos import ortho_dir
+
+    auth.require_superadmin()
+    org = _org(session, org_id)
+    if body.confirm.strip() != org.name:
+        raise auth.AuthError(400, "Escriba el nombre exacto de la organización para confirmar.", "confirm")
+    folders = [ortho_dir(o) for o in session.scalars(select(Orthophoto.id).join(Project, Project.id == Orthophoto.project_id)
+                                                       .where(Project.org_id == org.id))]
+    n_projects = session.scalar(select(func.count()).select_from(Project).where(Project.org_id == org.id)) or 0
+    name = org.name
+    session.delete(org)
+    # La auditoría de la organización se borra con ella: el registro de la eliminación queda sin organización.
+    auth.audit(session, "organizacion.eliminada", detail={"nombre": name, "id": str(org_id), "proyectos": n_projects})
+    session.commit()
+    for f in folders:
+        shutil.rmtree(f, ignore_errors=True)
+    return Response(status_code=204)
+
+
 @router.patch("/admin/orgs/{org_id}", response_model=OrgOut, summary="Plan, límites, nombre o suspensión")
 def admin_update_org(org_id: uuid.UUID, body: OrgUpdate, session: SessionDep) -> OrgOut:
     auth.require_superadmin()
     org = _org(session, org_id)
     data = body.model_dump(exclude_unset=True)
+    confirm = data.pop("confirm", None)
+    if data.get("suspended") and not org.suspended and (confirm or "").strip() != org.name:
+        raise auth.AuthError(400, "Escriba el nombre exacto de la organización para suspenderla.", "confirm")
+    if "limits" in data and data["limits"] is not None:
+        bad = set(data["limits"]) - set(auth.LIMIT_KEYS)
+        if bad:
+            raise auth.AuthError(422, f"Límite desconocido: {', '.join(sorted(bad))}.")
+    if data.get("name"):
+        data["name"] = data["name"].strip()
     for k, v in data.items():
         setattr(org, k, v)
     auth.audit(session, "organizacion.cambio", org_id=org.id, detail={k: v for k, v in data.items()})
@@ -294,10 +501,24 @@ def admin_update_user(user_id: uuid.UUID, body: UserAdminUpdate, session: Sessio
     u = session.get(User, user_id)
     if u is None:
         raise auth.AuthError(404, "Usuario no encontrado.")
+    if body.is_superadmin is not None and body.is_superadmin != u.is_superadmin:
+        if u.id == p.user_id:
+            raise auth.AuthError(400, "No puede quitarse a sí mismo el rol de superadministrador.")
+        u.is_superadmin = body.is_superadmin
+        auth.audit(session, "cuenta.superadmin" if body.is_superadmin else "cuenta.superadmin_retirado",
+                   detail={"usuario": u.email})
     if body.active is not None:
         if u.id == p.user_id and not body.active:
             raise auth.AuthError(400, "No puede suspender su propia cuenta.")
         u.active = body.active
+        session.flush()
+        if not body.active:
+            orgs = session.scalars(select(Membership.org_id).where(Membership.user_id == u.id, Membership.role == "admin",
+                                                                   Membership.active.is_(True)))
+            if any(not auth.active_admins(session, o) for o in orgs):
+                session.rollback()
+                raise auth.AuthError(400, "Es el único administrador activo de una organización: nombre otro antes de "
+                                          "suspender la cuenta.")
         if not body.active:
             auth.revoke_user_sessions(session, u.id)
         auth.audit(session, "cuenta.suspendida" if not body.active else "cuenta.reactivada", detail={"usuario": u.email})

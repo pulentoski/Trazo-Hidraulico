@@ -1,5 +1,5 @@
 """Ajustes: cada rol accede solo a sus secciones (Mi cuenta para todos; Organización para administradores;
-Plataforma para el superadministrador), perfil editable y ajustes de la organización (perfil de diseño por
+Panel admin —antes «Plataforma»— para el superadministrador), perfil editable y ajustes de la organización (perfil de diseño por
 defecto, vida útil y precios) aplicados a los proyectos nuevos."""
 import pytest
 
@@ -46,9 +46,9 @@ def test_organizacion_solo_administrador(users, role):
 
 
 @pytest.mark.parametrize("role", ROLES)
-def test_plataforma_solo_superadministrador(users, role):
+def test_panel_admin_solo_superadministrador(users, role):
     _, c = users
-    for path in ("/api/admin/system", "/api/admin/orgs", "/api/admin/users", "/api/admin/maps"):
+    for path in ("/api/admin/system", "/api/admin/orgs", "/api/admin/users", "/api/admin/maps", "/api/admin/overview"):
         assert c[role].get(path).status_code == 404, path  # no existe para quien no es superadministrador
     s = c["super"].get("/api/admin/system")
     assert s.status_code == 200

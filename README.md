@@ -18,14 +18,14 @@ make env          # crea .env desde .env.example con claves aleatorias para Post
 
 El mapa base no necesita key: sin key de Google, el editor usa **OpenStreetMap** (MapLibre) con calles de OSM,
 satélite opcional de **Esri World Imagery** (cada uno con su atribución) y búsqueda de direcciones con **Nominatim**.
-En **Ajustes → Plataforma → Mapa base** el superadministrador elige el proveedor: *Automático* (Google si hay key; si no,
+En **Panel admin → Mapa base** el superadministrador elige el proveedor: *Automático* (Google si hay key; si no,
 OpenStreetMap), *Google Maps* u *OpenStreetMap*. Si el navegador no tiene WebGL, el editor sigue sobre un lienzo
 neutro. Para usar Google Maps:
 
 1. En Google Cloud, habilite **Maps JavaScript API** (y **Geocoding API** para la búsqueda de dirección).
 2. Cree una API key con **restricción de aplicación «Sitios web»** (el dominio publicado, o
    `http://localhost:8080/*` en local) y restrinja las APIs a las dos anteriores.
-3. Ingrese como **superadministrador** y vaya a **Ajustes → Plataforma → Mapa base**: pegue la key (y, opcional, un
+3. Ingrese como **superadministrador** y vaya a **Panel admin → Mapa base**: pegue la key (y, opcional, un
    Map ID vectorial para el tema oscuro), use «Probar» y «Guardar». Se guarda **cifrada** en la base con
    `SETTINGS_SECRET_KEY` (la genera `make env`) y el mapa se activa sin reconstruir contenedores; nunca se muestra
    completa. «Borrar» la quita.
@@ -133,12 +133,14 @@ para dar más espacio al mapa.
 
 ## Ajustes y animaciones
 
-Una sola página **Ajustes** (`/ajustes/<sección>`, menú de usuario arriba a la derecha) con menú lateral según el rol:
+Una sola página **Ajustes** (`/ajustes/<sección>`, menú de usuario arriba a la derecha) con menú según el rol:
 **Mi cuenta** (todos: perfil, seguridad con contraseña, segundo factor y sesiones, y preferencias de tema, animaciones y
-mapa), **Organización** (administrador: miembros e invitaciones, criterios de diseño por defecto, catálogos con vida
-útil y precios por metro para los proyectos sin valores propios, uso y plan, auditoría) y **Plataforma**
-(superadministrador: organizaciones y cuentas, mapa base, planes y límites, sistema con versión, motor OWA-EPANET y
-SHA, estado de servicios y último respaldo). Las rutas antiguas (`/perfil`, `/organizacion`, `/plataforma`,
+mapa) y **Organización** (administrador: datos de la organización, miembros e invitaciones con el tope de usuarios del
+plan, criterios de diseño por defecto, catálogos con vida útil y precios por metro, uso y plan, auditoría). El
+**Panel admin** (`/panel-admin`, solo Super Admin; antes «Plataforma») reúne el resumen de la plataforma, las
+organizaciones con su ficha (plan, uso contra límites, usuarios, suspender, eliminar y entrar como soporte), planes y
+límites, usuarios, mapa base y sistema (versión, motor OWA-EPANET y SHA, servicios y último respaldo). Roles y
+permisos en [docs/autenticacion.md](docs/autenticacion.md). Las rutas antiguas (`/perfil`, `/organizacion`, `/plataforma`,
 `/configuracion`, `/acerca-de`) redirigen a su sección. Animaciones sobrias (transiciones de 150–250 ms, conteo de
 indicadores, dibujo de gráficos; en el mapa, flujo animado en el sentido del agua con velocidad según la velocidad del
 tramo, pulso en nudos bajo la presión mínima, resaltado al seleccionar y «Reproducir día»): se desactivan en

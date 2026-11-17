@@ -7,6 +7,7 @@ import { fmt } from "../lib/format";
 import { flushPending } from "../state/live";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
+import { DataTable } from "./DataTable";
 
 const BUILTIN = [{ id: "normal", name: "Operación normal (todas abiertas)" }, { id: "todas_cerradas", name: "Todas cerradas" },
   { id: "actual", name: "Estado del modelo" }];
@@ -96,14 +97,16 @@ export function ScenariosTab() {
         <>
           <div className="toolbar"><b>{cmp.a.scenario_name}</b> → <b>{cmp.b.scenario_name}</b>
             <button className="small ghost" onClick={() => downloadText("comparacion-escenarios.csv", compareCsv(cmp))}>Exportar CSV</button></div>
-          <table className="tbl">
-            <thead><tr><th>Tipo</th><th>ID</th><th>Nombre</th><th className="num">Antes (m)</th><th className="num">Después (m)</th><th className="num">Diferencia (m)</th></tr></thead>
-            <tbody>{cmp.rows.map((r) => (
-              <tr key={`${r.kind}-${r.id}`}><td>{r.kind}</td><td className="mono">{r.id}</td><td>{r.name ?? ""}</td>
-                <td className="num">{r.supplied_a ? fmt(r.a, 2) : "sin agua"}</td>
-                <td className={`num ${r.supplied_b ? "" : "bad"}`}>{r.supplied_b ? fmt(r.b, 2) : "sin agua"}</td>
-                <td className={`num ${r.diff != null && r.diff < 0 ? "bad" : ""}`}>{fmt(r.diff, 2)}</td></tr>))}</tbody>
-          </table>
+          <DataTable label="Comparación de escenarios" rows={cmp.rows} rowKey={(r) => `${r.kind}-${r.id}`} initialSort={{ key: "diff" }}
+            columns={[
+              { key: "kind", label: "Tipo", value: (r) => r.kind },
+              { key: "id", label: "ID", value: (r) => r.id, className: "mono" },
+              { key: "name", label: "Nombre", value: (r) => r.name ?? "" },
+              { key: "a", label: "Antes (m)", type: "num", value: (r) => (r.supplied_a ? r.a : null), render: (r) => (r.supplied_a ? fmt(r.a, 2) : "sin agua") },
+              { key: "b", label: "Después (m)", type: "num", value: (r) => (r.supplied_b ? r.b : null), render: (r) => (r.supplied_b ? fmt(r.b, 2) : "sin agua"),
+                className: (r) => (r.supplied_b ? "" : "bad") },
+              { key: "diff", label: "Diferencia (m)", type: "num", value: (r) => r.diff, render: (r) => fmt(r.diff, 2), className: (r) => (r.diff != null && r.diff < 0 ? "bad" : "") },
+            ]} />
         </>
       ) : res && (
         <>
@@ -116,13 +119,16 @@ export function ScenariosTab() {
             <button className="small ghost" disabled={!res.summary.afectados} onClick={() => downloadText(`afectados-${res.scenario}.csv`, affectedCsv(res))}>Exportar afectados (CSV)</button>
           </div>
           {res.clients.filter((c) => c.affected).length === 0 ? <p className="muted pad">Ningún cliente afectado.</p> : (
-            <table className="tbl">
-              <thead><tr><th>Cliente</th><th>Nombre</th><th>Nudo</th><th className="num">Consumo (L/s)</th><th>Situación</th><th className="num">Presión (m)</th></tr></thead>
-              <tbody>{res.clients.filter((c) => c.affected).map((c) => (
-                <tr key={c.id} className="clickable" onClick={() => gotoClient(c.id)}><td className="mono">{c.id}</td><td>{c.name ?? ""}</td><td className="mono">{c.node}</td>
-                  <td className="num">{fmt(c.consumption_lps, 3)}</td><td className={c.supplied ? "warn-text" : "bad-text"}>{c.supplied ? "bajo la presión mínima" : "sin suministro"}</td>
-                  <td className="num">{fmt(c.pressure, 2)}</td></tr>))}</tbody>
-            </table>)}
+            <DataTable label="Clientes afectados" rows={res.clients.filter((c) => c.affected)} rowKey={(c) => c.id} onRowClick={(c) => gotoClient(c.id)}
+              initialSort={{ key: "id" }}
+              columns={[
+                { key: "id", label: "Cliente", value: (c) => c.id, className: "mono" },
+                { key: "name", label: "Nombre", value: (c) => c.name ?? "" },
+                { key: "node", label: "Nudo", value: (c) => c.node, className: "mono" },
+                { key: "q", label: "Consumo (L/s)", type: "num", value: (c) => c.consumption_lps, render: (c) => fmt(c.consumption_lps, 3) },
+                { key: "sit", label: "Situación", value: (c) => (c.supplied ? "bajo la presión mínima" : "sin suministro"), className: (c) => (c.supplied ? "warn-text" : "bad-text") },
+                { key: "p", label: "Presión (m)", type: "num", value: (c) => c.pressure, render: (c) => fmt(c.pressure, 2) },
+              ]} />)}
         </>
       )}
     </>

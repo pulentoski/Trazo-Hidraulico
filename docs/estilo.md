@@ -1,120 +1,114 @@
-# Identidad visual de Trazo Hidráulico
+# Estilo visual de Trazo Hidráulico (v2 «Planta APR»)
 
-Identidad «agua y redes»: azul petróleo como color principal, un acento cálido (naranja cobre) reservado para la
-acción más importante de cada pantalla, neutros con un leve tono azulado, sombras suaves y radios consistentes.
-Todo está en tokens CSS (`frontend/src/styles/identity.css`, que se carga después de `app.css`) con tema claro y
-oscuro. La posición de los paneles del editor no cambia: herramientas a la izquierda, mapa al centro, propiedades a
-la derecha y panel inferior.
+Sistema visual tomado de las maquetas `docs/referencias/estilo/login.html` (ingreso) y
+`docs/referencias/estilo/principal.html` (inicio y estilo general). Las maquetas son solo referencia: **no se copian sus
+scripts** (Tailwind por CDN, `onclick` en línea) **ni recursos de otros dominios** (Google Fonts). Fuentes e íconos
+se sirven desde el propio proyecto y cumplen la CSP actual (`font-src 'self'`, `script-src 'self'`).
+
+Todo está en tokens CSS con tema claro y oscuro (`frontend/src/styles/identity.css`; marco, inicio, ingreso y Panel
+admin en `styles/frame.css`; escenas en `styles/scenes.css`). La posición de los paneles del editor no cambia:
+herramientas a la izquierda, mapa al centro, propiedades a la derecha y panel inferior.
 
 ## Color
 
+El oscuro es el de la maqueta (azul marino 950/900/850 y cian); el claro, su variante `html.light`.
+
 | Token | Claro | Oscuro | Uso |
 |---|---|---|---|
-| `--accent` | `#0a6b73` | `#3fbfc1` | Color principal: botón primario, selección, enlaces, pestaña activa |
-| `--accent-strong` | `#07555c` | `#6fd6d6` | Hover del primario |
-| `--accent-soft` | `#dcefef` | `#0f3539` | Fondos de estado activo (herramienta, vista, filtro) |
-| `--warm` | `#ad4a0c` | `#f2924a` | Acento cálido: **una** acción por pantalla (Simular, Nuevo proyecto) |
-| `--bg` | `#edf3f4` | `#0b1519` | Fondo de página |
-| `--panel` / `--panel-2` | `#ffffff` / `#f3f8f8` | `#11202a` / `#162a33` | Superficies |
-| `--line` / `--line-strong` | `#d5e1e4` / `#b2c5ca` | `#233a45` / `#35525e` | Bordes |
-| `--text` / `--muted` | `#10252c` / `#4f6871` | `#dceaee` / `#90a9b2` | Texto |
-| `--ok` / `--warn` / `--bad` | `#2b7a4b` / `#9a5a00` / `#bd3328` | `#5cc28a` / `#f0a838` / `#f06a5f` | Estados |
+| `--bg` / `--bg-hi` | `#eef3f9` / `#ffffff` | `#050d1a` / `#0d1d38` | Fondo de página y foco del degradado del ingreso |
+| `--panel` / `--panel-2` / `--panel-3` | `#ffffff` / `#f4f8fc` / `#eaf1f9` | `#091529` / `#0d1d38` / `#0e203d` | Tarjetas, cabeceras de tabla, controles |
+| `--glass` | `rgba(255,255,255,.92)` | `rgba(9,21,41,.9)` | Tarjeta del ingreso, accesos rápidos, avisos (con desenfoque) |
+| `--line` / `--line-strong` | `#d3deed` / `#b4c4d8` | `#1e293b` / `#334155` | Bordes |
+| `--text` / `--text-2` / `--muted` | `#0f172a` / `#334155` / `#5b6b80` | `#f1f5f9` / `#cbd5e1` / `#94a3b8` | Texto |
+| `--accent` | `#0369a1` | `#22d3ee` | Enlaces, selección, ítem activo, marca «Trazo» |
+| `--accent-vivid` | `#0284c7` | `#06b6d4` | Bordes de foco, íconos, decoración |
+| `--btn-1` → `--btn-2` | `#0062c4` → `#0072e0` | igual | Degradado del botón principal (`.primary`, `.cta`) y del menú activo |
+| `--ok` / `--warn` / `--bad` | `#047857` / `#b45309` / `#c2272d` | `#34d399` / `#fbbf24` / `#f08a8d` | Estados |
+| `--info` | `#4f46e5` | `#818cf8` | Acceso «Abrir el último proyecto» |
+| `--logo` / `--river` | `#0284c7` / `#0ea5e9` | `#00d2ff` / `#0ea5e9` | Logo (cordillera y río) |
 
-Sobre el primario y el acento el texto usa `--on-accent` / `--on-warm` (blanco en claro, casi negro en oscuro).
+El botón principal de la maqueta usa `#0077e6 → #0099ff`; aquí se oscureció a `#0062c4 → #0072e0` para que el texto
+blanco cumpla AA (el cian claro `#0284c7` de la maqueta queda para decoración: como texto da 4,1:1).
 
 **Contraste (WCAG 2.1, AA ≥ 4,5:1 para texto normal)**, sobre `--panel`:
 
 | | Claro | Oscuro |
 |---|---|---|
-| Texto | 15,9 | 13,5 |
-| Texto secundario | 5,9 | 6,7 |
-| Principal (texto/enlace) | 6,2 | 7,5 |
-| Acento cálido | 5,0 | 7,1 |
-| Correcto / advertencia / error | 5,3 / 5,5 / 5,7 | 7,6 / 8,2 / 5,5 |
-| Texto sobre botón primario | 6,2 | 8,2 |
-| Texto sobre botón cálido | 5,0 | 8,0 |
+| Texto | 17,9 | 16,7 |
+| Texto secundario (`--muted`) | 5,4 | 7,1 |
+| Acento (texto/enlace) | 5,9 | 10,1 |
+| Correcto / advertencia / error | 5,5 / 5,0 / 5,8 | 9,5 / 10,9 / 7,6 |
+| Texto blanco sobre el degradado del botón | 5,9 → 4,7 | 5,9 → 4,7 |
+| Acento sobre `--accent-soft` | 5,2 | 8,2 |
 
 ## Tipografía
 
-- **Títulos**: [Sora](https://fonts.google.com/specimen/Sora) (Google Fonts) 500/600/700, con respaldo IBM Plex
-  Sans y la fuente del sistema. Se empaqueta localmente con Fontsource (`@fontsource/sora`): no depende de la red
-  ni de servicios externos en tiempo de ejecución.
-- **Texto y datos**: IBM Plex Sans; los números de tablas, indicadores, coordenadas y estado usan cifras tabulares
-  (`font-variant-numeric: tabular-nums`) para alinearse en columna.
-- **Código e ID**: IBM Plex Mono.
+- **Inter** 400/500/600/700 (texto, títulos y datos), empaquetada con Fontsource (`@fontsource/inter`).
+- **IBM Plex Mono** para código e ID.
+- Tamaños de la maqueta: título del inicio 2,25 rem/700, títulos de página 1,4 rem/700, de tarjeta 0,95–1,05 rem/600,
+  texto 0,875–0,9 rem, rótulos 0,75 rem. Números tabulares en tablas, indicadores y coordenadas.
 
-## Íconos
+## Forma, espaciado y sombras
 
-Un solo set: **Lucide** (`lucide-react` 1.63.0), centralizado en `frontend/src/components/Icons.tsx` como
-`<Icon.nombre />`. Mismo tamaño (`--icon`: 18 px; 16 px en botones pequeños y menús) y mismo grosor de trazo
-(1,75). Cada botón lleva ícono y texto; si el ancho obliga a mostrar solo el ícono, el botón tiene `title` y
-`aria-label`.
+- Radios: 6 px (controles pequeños), **8 px** (botones, campos), **12 px** (accesos rápidos, menús, ítems del menú
+  lateral), **16 px** (tarjetas, paneles, modales; `rounded-2xl` de la maqueta), 18 px (tarjeta del ingreso).
+- Espaciado: rejilla de 4 px; tarjetas con 16–20 px de relleno, separación de 14–24 px; contenido hasta 1440 px.
+- Sombras: `--shadow-sm` (reposo), `--shadow-md` (tarjetas, `shadow-lg` de la maqueta), `--shadow` (menús, modales,
+  tarjeta del ingreso), `--btn-shadow` (botón principal).
+
+## Componentes
+
+- **Marco** (`components/AppFrame.tsx`) en inicio, Gestión, Ajustes y Panel admin: menú lateral de 240 px (plegable a
+  68 px; en pantallas angostas, cajón) con la marca, Inicio, Proyectos, Importar .inp, Desde Excel, Ajustes y —según
+  el rol— Organización o Panel admin; barra superior de 56 px con migas, versión, tema, campana de alertas
+  (mantenciones atrasadas reales) y usuario; aviso fijo del modo soporte; pie con versión y estado del sistema
+  (`/api/health`).
+- **Botones**: principal en degradado azul (derecha del grupo), secundarios neutros, peligrosos en rojo (izquierda,
+  siempre con confirmación; las acciones sobre organizaciones piden escribir su nombre).
+- **Campos**: fondo `--field`, borde suave, radio 8, anillo cian al enfocar; contraseña con botón mostrar/ocultar.
+- **Tarjetas**: radio 16, borde y sombra suave; las de proyecto con miniatura del trazado sobre cuadrícula.
+- **Menús desplegables** (`components/MenuButton.tsx`): se dibujan en una capa propia sobre el mapa y los paneles y se
+  reubican para no salirse de la ventana (Datos del editor, Datos de Gestión, alertas).
+- **Fichas de estado** (`.status-pill`): activo, suspendida, bloqueada, versión.
+- **Íconos**: un solo set, Lucide (`lucide-react`), en `components/Icons.tsx`; 18 px (16 px en botones pequeños),
+  trazo 1,75. Los mismos de la maqueta (Heroicons de contorno) tienen equivalente en Lucide.
+
+## Tablas
+
+Componente común `components/DataTable.tsx` (lógica en `lib/table.ts`, con pruebas): búsqueda sin tildes,
+orden por cualquier columna (texto A–Z con números naturales, números con orden numérico real, fechas ISO o
+dd-mm-aaaa; vacíos al final), paginación (25/50/100/todas) y exportar a CSV (las filas visibles, con el orden
+actual). Se usa en Nudos, Tramos, Alertas, Clientes, Consultas, Cuarteles, Mediciones, Grifos, Versiones, Resumen
+(listas de elementos, clientes sobre cota, mayores consumidores, eventos de pérdidas), Gestión (tablas de detalle,
+registros y vista previa de importación), Ajustes (miembros, invitaciones, sesiones, catálogo, auditoría) y Panel
+admin (organizaciones, usuarios, auditoría).
 
 ## Logo
 
-Una gota con una red de tres nudos (el último, en el acento cálido) sobre un cuadrado redondeado en el color
-principal (`Logo` en `components/PageHeader.tsx`; también `public/favicon.svg`). Aparece en el inicio, en el ingreso
-y en la barra superior del editor. La marca escrita es «**Trazo** Hidráulico», con «Trazo» en el color principal.
+Cordillera con un río (del menú de la maqueta) en `--logo` y `--river`: grande en el menú lateral, en cuadro
+redondeado en el ingreso y la barra del editor, y como `public/favicon.svg`. Marca escrita «**Trazo** Hidráulico» con
+«Trazo» en el acento.
 
-## Forma
+## Escenas y animaciones
 
-- Radios: 6 px (controles pequeños), 8 px (botones, campos), 12 px (tarjetas), 16 px (modales, tarjeta de ingreso).
-- Sombras: `--shadow-sm` (reposo de tarjetas), `--shadow-md` (hover), `--shadow` (menús, modales, avisos).
-- Fondo de identidad: curvas de nivel y una red de cañerías (`components/NetPattern.tsx`) en el encabezado del
-  inicio y en el ingreso, con un movimiento muy lento que se detiene con «Animaciones» desactivado o
-  `prefers-reduced-motion`.
+- **Ingreso**: ciclo del agua en los Andes (cordillera, glaciar, lluvia, río, bocatoma, estanque, viviendas).
+  **Inicio**: planta APR (pozo, cloración, estanque, macromedidor, oficina, lectores). Dibujo SVG de la maqueta en
+  `components/scenes/*.ts` (sin scripts), avisos al pasar el mouse por cada elemento y nubes que se apartan del
+  puntero; botón de pausa.
+- Interfaz: transiciones de 120–250 ms (`--dur-fast`, `--dur`, `--dur-slow`), elevación de 1–2 px al pasar el mouse,
+  aparición de menús y modales, esqueletos de carga y las animaciones del mapa que ya existían.
+- Todas respetan «Animaciones» (Ajustes → Preferencias) y `prefers-reduced-motion`; los e2e las desactivan.
 
-## Botones y jerarquía
+## Lo que la maqueta muestra sin función real (pendiente, no se inventó)
 
-- **Principal** (`.primary`): color principal, a la **derecha** del grupo de acciones.
-- **Destacada** (`.cta`): acento cálido, solo una por pantalla (Simular en el editor, Nuevo proyecto en el inicio).
-- **Secundarias**: estilo neutro, a la izquierda de la principal.
-- **Peligrosas** (`.danger`, `.danger-outline`, `.danger-text`): en rojo, en el extremo izquierdo, y siempre con
-  confirmación (eliminar proyecto, filas de registros, mediciones o fugas, desactivar o suspender cuentas,
-  desactivar el segundo factor, cerrar todas las sesiones, borrar la key del mapa).
-
-## Orden de las botoneras del editor
-
-**Barra superior** (izquierda → derecha, grupos separados):
-
-1. Navegación: Menú, logo, nombre del proyecto
-2. Archivo: Guardar (Ctrl+S), Historial, Deshacer (Ctrl+Z), Rehacer (Ctrl+Y)
-3. Vistas: Editor, Resumen, Gestión
-4. Análisis: Simular (F5), estado del cálculo
-5. Datos: menú Importar / Exportar (.inp, .trazo, planilla, SIG/CAD e informe)
-6. Usuario (a la derecha): tema y menú de usuario
-
-**Herramientas** (agrupadas, con título y atajo visible):
-
-| Grupo | Herramientas (tecla) |
-|---|---|
-| Selección | Seleccionar (V), Selección múltiple (B), Mover (M) |
-| Red | Nudo (N), Tubería (T), Estanque (E), Reservorio (R), Pozo (W), Válvula de corte (L), Grifo (G) |
-| Clientes | Cliente (C) |
-| Análisis | Factibilidad (F), Medir (D) |
-| Edición | Eliminar (X) |
-
-**Panel inferior** (orden de uso): Resumen, Alertas, Nudos, Tramos, Clientes, Simulación, Gráficos, Diagnóstico,
-Escenarios, Cuarteles, Demanda, Mediciones, Consultas, Capas (y al final Grifos y Corrida). Las que no caben pasan
-al menú «Más».
-
-## Animaciones
-
-Sobrias, entre 120 y 250 ms (`--dur-fast` 120 ms, `--dur` 180 ms, `--dur-slow` 250 ms):
-
-- Botones y tarjetas: elevación (1–2 px) y cambio de color suave al pasar el mouse; pulsación breve al hacer clic.
-- Menús, modales y avisos: aparición con desvanecimiento y escala corta; los avisos entran desde la derecha.
-- Carga: esqueletos animados (`components/Skeleton.tsx`) en el inicio, el editor, Gestión y Ajustes.
-- Mapa: aparición breve de cada elemento creado (anillo que crece), trazo animado de la tubería recién dibujada,
-  resaltado con pulsos al seleccionar o «ir al elemento», y el flujo, los pulsos de alerta y la transición de
-  horas que ya existían.
-- Íconos: microanimación al activar una herramienta.
-
-Todas respetan el interruptor «Animaciones» (Ajustes → Preferencias) y `prefers-reduced-motion`; los e2e las
-desactivan.
+- Menú «Reportes» y «Ayuda» del menú lateral y el enlace «Soporte» del pie.
+- Etiqueta «Activo» de cada proyecto (no hay estado de proyecto) y botón «Gestionar» separado de Gestión.
+- Selector «Región» y «Fórmula de pérdida» en el diálogo de proyecto nuevo (la fórmula se elige en el editor).
+- Indicador «Sistema operativo: en línea» como monitoreo continuo: aquí es una consulta a `/api/health` al cargar.
 
 ## Capturas
 
-`docs/capturas/estilo/`: `antes-*` (estilo anterior) y `despues-*` (esta identidad) de inicio, editor, Gestión,
-Ajustes → Mapa base e ingreso, en tema claro y oscuro, a 1440 y 1024 px. Las regenera `e2e/estilo.py`
-(`ESTILO_FASE=antes|despues`; `make test-e2e` produce las «después»). Los correos quedan tapados.
+`docs/capturas/estilo-v2/`: `antes-*` (estilo anterior) y `despues-*` (estilo v2) de ingreso, inicio, editor,
+Resumen, Gestión, Ajustes y Panel admin, en tema claro y oscuro, a 1440 y 1024 px. Las regenera `e2e/estilo_v2.py`
+(`ESTILO_FASE=antes|despues`; `make test-e2e` produce las «después»). Los correos quedan tapados. Las del estilo
+anterior siguen en `docs/capturas/estilo/`.

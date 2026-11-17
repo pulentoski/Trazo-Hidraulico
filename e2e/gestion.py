@@ -151,7 +151,40 @@ def tour_gestion(page: Page, pid: str, theme: str, width: int, full: bool) -> No
     expect(rep.locator(".meta")).to_contain_text("Versión del modelo: 1")
     rep.screenshot(path=str(SHOTS / f"gestion-informe-{theme}-{width}.png"), full_page=False)
     rep.close()
-    assert download(page, page.get_by_role("link", name="Informe Excel")).endswith(".xlsx")
+    assert download(page, page.get_by_role("group", name="Exportar e informe").get_by_role("link", name="Exportar Excel")).endswith(".xlsx")
+
+    log("botonera agrupada: período y filtros | metas | registros de datos | exportar e informe")
+    groups = page.get_by_role("region", name="Filtros y acciones").locator(":scope > [role=group]").evaluate_all(
+        "els => els.map(e => e.getAttribute('aria-label'))")
+    assert groups == ["Período y filtros", "Metas", "Registros de datos", "Exportar e informe"], groups
+    log("menú «Datos»: se despliega sobre todo y dentro de la ventana")
+    page.get_by_role("button", name=re.compile("^Datos")).click()
+    menu = page.get_by_role("menu", name="Registros de datos")
+    expect(menu).to_be_visible()
+    box = menu.bounding_box()
+    vp = page.viewport_size
+    assert box and box["x"] >= 0 and box["y"] >= 0 and box["x"] + box["width"] <= vp["width"] and box["y"] + box["height"] <= vp["height"], box
+    assert menu.evaluate("e => e.parentElement === document.body"), "el menú debe dibujarse en su propia capa"
+    shot(page, "gestion-menu-datos", theme, width)
+    menu.locator(".menu-row", has_text="Cloro").get_by_role("menuitem", name="Agregar").click()
+    dlg = page.get_by_role("dialog", name=re.compile("^Ingresar datos · Cloro"))
+    expect(dlg).to_be_visible()
+    url = page.url
+    dlg.get_by_label(re.compile("^Fecha")).fill("2026-10-29T08:00")
+    dlg.get_by_label(re.compile("^Punto")).fill("J-5")
+    dlg.get_by_label(re.compile("^Cloro libre")).fill("0,6")
+    dlg.get_by_role("button", name="Guardar fila").click()
+    expect(dlg).to_have_count(0)  # al guardar vuelve a Gestión, en la misma pestaña
+    expect(page.locator(".toast").last).to_contain_text("fila agregada")
+    assert page.url == url, (page.url, url)
+    hint = page.locator(".empty-hint").get_by_role("button", name="Ingresar datos")
+    if hint.count():
+        log("cuadro sin datos → «Ingresar datos» abre el formulario de su registro")
+        hint.first.click()
+        dlg = page.get_by_role("dialog", name=re.compile("^Ingresar datos"))
+        expect(dlg.get_by_role("form")).to_be_visible()
+        dlg.get_by_role("button", name="Cancelar").click()
+        expect(dlg).to_have_count(0)
 
     log("ver en el mapa (mapa de calor de fugas)")
     open_tab(page, "Pérdidas")

@@ -7,6 +7,7 @@ import { uidOf } from "../lib/sig";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
 import { Help } from "./Fields";
+import { DataTable } from "./DataTable";
 
 export function HydrantsTab() {
   const { project, net, focus, toast, revision, savedRevision } = useEditor();
@@ -28,24 +29,19 @@ export function HydrantsTab() {
         <span className="muted small">{hydrants.length} grifos{res ? ` · versión ${res.model_version}` : ""}</span>
       </div>
       {!hydrants.length ? <p className="muted pad">Sin grifos. Use la herramienta Grifo (G) o impórtelos desde la planilla.</p> : (
-        <table className="tbl">
-          <thead><tr><th>Grifo</th><th>Nudo</th><th className="num">Q incendio (L/s)</th><th className="num">P mín. (m)</th><th className="num">P estática (m)</th><th className="num">P residual (m)</th><th className="num">Q disponible (L/s)</th><th>Resultado</th></tr></thead>
-          <tbody>
-            {hydrants.map((h) => {
-              const r = byId.get(h.id);
-              return (
-                <tr key={h.uid} className="clickable" onClick={() => { const u = uidOf(net, "grifos", h.id); if (u) focus([u]); }}>
-                  <td className="mono">{h.id}</td><td className="mono">{net.nodes[h.node]?.id ?? "—"}</td>
-                  <td className="num">{fmt(h.props.fire_flow_lps ?? 16, 1)}</td><td className="num">{fmt(h.props.min_pressure_m ?? 5, 1)}</td>
-                  <td className="num">{fmt(r?.static_pressure_m ?? NaN, 1)}</td>
-                  <td className={`num ${r && r.ok === false ? "bad" : ""}`}>{fmt(r?.residual_pressure_m ?? NaN, 1)}</td>
-                  <td className="num">{fmt(r?.available_flow_lps ?? NaN, 1)}</td>
-                  <td className={r?.ok === false ? "bad" : ""}>{r?.message ?? ""}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <DataTable label="Grifos" rows={hydrants} rowKey={(h) => h.uid} initialSort={{ key: "id" }} exportName="grifos"
+          onRowClick={(h) => { const u = uidOf(net, "grifos", h.id); if (u) focus([u]); }}
+          columns={[
+            { key: "id", label: "Grifo", value: (h) => h.id, className: "mono" },
+            { key: "node", label: "Nudo", value: (h) => net.nodes[h.node]?.id ?? "", className: "mono" },
+            { key: "q", label: "Q incendio (L/s)", type: "num", value: (h) => h.props.fire_flow_lps ?? 16, render: (h) => fmt(h.props.fire_flow_lps ?? 16, 1) },
+            { key: "pmin", label: "P mín. (m)", type: "num", value: (h) => h.props.min_pressure_m ?? 5, render: (h) => fmt(h.props.min_pressure_m ?? 5, 1) },
+            { key: "ps", label: "P estática (m)", type: "num", value: (h) => byId.get(h.id)?.static_pressure_m ?? null, render: (h) => fmt(byId.get(h.id)?.static_pressure_m ?? NaN, 1) },
+            { key: "pr", label: "P residual (m)", type: "num", value: (h) => byId.get(h.id)?.residual_pressure_m ?? null,
+              render: (h) => fmt(byId.get(h.id)?.residual_pressure_m ?? NaN, 1), className: (h) => (byId.get(h.id)?.ok === false ? "bad" : "") },
+            { key: "qa", label: "Q disponible (L/s)", type: "num", value: (h) => byId.get(h.id)?.available_flow_lps ?? null, render: (h) => fmt(byId.get(h.id)?.available_flow_lps ?? NaN, 1) },
+            { key: "msg", label: "Resultado", value: (h) => byId.get(h.id)?.message ?? "", className: (h) => (byId.get(h.id)?.ok === false ? "bad" : "") },
+          ]} />
       )}
     </>
   );

@@ -9,6 +9,8 @@ import { errorText, openProject } from "../state/projects";
 import { useEditor } from "../state/store";
 import { CLIENT_TYPES } from "./ClientDialog";
 import { Help } from "./Fields";
+import type { DataColumn } from "./DataTable";
+import { DataTable } from "./DataTable";
 
 export function ClientsTab() {
   const { net, result, period, project, focus, toast, designParams } = useEditor();
@@ -51,6 +53,20 @@ export function ClientsTab() {
     { header: "Presión (m)", value: (r) => r.p },
   ]));
 
+  type Row = (typeof rows)[number];
+  const cols: DataColumn<Row>[] = [
+    { key: "id", label: "ID", value: (r) => r.c.id, className: "mono" },
+    { key: "name", label: "Nombre o dirección", value: (r) => r.c.props.name ?? "" },
+    { key: "type", label: "Tipo", value: (r) => typeLabel[r.c.props.client_type] },
+    { key: "status", label: "Estado", value: (r) => r.c.props.status },
+    { key: "cons", label: "Consumo", type: "num", value: (r) => r.c.props.consumption_value,
+      render: (r) => `${fmt(r.c.props.consumption_value, 2)} ${r.c.props.consumption_unit === "m3/mes" ? "m³/mes" : "L/s"}` },
+    { key: "lps", label: "L/s", type: "num", value: (r) => r.lps, render: (r) => fmt(r.lps, 3) },
+    { key: "node", label: "Nudo", value: (r) => r.node, className: "mono" },
+    { key: "link", label: "Tubería", value: (r) => r.link, className: "mono" },
+    { key: "p", label: "Presión (m)", type: "num", value: (r) => r.p, render: (r) => fmt(r.p, 2),
+      className: (r) => (r.p !== undefined && pmin !== undefined && r.p < pmin ? "bad" : "") },
+  ];
   return (
     <>
       <div className="toolbar">
@@ -60,21 +76,8 @@ export function ClientsTab() {
         <button className="small ghost" disabled={!rows.length} onClick={exportCsv}>Exportar CSV</button>
         <span className="muted small">{rows.length} clientes · {fmt(total, 3)} L/s activos</span>
       </div>
-      {rows.length === 0 ? <p className="muted pad">Sin clientes. Use la herramienta Cliente (C) o importe un CSV.</p> : (
-        <table className="tbl">
-          <thead><tr><th>ID</th><th>Nombre o dirección</th><th>Tipo</th><th>Estado</th><th className="num">Consumo</th><th className="num">L/s</th><th>Nudo</th><th>Tubería</th><th className="num">Presión (m)</th></tr></thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.c.uid} className="clickable" onClick={() => focus([r.c.uid])}>
-                <td className="mono">{r.c.id}</td><td>{r.c.props.name ?? ""}</td><td>{typeLabel[r.c.props.client_type]}</td>
-                <td>{r.c.props.status}</td><td className="num">{fmt(r.c.props.consumption_value, 2)} {r.c.props.consumption_unit === "m3/mes" ? "m³/mes" : "L/s"}</td>
-                <td className="num">{fmt(r.lps, 3)}</td><td className="mono">{r.node}</td><td className="mono">{r.link}</td>
-                <td className={`num ${r.p !== undefined && pmin !== undefined && r.p < pmin ? "bad" : ""}`}>{fmt(r.p, 2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <DataTable label="Clientes" rows={rows} columns={cols} rowKey={(r) => r.c.uid} onRowClick={(r) => focus([r.c.uid])}
+        empty={<p className="muted pad">Sin clientes. Use la herramienta Cliente (C) o importe un CSV.</p>} />
     </>
   );
 }

@@ -24,6 +24,101 @@
         "title": "Addition",
         "type": "object"
       },
+      "AdminOverview": {
+        "properties": {
+          "disk_free_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disk Free Gb"
+          },
+          "disk_total_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disk Total Gb"
+          },
+          "disk_used_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disk Used Gb"
+          },
+          "near_limit": {
+            "items": {
+              "$ref": "#/components/schemas/NearLimit"
+            },
+            "title": "Near Limit",
+            "type": "array"
+          },
+          "orgs_active": {
+            "title": "Orgs Active",
+            "type": "integer"
+          },
+          "orgs_suspended": {
+            "title": "Orgs Suspended",
+            "type": "integer"
+          },
+          "ortho_count": {
+            "title": "Ortho Count",
+            "type": "integer"
+          },
+          "ortho_mb": {
+            "title": "Ortho Mb",
+            "type": "number"
+          },
+          "projects_total": {
+            "title": "Projects Total",
+            "type": "integer"
+          },
+          "recent_audit": {
+            "items": {
+              "$ref": "#/components/schemas/AuditOut"
+            },
+            "title": "Recent Audit",
+            "type": "array"
+          },
+          "users_active": {
+            "title": "Users Active",
+            "type": "integer"
+          },
+          "users_total": {
+            "title": "Users Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "orgs_active",
+          "orgs_suspended",
+          "users_total",
+          "users_active",
+          "projects_total",
+          "ortho_count",
+          "ortho_mb",
+          "disk_total_gb",
+          "disk_used_gb",
+          "disk_free_gb",
+          "near_limit",
+          "recent_audit"
+        ],
+        "title": "AdminOverview",
+        "type": "object"
+      },
       "AffectedClient": {
         "properties": {
           "after": {
@@ -4670,6 +4765,48 @@
         "title": "InvitationInfo",
         "type": "object"
       },
+      "InvitationOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Identificador corto de la invitación",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "proyectista",
+              "revisor",
+              "lector"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "InvitationOut",
+        "type": "object"
+      },
       "InviteIn": {
         "additionalProperties": false,
         "properties": {
@@ -4907,6 +5044,53 @@
           "suggested"
         ],
         "title": "LifeRow",
+        "type": "object"
+      },
+      "LimitUse": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Uso / límite (0–1+); sin límite = None",
+            "title": "Ratio"
+          },
+          "used": {
+            "title": "Used",
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "used",
+          "limit"
+        ],
+        "title": "LimitUse",
         "type": "object"
       },
       "LineStringGeometry": {
@@ -6129,6 +6313,17 @@
             },
             "title": "Orgs",
             "type": "array"
+          },
+          "support_org": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrgRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Organización en la que el superadministrador está como soporte"
           }
         },
         "required": [
@@ -6481,6 +6676,22 @@
           }
         },
         "title": "MonitoringSettings",
+        "type": "object"
+      },
+      "NearLimit": {
+        "properties": {
+          "org": {
+            "$ref": "#/components/schemas/OrgOut"
+          },
+          "worst": {
+            "$ref": "#/components/schemas/LimitUse"
+          }
+        },
+        "required": [
+          "org",
+          "worst"
+        ],
+        "title": "NearLimit",
         "type": "object"
       },
       "NetworkBlock": {
@@ -7144,6 +7355,18 @@
             "title": "Id",
             "type": "string"
           },
+          "info": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Info"
+          },
           "kind": {
             "title": "Kind",
             "type": "string"
@@ -7267,6 +7490,197 @@
         "title": "OrgCreated",
         "type": "object"
       },
+      "OrgDataUpdate": {
+        "additionalProperties": false,
+        "description": "Lo que el administrador de la organización puede cambiar (no plan, límites ni suspensión).",
+        "properties": {
+          "info": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrgInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "apr",
+                  "consultora",
+                  "sanitaria",
+                  "otra"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "OrgDataUpdate",
+        "type": "object"
+      },
+      "OrgDelete": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm": {
+            "description": "Nombre exacto de la organización",
+            "maxLength": 200,
+            "title": "Confirm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "OrgDelete",
+        "type": "object"
+      },
+      "OrgDetail": {
+        "properties": {
+          "limits_use": {
+            "items": {
+              "$ref": "#/components/schemas/LimitUse"
+            },
+            "title": "Limits Use",
+            "type": "array"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberOut"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "org": {
+            "$ref": "#/components/schemas/OrgOut"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "org",
+          "usage",
+          "limits_use",
+          "members"
+        ],
+        "title": "OrgDetail",
+        "type": "object"
+      },
+      "OrgInfo": {
+        "additionalProperties": false,
+        "description": "Datos de contacto de la organización (todos opcionales).",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dirección",
+            "title": "Address"
+          },
+          "comuna": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comuna"
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Persona de contacto",
+            "title": "Contact"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 254,
+                "pattern": "^$|^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "rut": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rut"
+          }
+        },
+        "title": "OrgInfo",
+        "type": "object"
+      },
       "OrgOut": {
         "properties": {
           "created_at": {
@@ -7278,6 +7692,18 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "info": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Info"
           },
           "kind": {
             "title": "Kind",
@@ -7441,6 +7867,19 @@
       "OrgUpdate": {
         "additionalProperties": false,
         "properties": {
+          "confirm": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nombre de la organización (exigido para suspender)",
+            "title": "Confirm"
+          },
           "limits": {
             "anyOf": [
               {
@@ -8048,6 +8487,40 @@
           "ids"
         ],
         "title": "PlanYear",
+        "type": "object"
+      },
+      "PlansUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "plans": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "propertyNames": {
+              "enum": [
+                "basico",
+                "profesional",
+                "ilimitado"
+              ]
+            },
+            "title": "Plans",
+            "type": "object"
+          }
+        },
+        "required": [
+          "plans"
+        ],
+        "title": "PlansUpdate",
         "type": "object"
       },
       "PointGeometry": {
@@ -11293,6 +11766,18 @@
       },
       "Usage": {
         "properties": {
+          "invitations_today": {
+            "default": 0,
+            "description": "Invitaciones creadas hoy",
+            "title": "Invitations Today",
+            "type": "integer"
+          },
+          "invite_days": {
+            "default": 7,
+            "description": "Días de vigencia de una invitación",
+            "title": "Invite Days",
+            "type": "integer"
+          },
           "limits": {
             "additionalProperties": true,
             "title": "Limits",
@@ -11310,12 +11795,24 @@
             "title": "Ortho Mb",
             "type": "number"
           },
+          "pending_invitations": {
+            "default": 0,
+            "description": "Invitaciones vigentes sin aceptar",
+            "title": "Pending Invitations",
+            "type": "integer"
+          },
           "projects": {
             "title": "Projects",
             "type": "integer"
           },
           "simulations": {
             "title": "Simulations",
+            "type": "integer"
+          },
+          "users": {
+            "default": 0,
+            "description": "Usuarios activos de la organización",
+            "title": "Users",
             "type": "integer"
           }
         },
@@ -11408,6 +11905,17 @@
               }
             ],
             "title": "Active"
+          },
+          "is_superadmin": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Superadmin"
           }
         },
         "title": "UserAdminUpdate",
@@ -12445,6 +12953,91 @@
       }
     },
     "/api/admin/orgs/{org_id}": {
+      "delete": {
+        "operationId": "admin_delete_org_api_admin_orgs__org_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgDelete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Eliminar una organización con sus proyectos",
+        "tags": [
+          "organizaciones"
+        ]
+      },
+      "get": {
+        "operationId": "admin_org_detail_api_admin_orgs__org_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ficha de una organización",
+        "tags": [
+          "organizaciones"
+        ]
+      },
       "patch": {
         "operationId": "admin_update_org_api_admin_orgs__org_id__patch",
         "parameters": [
@@ -12492,6 +13085,109 @@
           }
         },
         "summary": "Plan, límites, nombre o suspensión",
+        "tags": [
+          "organizaciones"
+        ]
+      }
+    },
+    "/api/admin/orgs/{org_id}/support": {
+      "post": {
+        "operationId": "admin_support_api_admin_orgs__org_id__support_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Entrar a la organización como soporte",
+        "tags": [
+          "organizaciones"
+        ]
+      }
+    },
+    "/api/admin/overview": {
+      "get": {
+        "operationId": "admin_overview_api_admin_overview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Resumen del Panel admin",
+        "tags": [
+          "organizaciones"
+        ]
+      }
+    },
+    "/api/admin/plans": {
+      "put": {
+        "operationId": "admin_plans_api_admin_plans_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlansUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Admin Plans Api Admin Plans Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Editar los límites de cada plan",
         "tags": [
           "organizaciones"
         ]
@@ -13200,6 +13896,20 @@
         ]
       }
     },
+    "/api/auth/support/exit": {
+      "post": {
+        "operationId": "support_exit_api_auth_support_exit_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Salir del modo soporte (superadministrador)",
+        "tags": [
+          "autenticación"
+        ]
+      }
+    },
     "/api/catalog/pipes": {
       "get": {
         "operationId": "list_pipes_api_catalog_pipes_get",
@@ -13317,6 +14027,100 @@
         ]
       }
     },
+    "/api/orgs/{org_id}": {
+      "get": {
+        "operationId": "org_data_api_orgs__org_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Datos de la organización (miembros)",
+        "tags": [
+          "organizaciones"
+        ]
+      },
+      "patch": {
+        "operationId": "update_org_data_api_orgs__org_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgDataUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Nombre, tipo y datos de la organización (administrador)",
+        "tags": [
+          "organizaciones"
+        ]
+      }
+    },
     "/api/orgs/{org_id}/audit": {
       "get": {
         "operationId": "audit_log_api_orgs__org_id__audit_get",
@@ -13394,6 +14198,51 @@
       }
     },
     "/api/orgs/{org_id}/invitations": {
+      "get": {
+        "operationId": "invitations_api_orgs__org_id__invitations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationOut"
+                  },
+                  "title": "Response Invitations Api Orgs  Org Id  Invitations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Invitaciones vigentes",
+        "tags": [
+          "organizaciones"
+        ]
+      },
       "post": {
         "operationId": "invite_api_orgs__org_id__invitations_post",
         "parameters": [
@@ -13441,6 +14290,51 @@
           }
         },
         "summary": "Invitar por correo o con un enlace de un solo uso",
+        "tags": [
+          "organizaciones"
+        ]
+      }
+    },
+    "/api/orgs/{org_id}/invitations/{inv_id}": {
+      "delete": {
+        "operationId": "revoke_invitation_api_orgs__org_id__invitations__inv_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "inv_id",
+            "required": true,
+            "schema": {
+              "title": "Inv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Anular una invitación",
         "tags": [
           "organizaciones"
         ]

@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { Navigate, Outlet, createBrowserRouter, useLocation } from "react-router";
 
-/** Rutas antiguas (Perfil, Organización, Plataforma, Configuración, Acerca de) → su sección de Ajustes. */
+/** Rutas antiguas (Perfil, Organización, Plataforma, Configuración, Acerca de) → su sección de Ajustes o el Panel admin. */
 function Legacy({ to }: { to: string }) {
   const { search } = useLocation();
   return <Navigate to={`${to}${search}`} replace />;
@@ -14,6 +14,7 @@ import { EditorPage } from "./pages/Editor";
 import { GestionPage } from "./pages/Gestion";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
+import { PanelAdmin } from "./pages/PanelAdmin";
 import { PATHS } from "./paths";
 import { Shell } from "./pages/Shell";
 import { useAuth } from "./state/auth";
@@ -57,7 +58,11 @@ export const router = createBrowserRouter([
           { path: "/ajustes/:seccion", element: <Ajustes /> },
           { path: "/perfil", element: <Legacy to={PATHS.ajustes("seguridad")} /> },
           { path: "/organizacion", element: <Legacy to={PATHS.ajustes("miembros")} /> },
-          { path: "/plataforma", element: <Legacy to={PATHS.ajustes("organizaciones")} /> },
+          { path: "/plataforma", element: <Legacy to={PATHS.panel()} /> },
+          { path: "/plataforma/:resto", element: <Legacy to={PATHS.panel()} /> },
+          { path: "/panel-admin", element: <PanelAdmin /> },
+          { path: "/panel-admin/:seccion", element: <PanelAdmin /> },
+          { path: "/panel-admin/:seccion/:id", element: <PanelAdmin /> },
           { path: "/configuracion", element: <Legacy to={PATHS.ajustes("preferencias")} /> },
           { path: "/acerca-de", element: <Legacy to={PATHS.ajustes("perfil")} /> },
           { path: "/proyecto/:id", element: <EditorPage /> },

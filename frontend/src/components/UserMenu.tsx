@@ -26,7 +26,7 @@ export function UserMenu() {
     <div className="menu-wrap user-menu" ref={ref}>
       <button className="ghost" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" aria-label="Menú de usuario" title={me.email}>
         <span className="avatar">{initial}</span>
-        <span className="user-org">{cur ? `${cur.name} · ${ROLE_LABEL[cur.role]}` : me.email}</span>
+        <span className="user-org"><b>{me.name || me.email.split("@")[0]}</b><small>{cur ? `${cur.name} · ${ROLE_LABEL[cur.role]}` : me.email}</small></span>
         <span className="caret" aria-hidden><Icon.chevronDown /></span>
       </button>
       {open && (
@@ -43,8 +43,8 @@ export function UserMenu() {
               </select></label>
           )}
           <Link className="menu-item" role="menuitem" to={PATHS.ajustes("perfil")} onClick={() => setOpen(false)}><Icon.user /> Mi cuenta</Link>
-          {isAdmin && <Link className="menu-item" role="menuitem" to={PATHS.ajustes("miembros")} onClick={() => setOpen(false)}><Icon.org /> Organización</Link>}
-          {me.is_superadmin && <Link className="menu-item" role="menuitem" to={PATHS.ajustes("organizaciones")} onClick={() => setOpen(false)}><Icon.gear /> Plataforma</Link>}
+          {isAdmin && <Link className="menu-item" role="menuitem" to={PATHS.ajustes("organizacion")} onClick={() => setOpen(false)}><Icon.org /> Organización</Link>}
+          {me.is_superadmin && <Link className="menu-item" role="menuitem" to={PATHS.panel()} onClick={() => setOpen(false)}><Icon.shield /> Panel admin</Link>}
           <div className="menu-sep" />
           <button className="menu-item" role="menuitem" onClick={async () => { await api.logout().catch(() => undefined); window.location.assign(PATHS.login); }}>
             <Icon.logout /> Cerrar sesión</button>

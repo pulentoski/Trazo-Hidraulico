@@ -6,6 +6,7 @@ import { fmtDate } from "../lib/format";
 import { errorText, openProject } from "../state/projects";
 import { removeElements, useEditor } from "../state/store";
 import { Icon } from "./Icons";
+import { DataTable } from "./DataTable";
 
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   useEffect(() => {
@@ -88,27 +89,22 @@ export function VersionsDialog() {
     <Modal title={`Versiones de «${project.name}»`} onClose={close} wide>
       <label className="inline"><input type="checkbox" checked={showAuto} onChange={(e) => setShowAuto(e.target.checked)} /> Mostrar guardados automáticos</label>
       <p className="muted">Cada guardado crea una versión inmutable; las simulaciones quedan ligadas a la versión que las generó.</p>
-      <table className="tbl">
-        <thead><tr><th>Versión</th><th>Tipo</th><th>Etiqueta</th><th>Fecha</th><th>Nudos</th><th>Tramos</th><th>Resultados</th><th /></tr></thead>
-        <tbody>
-          {rows.map((v) => (
-            <tr key={v.number} className={v.number === serverVersion ? "current" : ""}>
-              <td>v{v.number}</td>
-              <td>{{ auto: "automático", manual: "manual", import: "importación" }[v.kind]}</td>
-              <td>{v.label ?? ""}</td>
-              <td>{fmtDate(v.created_at)}</td>
-              <td className="num">{v.node_count}</td>
-              <td className="num">{v.link_count}</td>
-              <td>{v.has_results ? "sí" : "—"}</td>
-              <td className="right">
-                <a className="btn ghost small" href={api.exportUrl(project.id, v.number)}>.inp</a>
-                <button className="ghost small" onClick={() => setReviewing(reviewing === v.number ? null : v.number)}>Revisión</button>
-                {v.number !== serverVersion && !readOnly && <button className="ghost small" onClick={() => void restore(v)}>Restaurar</button>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable label="Versiones" rows={rows} rowKey={(v) => String(v.number)} initialSort={{ key: "n", dir: -1 }} pageSize={25}
+        rowClassName={(v) => (v.number === serverVersion ? "current" : "")} exportName={`versiones-${project.name}`}
+        columns={[
+          { key: "n", label: "Versión", type: "num", value: (v) => v.number, render: (v) => `v${v.number}` },
+          { key: "kind", label: "Tipo", value: (v) => ({ auto: "automático", manual: "manual", import: "importación" }[v.kind] ?? v.kind) },
+          { key: "label", label: "Etiqueta", value: (v) => v.label ?? "" },
+          { key: "at", label: "Fecha", type: "date", value: (v) => v.created_at, render: (v) => fmtDate(v.created_at) },
+          { key: "nodes", label: "Nudos", type: "num", value: (v) => v.node_count },
+          { key: "links", label: "Tramos", type: "num", value: (v) => v.link_count },
+          { key: "res", label: "Resultados", value: (v) => (v.has_results ? "sí" : "—") },
+          { key: "acc", label: "", sortable: false, noExport: true, value: () => "", className: "right nowrap", render: (v) => (<>
+            <a className="btn ghost small" href={api.exportUrl(project.id, v.number)}>.inp</a>
+            <button className="ghost small" onClick={() => setReviewing(reviewing === v.number ? null : v.number)}>Revisión</button>
+            {v.number !== serverVersion && !readOnly && <button className="ghost small" onClick={() => void restore(v)}>Restaurar</button>}
+          </>) },
+        ]} />
       {reviewing !== null && <Reviews projectId={project.id} version={reviewing} />}
     </Modal>
   );

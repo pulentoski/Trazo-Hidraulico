@@ -1,0 +1,76 @@
+/* Escenas ilustradas del ingreso y del inicio (components/Scene.tsx; dibujo de docs/referencias/estilo/). Trazo en
+   blanco y negro; en tema oscuro el «tinta» del cielo pasa a blanco. Animaciones lentas y continuas, solo en estas
+   escenas; se detienen con «Animaciones» desactivado, prefers-reduced-motion o el botón de pausa. */
+.th-scene { display: block; width: 100%; height: 100%; --ink: #000; }
+:root[data-theme="dark"] .th-scene { --ink: #fff; }
+.th-scene .sky-ink { stroke: var(--ink); }
+.th-scene .dot { fill: var(--ink); }
+.th-scene [data-tip] { cursor: help; }
+.th-scene .hit { fill: none; stroke: transparent; pointer-events: stroke; }
+
+@keyframes sc-cA { 50% { transform: translateX(14px); } }
+@keyframes sc-cB { 50% { transform: translateX(-12px); } }
+@keyframes sc-rain { 0% { transform: translateY(-10px); opacity: 0; } 20%, 85% { opacity: 0.95; } 100% { transform: translateY(58px); opacity: 0; } }
+@keyframes sc-snow { 0% { transform: translate(0, -8px); opacity: 0; } 25% { opacity: 1; } 50% { transform: translate(4px, 22px); } 100% { transform: translate(-3px, 54px); opacity: 0; } }
+@keyframes sc-dash { to { stroke-dashoffset: -48; } }
+@keyframes sc-pdash { to { stroke-dashoffset: -32; } }
+@keyframes sc-evap { 0% { transform: translateY(0); opacity: 0; } 30% { opacity: 0.8; } 100% { transform: translateY(-62px); opacity: 0; } }
+@keyframes sc-pul { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+@keyframes sc-sun { 50% { transform: scale(1.12); opacity: 0.6; } }
+@keyframes sc-wv { to { transform: translateX(-40px); } }
+@keyframes sc-wv2 { to { transform: translateX(-60px); } }
+@keyframes sc-boat { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-2px) rotate(3deg); } }
+@keyframes sc-condor { 0%, 100% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(60px, -8px) rotate(-4deg); }
+  50% { transform: translate(120px, 2px) rotate(0); } 75% { transform: translate(60px, 10px) rotate(4deg); } }
+@keyframes sc-bob { 50% { transform: translateY(-1.6px); } }
+@keyframes sc-sip { 0%, 22% { transform: rotate(0); } 42%, 62% { transform: rotate(-78deg); } 82%, 100% { transform: rotate(0); } }
+@keyframes sc-drip { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(13px); opacity: 0; } }
+@keyframes sc-flag { 0%, 100% { transform: skewY(0) scaleX(1); } 50% { transform: skewY(-5deg) scaleX(0.93); } }
+@keyframes sc-sig { 0%, 100% { opacity: 0.15; } 50% { opacity: 1; } }
+@keyframes sc-needle { 0%, 100% { transform: rotate(-35deg); } 50% { transform: rotate(40deg); } }
+@keyframes sc-legA { 0%, 100% { transform: rotate(-26deg); } 50% { transform: rotate(26deg); } }
+@keyframes sc-legB { 0%, 100% { transform: rotate(26deg); } 50% { transform: rotate(-26deg); } }
+@keyframes sc-stroll { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(34px); } }
+@keyframes sc-face { 0%, 49.9% { transform: scaleX(1); } 50%, 100% { transform: scaleX(-1); } }
+
+.th-scene .c1 { animation: sc-cA 11s ease-in-out infinite; }
+.th-scene .c2 { animation: sc-cB 14s ease-in-out infinite; }
+.th-scene .c3 { animation: sc-cA 16s ease-in-out infinite; }
+.th-scene .r1 { animation: sc-rain 1.8s linear infinite; }
+.th-scene .r2 { animation: sc-rain 1.8s linear 0.6s infinite; }
+.th-scene .r3 { animation: sc-rain 1.8s linear 1.2s infinite; }
+.th-scene .s1 { animation: sc-snow 3.2s ease-in-out infinite; }
+.th-scene .s2 { animation: sc-snow 3.2s ease-in-out 1.1s infinite; }
+.th-scene .s3 { animation: sc-snow 3.2s ease-in-out 2.2s infinite; }
+.th-scene .river { stroke-dasharray: 12 12; animation: sc-dash 1.8s linear infinite; }
+.th-scene .pipe { stroke-dasharray: 8 8; animation: sc-pdash 1.2s linear infinite; }
+.th-scene .e1 { animation: sc-evap 4.5s ease-out infinite; }
+.th-scene .e2 { animation: sc-evap 4.5s ease-out 1.5s infinite; }
+.th-scene .e3 { animation: sc-evap 4.5s ease-out 3s infinite; }
+.th-scene .sunr { transform-origin: 760px 58px; animation: sc-sun 6s ease-in-out infinite; }
+.th-scene .tank { animation: sc-pul 3s ease-in-out infinite; }
+.th-scene .w1 { animation: sc-wv 2.6s linear infinite; }
+.th-scene .w2 { animation: sc-wv2 3.8s linear infinite; }
+.th-scene .w3 { animation: sc-wv 2.2s linear infinite reverse; }
+.th-scene .boat { transform-box: fill-box; transform-origin: center bottom; animation: sc-boat 3.5s ease-in-out infinite; }
+.th-scene .condor { animation: sc-condor 22s ease-in-out infinite; }
+.th-scene .bob { animation: sc-bob 1.6s ease-in-out infinite; }
+.th-scene .sip { transform-box: fill-box; transform-origin: 0 0; animation: sc-sip 4s ease-in-out infinite; }
+.th-scene .drip { animation: sc-drip 1.2s linear infinite; }
+.th-scene .drip.b { animation-delay: 0.6s; }
+.th-scene .flag { transform-box: fill-box; transform-origin: 0 50%; animation: sc-flag 2.2s ease-in-out infinite; }
+.th-scene .sig { animation: sc-sig 1.8s ease-in-out infinite; }
+.th-scene .sig.s2 { animation-delay: 0.4s; }
+.th-scene .needle { transform-origin: 652px 229px; animation: sc-needle 5s ease-in-out infinite; }
+.th-scene .lg { transform-box: fill-box; transform-origin: 50% 0; }
+.th-scene .la { animation: sc-legA 0.7s ease-in-out infinite; }
+.th-scene .lb { animation: sc-legB 0.7s ease-in-out infinite; }
+.th-scene .stroll { animation: sc-stroll 9s ease-in-out infinite; }
+.th-scene .fc { transform-box: fill-box; transform-origin: center; animation: sc-face 9s linear infinite; }
+.th-scene.paused * { animation-play-state: paused !important; }
+
+/* Aviso de los elementos de la escena */
+.scene-tip { position: fixed; z-index: 60; max-width: 250px; padding: 10px 12px; border-radius: 12px; pointer-events: none;
+  background: var(--glass); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: var(--shadow);
+  backdrop-filter: blur(10px); font-size: 0.78rem; line-height: 1.45; color: var(--muted); animation: pop-in var(--dur-fast) var(--ease-out); }
+.scene-tip b { display: block; color: var(--accent); font-size: 0.82rem; font-weight: 600; margin-bottom: 2px; }

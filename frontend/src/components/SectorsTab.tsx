@@ -6,6 +6,7 @@ import { cutMessage, uidOf } from "../lib/sig";
 import { errorText } from "../state/projects";
 import { useEditor } from "../state/store";
 import { Help } from "./Fields";
+import { DataTable } from "./DataTable";
 
 export function SectorsTab() {
   const { project, serverVersion, sectors, sectorFocus, set, net, frame, toast, revision, savedRevision } = useEditor();
@@ -42,18 +43,19 @@ export function SectorsTab() {
         </div>
       )}
       {(sectors?.notes ?? []).map((n, i) => <p key={i} className="muted small pad">{n}</p>)}
-      <table className="tbl">
-        <thead><tr><th>Cuartel</th><th>Válvulas a cerrar</th><th className="num">Red (m)</th><th className="num">Tramos</th><th className="num">Clientes</th><th className="num">Aguas abajo</th><th className="num">Sin agua</th><th className="num">Consumo (L/s)</th></tr></thead>
-        <tbody>
-          {(sectors?.sectors ?? []).map((s) => (
-            <tr key={s.id} className={`clickable ${s.id === sectorFocus ? "current" : ""}`} onClick={() => show(s.id)}>
-              <td className="mono">{s.id}{s.has_source ? " ⛲" : ""}</td><td className="mono">{s.valves.join(", ") || "—"}</td>
-              <td className="num">{fmt(s.length_m, 0)}</td><td className="num">{s.links.length}</td><td className="num">{s.clients.length}</td>
-              <td className="num">{s.downstream_clients.length}</td><td className="num">{s.affected_clients}</td><td className="num">{fmt(s.affected_consumption_lps, 3)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable label="Cuarteles" rows={sectors?.sectors ?? []} rowKey={(s) => s.id} onRowClick={(s) => show(s.id)}
+        rowClassName={(s) => (s.id === sectorFocus ? "current" : "")} initialSort={{ key: "id" }} exportName={`cuarteles-${project.name}`}
+        empty={<p className="muted pad">{busy ? "Calculando…" : "Sin cuarteles."}</p>}
+        columns={[
+          { key: "id", label: "Cuartel", value: (s) => s.id, render: (s) => `${s.id}${s.has_source ? " ⛲" : ""}`, className: "mono" },
+          { key: "valves", label: "Válvulas a cerrar", value: (s) => s.valves.join(", "), className: "mono" },
+          { key: "len", label: "Red (m)", type: "num", value: (s) => s.length_m, render: (s) => fmt(s.length_m, 0) },
+          { key: "links", label: "Tramos", type: "num", value: (s) => s.links.length },
+          { key: "clients", label: "Clientes", type: "num", value: (s) => s.clients.length },
+          { key: "down", label: "Aguas abajo", type: "num", value: (s) => s.downstream_clients.length },
+          { key: "aff", label: "Sin agua", type: "num", value: (s) => s.affected_clients },
+          { key: "lps", label: "Consumo (L/s)", type: "num", value: (s) => s.affected_consumption_lps, render: (s) => fmt(s.affected_consumption_lps, 3) },
+        ]} />
     </>
   );
 }

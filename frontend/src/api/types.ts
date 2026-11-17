@@ -117,3 +117,11 @@ export type CapacityResult = S["CapacityResult"];
 // Ajustes
 export type OrgSettings = S["OrgSettings"];
 export type SystemInfo = S["SystemInfo"];
+export type AdminOverview = S["AdminOverview"];
+export type OrgDetail = S["OrgDetail"];
+export type OrgOut = S["OrgOut"];
+export type OrgDataUpdate = S["OrgDataUpdate"];
+export type OrgInfo = S["OrgInfo"];
+export type InvitationOut = S["InvitationOut"];
+export type LimitUse = S["LimitUse"];
+export type PlanName = NonNullable<S["OrgCreate"]["plan"]>;
