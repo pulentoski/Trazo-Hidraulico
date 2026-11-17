@@ -95,6 +95,18 @@ certificado interno para la IP nueva). Manual: `make actualizar-ip`. Registro: `
 Tras un cambio de IP el navegador vuelve a pedir que acepte el certificado. Para una dirección estable, asocie una
 IP elástica o use un dominio.
 
+**Asociar una IP elástica** (EC2 → Elastic IPs → *Associate Elastic IP address* → la instancia): no hace falta
+reiniciar ni editar `.env`; en ≤ 5 min `trazo-ip.timer` cambia `SITE_ADDRESS`/`PUBLIC_URL` a la IP elástica y
+recrea el proxy (o de inmediato: `make actualizar-ip`). Mientras tanto, entrar por la IP nueva muestra una página
+en blanco: Caddy solo atiende la dirección de `SITE_ADDRESS`. El SSH pasa a `ubuntu@<IP elástica>`.
+
+*Actualización interrumpida* (17-11-2026): la instancia se detuvo justo cuando el timer recreaba los contenedores
+para una IP nueva; `proxy`, `api`, `worker` y `backup` quedaron en estado «created» (Docker no los arranca al
+reiniciar) y, como `.env` ya tenía la IP, el script no volvía a actuar: sitio caído. Ahora `actualizar-ip.sh`
+también levanta la pila si encuentra contenedores «created» aunque la IP no haya cambiado (una pila detenida a
+propósito con `make down` o `docker stop` no se toca). Prueba: `make test-deploy` (incluida en `make test`).
+Diagnóstico manual: `docker ps -a` (estado *Created*) → `make up-public`.
+
 ### Pasar de IP a dominio (un paso)
 
 Con el registro DNS `A` del dominio ya apuntando a la IP pública y los puertos 80 y 443 abiertos (Let's Encrypt

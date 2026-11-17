@@ -12,7 +12,7 @@ export HOST_UID HOST_GID
 CADDY_CONFIG_HASH := $(shell cat infra/caddy/Caddyfile infra/caddy/entrypoint.sh 2>/dev/null | sha256sum | cut -c1-16)
 export CADDY_CONFIG_HASH
 
-.PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend test-e2e test-ortho-grande reset-db gen-types backup \
+.PHONY: help env check-auth up up-public down logs ps build test test-backend test-frontend test-deploy test-e2e test-ortho-grande reset-db gen-types backup \
         create-admin unlock-user reset-password actualizar-ip demo ejemplo restore-test backup-now
 
 help: ## Muestra esta ayuda
@@ -73,13 +73,19 @@ ps: ## Estado de los servicios
 build: env ## Construye todas las imágenes
 	$(COMPOSE) --profile test build
 
-test: env test-backend test-frontend ## Ejecuta todas las pruebas dentro de contenedores
+test: env test-backend test-frontend test-deploy ## Ejecuta todas las pruebas dentro de contenedores
 	@echo "✔ make test: todas las pruebas pasaron."
 
 test-backend: env
 	$(COMPOSE) up -d --build --wait db cache
 	$(COMPOSE) --profile test build api-test
 	$(COMPOSE) --profile test run --rm api-test
+
+# Scripts de despliegue con curl y docker simulados, en un contenedor sin red (imagen ya usada por el respaldo).
+DEPLOY_TEST_IMAGE := postgis/postgis:16-3.4@sha256:44126d872ac91993766c341e369c539e8196614321765d36a6f1bab0419a5fa5
+test-deploy:
+	docker run --rm --network none -u $(HOST_UID):$(HOST_GID) -v $(CURDIR)/deploy:/deploy:ro --entrypoint bash \
+	  $(DEPLOY_TEST_IMAGE) /deploy/pruebas/actualizar-ip.test.sh
 
 test-frontend: env
 	$(COMPOSE) --profile test build web-test
